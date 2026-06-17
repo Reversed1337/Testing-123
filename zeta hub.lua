@@ -2,7 +2,6 @@ local G = ... or {}
 if type(G) ~= "table" then G = {} end
 -- Create mock context if missing required functions
 if type(G.IsPremium) ~= "function" then G.IsPremium = function() return true end end
-if type(G.IsHeadless) ~= "function" then G.IsHeadless = function() return false end end
 if type(G.RegisterReset) ~= "function" then G.RegisterReset = function() end end
 if type(G.Library) ~= "table" then G.Library = {} end
 if type(G.Window) ~= "table" then G.Window = {} end
