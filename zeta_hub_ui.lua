@@ -1,10345 +1,8806 @@
-local cloneref = (cloneref or clonereference or function(instance: any)
-    return instance
-end)
-local CoreGui: CoreGui = cloneref(game:GetService("CoreGui"))
-local Players: Players = cloneref(game:GetService("Players"))
-local RunService: RunService = cloneref(game:GetService("RunService"))
-local SoundService: SoundService = cloneref(game:GetService("SoundService"))
-local UserInputService: UserInputService = cloneref(game:GetService("UserInputService"))
-local TextService: TextService = cloneref(game:GetService("TextService"))
-local Teams: Teams = cloneref(game:GetService("Teams"))
-local TweenService: TweenService = cloneref(game:GetService("TweenService"))
-
-local getgenv = getgenv or function()
-    return shared
+local G = ... or {}
+if type(G) ~= "table" then G = {} end
+if type(G.IsPremium) ~= "function" then G.IsPremium = function() return true end end
+if type(G.RegisterReset) ~= "function" then G.RegisterReset = function() end end
+if type(G.IsHeadless) ~= "function" then G.IsHeadless = function() return false end end
+if type(G.Library) ~= "table" then G.Library = {} end
+if type(G.Window) ~= "table" then G.Window = {} end
+local V = game.GameId
+if tostring(V) ~= "10200395747" then
+    print("Exo: Invalid Game")
+    return
 end
-local setclipboard = setclipboard or nil
-local protectgui = protectgui or (syn and syn.protect_gui) or function() end
-local gethui = gethui or function()
-    return CoreGui
+if _G.is_running_gag2 then
+    warn("Already running x")
+    return
 end
-
-local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local Mouse = LocalPlayer:GetMouse()
-
-local Labels = {}
-local Buttons = {}
-local Toggles = {}
-local Options = {}
-
-local Library = {
-    LocalPlayer = LocalPlayer,
-    DevicePlatform = nil,
-    IsMobile = false,
-    IsRobloxFocused = true,
-
-    ScreenGui = nil,
-
-    SearchText = "",
-    Searching = false,
-    LastSearchTab = nil,
-
-    ActiveTab = nil,
-    Tabs = {},
-    DependencyBoxes = {},
-
-    KeybindFrame = nil,
-    KeybindContainer = nil,
-    KeybindToggles = {},
-
-    Notifications = {},
-
-    ToggleKeybind = Enum.KeyCode.RightControl,
-    TweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-    NotifyTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-
-    Toggled = false,
-    Unloaded = false,
-
-    Labels = Labels,
-    Buttons = Buttons,
-    Toggles = Toggles,
-    Options = Options,
-
-    NotifySide = "Right",
-    ShowCustomCursor = false,
-    ForceCheckbox = false,
-    ShowToggleFrameInKeybinds = true,
-    NotifyOnError = false,
-
-    CantDragForced = false,
-
-    Signals = {},
-    UnloadSignals = {},
-
-    MinSize = Vector2.new(480, 360),
-    DPIScale = 1,
-    CornerRadius = 4,
-
-    IsLightTheme = false,
-    Scheme = {
-        BackgroundColor = Color3.fromRGB(15, 15, 15),
-        MainColor = Color3.fromRGB(25, 25, 25),
-        AccentColor = Color3.fromRGB(125, 85, 255),
-        OutlineColor = Color3.fromRGB(40, 40, 40),
-        FontColor = Color3.new(1, 1, 1),
-        Font = Font.fromEnum(Enum.Font.Code),
-
-        Red = Color3.fromRGB(255, 50, 50),
-        Dark = Color3.new(0, 0, 0),
-        White = Color3.new(1, 1, 1),
-    },
-
-    Registry = {},
-    DPIRegistry = {},
-}
-
-local ObsidianImageManager = {
-    Assets = {
-        TransparencyTexture = {
-            RobloxId = 139785960036434,
-            Path = "Obsidian/assets/TransparencyTexture.png",
-
-            Id = nil
-        },
-        
-        SaturationMap = {
-            RobloxId = 4155801252,
-            Path = "Obsidian/assets/SaturationMap.png",
-
-            Id = nil
-        }
-    }
-}
-do
-    local BaseURL = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
-
-    local function RecursiveCreatePath(Path: string, IsFile: boolean?)
-        if not isfolder or not makefolder then return end
-
-        local Segments = Path:split("/")
-        local TraversedPath = ""
-
-        if IsFile then
-            table.remove(Segments, #Segments)
-        end
-
-        for _, Segment in ipairs(Segments) do
-            if not isfolder(TraversedPath .. Segment) then
-                makefolder(TraversedPath .. Segment)
-            end
-
-            TraversedPath = TraversedPath .. Segment .. "/"
-        end
-
-        return TraversedPath
-    end
-
-    function ObsidianImageManager.GetAsset(AssetName: string)
-        if not ObsidianImageManager.Assets[AssetName] then
-            return nil
-        end
-
-        local AssetData = ObsidianImageManager.Assets[AssetName]
-        if AssetData.Id then
-            return AssetData.Id
-        end
-
-        local AssetID = `rbxassetid://{AssetData.RobloxId}`
-
-        if getcustomasset then
-            local Success, NewID = pcall(getcustomasset, AssetData.Path)
-
-            if Success and NewID then
-                AssetID = NewID
-            end
-        end
-
-        AssetData.Id = AssetID
-        return AssetID
-    end
-
-    function ObsidianImageManager.DownloadAsset(AssetPath: string)
-        if not getcustomasset or not writefile or not isfile then
-            return
-        end
-
-        RecursiveCreatePath(AssetPath, true)
-
-        if isfile(AssetPath) then
-            return
-        end
-
-        local URLPath = AssetPath:gsub("Obsidian/", "")
-        writefile(AssetPath, game:HttpGet(`{BaseURL}{URLPath}`))
-    end
-
-    for _, Data in ObsidianImageManager.Assets do
-        ObsidianImageManager.DownloadAsset(Data.Path)
-    end
-end
-
-if RunService:IsStudio() then
-    if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
-        Library.IsMobile = true
-        Library.MinSize = Vector2.new(480, 240)
-    else
-        Library.IsMobile = false
-        Library.MinSize = Vector2.new(480, 360)
-    end
-else
-    pcall(function()
-        Library.DevicePlatform = UserInputService:GetPlatform()
-    end)
-    Library.IsMobile = (Library.DevicePlatform == Enum.Platform.Android or Library.DevicePlatform == Enum.Platform.IOS)
-    Library.MinSize = Library.IsMobile and Vector2.new(480, 240) or Vector2.new(480, 360)
-end
-
-local Templates = {
-    --// UI \\-
-    Frame = {
-        BorderSizePixel = 0,
-    },
-    ImageLabel = {
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-    },
-    ImageButton = {
-        AutoButtonColor = false,
-        BorderSizePixel = 0,
-    },
-    ScrollingFrame = {
-        BorderSizePixel = 0,
-    },
-    TextLabel = {
-        BorderSizePixel = 0,
-        FontFace = "Font",
-        RichText = true,
-        TextColor3 = "FontColor",
-    },
-    TextButton = {
-        AutoButtonColor = false,
-        BorderSizePixel = 0,
-        FontFace = "Font",
-        RichText = true,
-        TextColor3 = "FontColor",
-    },
-    TextBox = {
-        BorderSizePixel = 0,
-        FontFace = "Font",
-        PlaceholderColor3 = function()
-            local H, S, V = Library.Scheme.FontColor:ToHSV()
-            return Color3.fromHSV(H, S, V / 2)
-        end,
-        Text = "",
-        TextColor3 = "FontColor",
-    },
-    UIListLayout = {
-        SortOrder = Enum.SortOrder.LayoutOrder,
-    },
-    UIStroke = {
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-    },
-
-    --// Library \\--
-    Window = {
-        Title = "No Title",
-        Footer = "No Footer",
-        Position = UDim2.fromOffset(6, 6),
-        Size = UDim2.fromOffset(720, 600),
-        IconSize = UDim2.fromOffset(30, 30),
-        AutoShow = true,
-        Center = true,
-        Resizable = true,
-        SearchbarSize = UDim2.fromScale(1, 1),
-        CornerRadius = 4,
-        NotifySide = "Right",
-        ShowCustomCursor = false,
-        Font = Enum.Font.Code,
-        ToggleKeybind = Enum.KeyCode.RightControl,
-        MobileButtonsSide = "Left",
-    },
-    Toggle = {
-        Text = "Toggle",
-        Default = false,
-
-        Callback = function() end,
-        Changed = function() end,
-
-        Risky = false,
-        Disabled = false,
-        Visible = true,
-    },
-    Input = {
-        Text = "Input",
-        Default = "",
-        Finished = false,
-        Numeric = false,
-        ClearTextOnFocus = true,
-        Placeholder = "",
-        AllowEmpty = true,
-        EmptyReset = "---",
-
-        Callback = function() end,
-        Changed = function() end,
-
-        Disabled = false,
-        Visible = true,
-    },
-    Slider = {
-        Text = "Slider",
-        Default = 0,
-        Min = 0,
-        Max = 100,
-        Rounding = 0,
-
-        Prefix = "",
-        Suffix = "",
-
-        Callback = function() end,
-        Changed = function() end,
-
-        Disabled = false,
-        Visible = true,
-    },
-    Dropdown = {
-        Values = {},
-        DisabledValues = {},
-        Multi = false,
-        MaxVisibleDropdownItems = 8,
-
-        Callback = function() end,
-        Changed = function() end,
-
-        Disabled = false,
-        Visible = true,
-    },
-    Viewport = {
-        Object = nil,
-        Camera = nil,
-        Clone = true,
-        AutoFocus = true,
-        Interactive = false,
-        Height = 200,
-        Visible = true,
-    },
-    Image = {
-        Image = "",
-        Transparency = 0,
-        Color = Color3.new(1, 1, 1),
-        RectOffset = Vector2.zero,
-        RectSize = Vector2.zero,
-        ScaleType = Enum.ScaleType.Fit,
-        Height = 200,
-        Visible = true,
-    },
-
-    --// Addons \\-
-    KeyPicker = {
-        Text = "KeyPicker",
-        Default = "None",
-        Mode = "Toggle",
-        Modes = { "Always", "Toggle", "Hold" },
-        SyncToggleState = false,
-
-        Callback = function() end,
-        ChangedCallback = function() end,
-        Changed = function() end,
-        Clicked = function() end,
-    },
-    ColorPicker = {
-        Default = Color3.new(1, 1, 1),
-
-        Callback = function() end,
-        Changed = function() end,
-    },
-}
-
-local Places = {
-    Bottom = { 0, 1 },
-    Right = { 1, 0 },
-}
-local Sizes = {
-    Left = { 0.5, 1 },
-    Right = { 0.5, 1 },
-}
-
---// Basic Functions \\--
-local function ApplyDPIScale(Dimension, ExtraOffset)
-    if typeof(Dimension) == "UDim" then
-        return UDim.new(Dimension.Scale, Dimension.Offset * Library.DPIScale)
-    end
-
-    if ExtraOffset then
-        return UDim2.new(
-            Dimension.X.Scale,
-            (Dimension.X.Offset * Library.DPIScale) + (ExtraOffset[1] * Library.DPIScale),
-            Dimension.Y.Scale,
-            (Dimension.Y.Offset * Library.DPIScale) + (ExtraOffset[2] * Library.DPIScale)
-        )
-    end
-
-    return UDim2.new(
-        Dimension.X.Scale,
-        Dimension.X.Offset * Library.DPIScale,
-        Dimension.Y.Scale,
-        Dimension.Y.Offset * Library.DPIScale
-    )
-end
-local function ApplyTextScale(TextSize)
-    return TextSize * Library.DPIScale
-end
-
-local function WaitForEvent(Event, Timeout, Condition)
-    local Bindable = Instance.new("BindableEvent")
-    local Connection = Event:Once(function(...)
-        if not Condition or typeof(Condition) == "function" and Condition(...) then
-            Bindable:Fire(true)
-        else
-            Bindable:Fire(false)
-        end
-    end)
-    task.delay(Timeout, function()
-        Connection:Disconnect()
-        Bindable:Fire(false)
-    end)
-
-    local Result = Bindable.Event:Wait()
-    Bindable:Destroy()
-
-    return Result
-end
-
-local function IsMouseInput(Input: InputObject, IncludeM2: boolean?)
-    return Input.UserInputType == Enum.UserInputType.MouseButton1
-        or (IncludeM2 == true and Input.UserInputType == Enum.UserInputType.MouseButton2)
-        or Input.UserInputType == Enum.UserInputType.Touch
-end
-local function IsClickInput(Input: InputObject, IncludeM2: boolean?)
-    return IsMouseInput(Input, IncludeM2)
-        and Input.UserInputState == Enum.UserInputState.Begin
-        and Library.IsRobloxFocused
-end
-local function IsHoverInput(Input: InputObject)
-    return (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch)
-        and Input.UserInputState == Enum.UserInputState.Change
-end
-local function IsDragInput(Input: InputObject, IncludeM2: boolean?)
-    return IsMouseInput(Input, IncludeM2)
-        and (Input.UserInputState == Enum.UserInputState.Begin or Input.UserInputState == Enum.UserInputState.Change)
-        and Library.IsRobloxFocused
-end
-
-local function GetTableSize(Table: { [any]: any })
-    local Size = 0
-
-    for _, _ in pairs(Table) do
-        Size += 1
-    end
-
-    return Size
-end
-local function StopTween(Tween: TweenBase)
-    if not (Tween and Tween.PlaybackState == Enum.PlaybackState.Playing) then
-        return
-    end
-
-    Tween:Cancel()
-end
-local function Trim(Text: string)
-    return Text:match("^%s*(.-)%s*$")
-end
-local function Round(Value, Rounding)
-    assert(Rounding >= 0, "Invalid rounding number.")
-
-    if Rounding == 0 then
-        return math.floor(Value)
-    end
-
-    return tonumber(string.format("%." .. Rounding .. "f", Value))
-end
-
-local function GetPlayers(ExcludeLocalPlayer: boolean?)
-    local PlayerList = Players:GetPlayers()
-
-    if ExcludeLocalPlayer then
-        local Idx = table.find(PlayerList, LocalPlayer)
-        if Idx then
-            table.remove(PlayerList, Idx)
-        end
-    end
-
-    table.sort(PlayerList, function(Player1, Player2)
-        return Player1.Name:lower() < Player2.Name:lower()
-    end)
-
-    return PlayerList
-end
-local function GetTeams()
-    local TeamList = Teams:GetTeams()
-
-    table.sort(TeamList, function(Team1, Team2)
-        return Team1.Name:lower() < Team2.Name:lower()
-    end)
-
-    return TeamList
-end
-
-function Library:UpdateKeybindFrame()
-    if not Library.KeybindFrame then
-        return
-    end
-
-    local XSize = 0
-    for _, KeybindToggle in pairs(Library.KeybindToggles) do
-        if not KeybindToggle.Holder.Visible then
-            continue
-        end
-
-        local FullSize = KeybindToggle.Label.Size.X.Offset + KeybindToggle.Label.Position.X.Offset
-        if FullSize > XSize then
-            XSize = FullSize
-        end
-    end
-
-    Library.KeybindFrame.Size = UDim2.fromOffset(XSize + 18 * Library.DPIScale, 0)
-end
-function Library:UpdateDependencyBoxes()
-    for _, Depbox in pairs(Library.DependencyBoxes) do
-        Depbox:Update(true)
-    end
-
-    if Library.Searching then
-        Library:UpdateSearch(Library.SearchText)
-    end
-end
-
-local function CheckDepbox(Box, Search)
-    local VisibleElements = 0
-
-    for _, ElementInfo in pairs(Box.Elements) do
-        if ElementInfo.Type == "Divider" then
-            ElementInfo.Holder.Visible = false
-            continue
-        elseif ElementInfo.SubButton then
-            --// Check if any of the Buttons Name matches with Search
-            local Visible = false
-
-            --// Check if Search matches Element's Name and if Element is Visible
-            if ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                Visible = true
-            else
-                ElementInfo.Base.Visible = false
-            end
-            if ElementInfo.SubButton.Text:lower():match(Search) and ElementInfo.SubButton.Visible then
-                Visible = true
-            else
-                ElementInfo.SubButton.Base.Visible = false
-            end
-            ElementInfo.Holder.Visible = Visible
-            if Visible then
-                VisibleElements += 1
-            end
-
-            continue
-        end
-
-        --// Check if Search matches Element's Name and if Element is Visible
-        if ElementInfo.Text and ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-            ElementInfo.Holder.Visible = true
-            VisibleElements += 1
-        else
-            ElementInfo.Holder.Visible = false
-        end
-    end
-
-    for _, Depbox in pairs(Box.DependencyBoxes) do
-        if not Depbox.Visible then
-            continue
-        end
-
-        VisibleElements += CheckDepbox(Depbox, Search)
-    end
-
-    return VisibleElements
-end
-local function RestoreDepbox(Box)
-    for _, ElementInfo in pairs(Box.Elements) do
-        ElementInfo.Holder.Visible = typeof(ElementInfo.Visible) == "boolean" and ElementInfo.Visible or true
-
-        if ElementInfo.SubButton then
-            ElementInfo.Base.Visible = ElementInfo.Visible
-            ElementInfo.SubButton.Base.Visible = ElementInfo.SubButton.Visible
-        end
-    end
-
-    Box:Resize()
-    Box.Holder.Visible = true
-
-    for _, Depbox in pairs(Box.DependencyBoxes) do
-        if not Depbox.Visible then
-            continue
-        end
-
-        RestoreDepbox(Depbox)
-    end
-end
-
-function Library:UpdateSearch(SearchText)
-    Library.SearchText = SearchText
-
-    --// Reset Elements Visibility in Last Tab Searched
-    if Library.LastSearchTab then
-        for _, Groupbox in pairs(Library.LastSearchTab.Groupboxes) do
-            for _, ElementInfo in pairs(Groupbox.Elements) do
-                ElementInfo.Holder.Visible = typeof(ElementInfo.Visible) == "boolean" and ElementInfo.Visible or true
-
-                if ElementInfo.SubButton then
-                    ElementInfo.Base.Visible = ElementInfo.Visible
-                    ElementInfo.SubButton.Base.Visible = ElementInfo.SubButton.Visible
-                end
-            end
-
-            for _, Depbox in pairs(Groupbox.DependencyBoxes) do
-                if not Depbox.Visible then
-                    continue
-                end
-
-                RestoreDepbox(Depbox)
-            end
-
-            Groupbox:Resize()
-            Groupbox.Holder.Visible = true
-        end
-
-        for _, Tabbox in pairs(Library.LastSearchTab.Tabboxes) do
-            for _, Tab in pairs(Tabbox.Tabs) do
-                for _, ElementInfo in pairs(Tab.Elements) do
-                    ElementInfo.Holder.Visible = typeof(ElementInfo.Visible) == "boolean" and ElementInfo.Visible
-                        or true
-
-                    if ElementInfo.SubButton then
-                        ElementInfo.Base.Visible = ElementInfo.Visible
-                        ElementInfo.SubButton.Base.Visible = ElementInfo.SubButton.Visible
-                    end
-                end
-
-                for _, Depbox in pairs(Tab.DependencyBoxes) do
-                    if not Depbox.Visible then
-                        continue
-                    end
-
-                    RestoreDepbox(Depbox)
-                end
-
-                Tab.ButtonHolder.Visible = true
-            end
-
-            Tabbox.ActiveTab:Resize()
-            Tabbox.Holder.Visible = true
-        end
-
-        for _, DepGroupbox in pairs(Library.LastSearchTab.DependencyGroupboxes) do
-            if not DepGroupbox.Visible then
-                continue
-            end
-
-            for _, ElementInfo in pairs(DepGroupbox.Elements) do
-                ElementInfo.Holder.Visible = typeof(ElementInfo.Visible) == "boolean" and ElementInfo.Visible or true
-
-                if ElementInfo.SubButton then
-                    ElementInfo.Base.Visible = ElementInfo.Visible
-                    ElementInfo.SubButton.Base.Visible = ElementInfo.SubButton.Visible
-                end
-            end
-
-            for _, Depbox in pairs(DepGroupbox.DependencyBoxes) do
-                if not Depbox.Visible then
-                    continue
-                end
-
-                RestoreDepbox(Depbox)
-            end
-
-            DepGroupbox:Resize()
-            DepGroupbox.Holder.Visible = true
-        end
-    end
-
-    --// Cancel Search if Search Text is empty
-    local Search = SearchText:lower()
-    if Trim(Search) == "" or Library.ActiveTab.IsKeyTab then
-        Library.Searching = false
-        Library.LastSearchTab = nil
-        return
-    end
-
-    Library.Searching = true
-
-    --// Loop through Groupboxes to get Elements Info
-    for _, Groupbox in pairs(Library.ActiveTab.Groupboxes) do
-        local VisibleElements = 0
-
-        for _, ElementInfo in pairs(Groupbox.Elements) do
-            if ElementInfo.Type == "Divider" then
-                ElementInfo.Holder.Visible = false
-                continue
-            elseif ElementInfo.SubButton then
-                --// Check if any of the Buttons Name matches with Search
-                local Visible = false
-
-                --// Check if Search matches Element's Name and if Element is Visible
-                if ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                    Visible = true
-                else
-                    ElementInfo.Base.Visible = false
-                end
-                if ElementInfo.SubButton.Text:lower():match(Search) and ElementInfo.SubButton.Visible then
-                    Visible = true
-                else
-                    ElementInfo.SubButton.Base.Visible = false
-                end
-                ElementInfo.Holder.Visible = Visible
-                if Visible then
-                    VisibleElements += 1
-                end
-
-                continue
-            end
-
-            --// Check if Search matches Element's Name and if Element is Visible
-            if ElementInfo.Text and ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                ElementInfo.Holder.Visible = true
-                VisibleElements += 1
-            else
-                ElementInfo.Holder.Visible = false
-            end
-        end
-
-        for _, Depbox in pairs(Groupbox.DependencyBoxes) do
-            if not Depbox.Visible then
-                continue
-            end
-
-            VisibleElements += CheckDepbox(Depbox, Search)
-        end
-
-        --// Update Groupbox Size and Visibility if found any element
-        if VisibleElements > 0 then
-            Groupbox:Resize()
-        end
-        Groupbox.Holder.Visible = VisibleElements > 0
-    end
-
-    for _, Tabbox in pairs(Library.ActiveTab.Tabboxes) do
-        local VisibleTabs = 0
-        local VisibleElements = {}
-
-        for _, Tab in pairs(Tabbox.Tabs) do
-            VisibleElements[Tab] = 0
-
-            for _, ElementInfo in pairs(Tab.Elements) do
-                if ElementInfo.Type == "Divider" then
-                    ElementInfo.Holder.Visible = false
-                    continue
-                elseif ElementInfo.SubButton then
-                    --// Check if any of the Buttons Name matches with Search
-                    local Visible = false
-
-                    --// Check if Search matches Element's Name and if Element is Visible
-                    if ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                        Visible = true
-                    else
-                        ElementInfo.Base.Visible = false
-                    end
-                    if ElementInfo.SubButton.Text:lower():match(Search) and ElementInfo.SubButton.Visible then
-                        Visible = true
-                    else
-                        ElementInfo.SubButton.Base.Visible = false
-                    end
-                    ElementInfo.Holder.Visible = Visible
-                    if Visible then
-                        VisibleElements[Tab] += 1
-                    end
-
-                    continue
-                end
-
-                --// Check if Search matches Element's Name and if Element is Visible
-                if ElementInfo.Text and ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                    ElementInfo.Holder.Visible = true
-                    VisibleElements[Tab] += 1
-                else
-                    ElementInfo.Holder.Visible = false
-                end
-            end
-
-            for _, Depbox in pairs(Tab.DependencyBoxes) do
-                if not Depbox.Visible then
-                    continue
-                end
-
-                VisibleElements[Tab] += CheckDepbox(Depbox, Search)
-            end
-        end
-
-        for Tab, Visible in pairs(VisibleElements) do
-            Tab.ButtonHolder.Visible = Visible > 0
-            if Visible > 0 then
-                VisibleTabs += 1
-
-                if Tabbox.ActiveTab == Tab then
-                    Tab:Resize()
-                elseif VisibleElements[Tabbox.ActiveTab] == 0 then
-                    Tab:Show()
-                end
-            end
-        end
-
-        --// Update Tabbox Visibility if any visible
-        Tabbox.Holder.Visible = VisibleTabs > 0
-    end
-
-    for _, DepGroupbox in pairs(Library.ActiveTab.DependencyGroupboxes) do
-        if not DepGroupbox.Visible then
-            continue
-        end
-
-        local VisibleElements = 0
-
-        for _, ElementInfo in pairs(DepGroupbox.Elements) do
-            if ElementInfo.Type == "Divider" then
-                ElementInfo.Holder.Visible = false
-                continue
-            elseif ElementInfo.SubButton then
-                --// Check if any of the Buttons Name matches with Search
-                local Visible = false
-
-                --// Check if Search matches Element's Name and if Element is Visible
-                if ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                    Visible = true
-                else
-                    ElementInfo.Base.Visible = false
-                end
-                if ElementInfo.SubButton.Text:lower():match(Search) and ElementInfo.SubButton.Visible then
-                    Visible = true
-                else
-                    ElementInfo.SubButton.Base.Visible = false
-                end
-                ElementInfo.Holder.Visible = Visible
-                if Visible then
-                    VisibleElements += 1
-                end
-
-                continue
-            end
-
-            --// Check if Search matches Element's Name and if Element is Visible
-            if ElementInfo.Text and ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                ElementInfo.Holder.Visible = true
-                VisibleElements += 1
-            else
-                ElementInfo.Holder.Visible = false
-            end
-        end
-
-        for _, Depbox in pairs(DepGroupbox.DependencyBoxes) do
-            if not Depbox.Visible then
-                continue
-            end
-
-            VisibleElements += CheckDepbox(Depbox, Search)
-        end
-
-        --// Update Groupbox Size and Visibility if found any element
-        if VisibleElements > 0 then
-            DepGroupbox:Resize()
-        end
-        DepGroupbox.Holder.Visible = VisibleElements > 0
-    end
-
-    --// Set Last Tab to Current One
-    Library.LastSearchTab = Library.ActiveTab
-end
-
-function Library:AddToRegistry(Instance, Properties)
-    Library.Registry[Instance] = Properties
-end
-
-function Library:RemoveFromRegistry(Instance)
-    Library.Registry[Instance] = nil
-end
-
-function Library:UpdateColorsUsingRegistry()
-    for Instance, Properties in pairs(Library.Registry) do
-        for Property, ColorIdx in pairs(Properties) do
-            if typeof(ColorIdx) == "string" then
-                Instance[Property] = Library.Scheme[ColorIdx]
-            elseif typeof(ColorIdx) == "function" then
-                Instance[Property] = ColorIdx()
-            end
-        end
-    end
-end
-
-function Library:UpdateDPI(Instance, Properties)
-    if not Library.DPIRegistry[Instance] then
-        return
-    end
-
-    for Property, Value in pairs(Properties) do
-        Library.DPIRegistry[Instance][Property] = Value and Value or nil
-    end
-end
-
-function Library:SetDPIScale(DPIScale: number)
-    Library.DPIScale = DPIScale / 100
-    Library.MinSize *= Library.DPIScale
-
-    for Instance, Properties in pairs(Library.DPIRegistry) do
-        for Property, Value in pairs(Properties) do
-            if Property == "DPIExclude" or Property == "DPIOffset" then
-                continue
-            elseif Property == "TextSize" then
-                Instance[Property] = ApplyTextScale(Value)
-            else
-                Instance[Property] = ApplyDPIScale(Value, Properties["DPIOffset"][Property])
-            end
-        end
-    end
-
-    for _, Tab in pairs(Library.Tabs) do
-        if Tab.IsKeyTab then
-            continue
-        end
-
-        Tab:Resize(true)
-        for _, Groupbox in pairs(Tab.Groupboxes) do
-            Groupbox:Resize()
-        end
-        for _, Tabbox in pairs(Tab.Tabboxes) do
-            for _, SubTab in pairs(Tabbox.Tabs) do
-                SubTab:Resize()
-            end
-        end
-    end
-
-    for _, Option in pairs(Options) do
-        if Option.Type == "Dropdown" then
-            Option:RecalculateListSize()
-        elseif Option.Type == "KeyPicker" then
-            Option:Update()
-        end
-    end
-
-    Library:UpdateKeybindFrame()
-    for _, Notification in pairs(Library.Notifications) do
-        Notification:Resize()
-    end
-    
-    if Library.ActiveTab and Library.ActiveTab.Show then Library.ActiveTab:Show() end
-end
-
-function Library:GiveSignal(Connection: RBXScriptConnection)
-    table.insert(Library.Signals, Connection)
-    return Connection
-end
-
-local FetchIcons, Icons = pcall(function()
-    return loadstring(
-        game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
-    )()
-end)
-function Library:GetIcon(IconName: string)
-    if not FetchIcons then
-        return
-    end
-    local Success, Icon = pcall(Icons.GetAsset, IconName)
-    if not Success then
-        return
-    end
-    return Icon
-end
-
-function Library:Validate(Table: { [string]: any }, Template: { [string]: any }): { [string]: any }
-    if typeof(Table) ~= "table" then
-        return Template
-    end
-
-    for k, v in pairs(Template) do
-        if typeof(k) == "number" then
-            continue
-        end
-
-        if typeof(v) == "table" then
-            Table[k] = Library:Validate(Table[k], v)
-        elseif Table[k] == nil then
-            Table[k] = v
-        end
-    end
-
-    return Table
-end
-
---// Creator Functions \\--
-local function FillInstance(Table: { [string]: any }, Instance: GuiObject)
-    local ThemeProperties = Library.Registry[Instance] or {}
-    local DPIProperties = Library.DPIRegistry[Instance] or {}
-
-    local DPIExclude = DPIProperties["DPIExclude"] or Table["DPIExclude"] or {}
-    local DPIOffset = DPIProperties["DPIOffset"] or Table["DPIOffset"] or {}
-
-    for k, v in pairs(Table) do
-        if k == "DPIExclude" or k == "DPIOffset" then
-            continue
-        elseif ThemeProperties[k] then
-            ThemeProperties[k] = nil
-        elseif k ~= "Text" and (Library.Scheme[v] or typeof(v) == "function") then
-            -- me when Red in dropdowns break things (temp fix - or perm idk if deivid will do something about this)
-            ThemeProperties[k] = v
-            Instance[k] = Library.Scheme[v] or v()
-            continue
-        end
-
-        if not DPIExclude[k] then
-            if k == "Position" or k == "Size" or k:match("Padding") then
-                DPIProperties[k] = v
-                v = ApplyDPIScale(v, DPIOffset[k])
-            elseif k == "TextSize" then
-                DPIProperties[k] = v
-                v = ApplyTextScale(v)
-            end
-        end
-
-        Instance[k] = v
-    end
-
-    if GetTableSize(ThemeProperties) > 0 then
-        Library.Registry[Instance] = ThemeProperties
-    end
-    if GetTableSize(DPIProperties) > 0 then
-        DPIProperties["DPIExclude"] = DPIExclude
-        DPIProperties["DPIOffset"] = DPIOffset
-        Library.DPIRegistry[Instance] = DPIProperties
-    end
-end
-
-local function New(ClassName: string, Properties: { [string]: any }): any
-    local Instance = Instance.new(ClassName)
-
-    if Templates[ClassName] then
-        FillInstance(Templates[ClassName], Instance)
-    end
-    FillInstance(Properties, Instance)
-
-    if Properties["Parent"] and not Properties["ZIndex"] then
-        pcall(function()
-            Instance.ZIndex = Properties.Parent.ZIndex
-        end)
-    end
-
-    return Instance
-end 
---// Main Instances \\-
- local PlayerGui = Library.LocalPlayer:WaitForChild("PlayerGui", math.huge)
-
-local function SafeParentUI(UI: Instance)
-    local success, err = pcall(function()
-        UI.Parent = PlayerGui
-    end)
-
-    if not success then
-        warn("[EXO UI] Failed to parent UI to PlayerGui:", err)
-        return false
-    end
-
-    return true
-end
-
-local function ParentUI(UI: Instance, _SkipHiddenUI: boolean?)
-    return SafeParentUI(UI)
-end
- 
-local ScreenGui = New("ScreenGui", {
-    Name = "Obsidian",
-    DisplayOrder = 2147483647,
-    ResetOnSpawn = false,
-})
-ParentUI(ScreenGui)
-Library.ScreenGui = ScreenGui
-ScreenGui.DescendantRemoving:Connect(function(Instance)
-    Library:RemoveFromRegistry(Instance)
-    Library.DPIRegistry[Instance] = nil
-end)
-
-local ModalScreenGui = New("ScreenGui", {
-    Name = "ObsidanModal",
-    DisplayOrder = 2147483647,
-    ResetOnSpawn = false,
-})
-ParentUI(ModalScreenGui, true)
-
-local ModalElement = New("TextButton", {
-    BackgroundTransparency = 1,
-    Modal = false,
-    Size = UDim2.fromScale(0, 0),
-    Text = "",
-    ZIndex = -999,
-    Parent = ModalScreenGui,
-})
-
---// Cursor
-local Cursor
-do
-    Cursor = New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "White",
-        Size = UDim2.fromOffset(9, 1),
-        Visible = false,
-        ZIndex = 999,
-        Parent = ScreenGui,
-    })
-    New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "Dark",
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.new(1, 2, 1, 2),
-        ZIndex = 998,
-        Parent = Cursor,
-    })
-
-    local CursorV = New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "White",
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(1, 9),
-        Parent = Cursor,
-    })
-    New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "Dark",
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.new(1, 2, 1, 2),
-        ZIndex = 998,
-        Parent = CursorV,
-    })
-end
-
---// Notification
-local NotificationArea
-local NotificationList
-do
-    NotificationArea = New("Frame", {
-        AnchorPoint = Vector2.new(1, 0),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -6, 0, 6),
-        Size = UDim2.new(0, 300, 1, -6),
-        Parent = ScreenGui,
-    })
-    NotificationList = New("UIListLayout", {
-        HorizontalAlignment = Enum.HorizontalAlignment.Right,
-        Padding = UDim.new(0, 6),
-        Parent = NotificationArea,
-    })
-end
-
---// Lib Functions \\--
-function Library:GetBetterColor(Color: Color3, Add: number): Color3
-    Add = Add * (Library.IsLightTheme and -4 or 2)
-    return Color3.fromRGB(
-        math.clamp(Color.R * 255 + Add, 0, 255),
-        math.clamp(Color.G * 255 + Add, 0, 255),
-        math.clamp(Color.B * 255 + Add, 0, 255)
-    )
-end
-
-function Library:GetDarkerColor(Color: Color3): Color3
-    local H, S, V = Color:ToHSV()
-    return Color3.fromHSV(H, S, V / 2)
-end
-
-function Library:GetKeyString(KeyCode: Enum.KeyCode)
-    if KeyCode.EnumType == Enum.KeyCode and KeyCode.Value > 33 and KeyCode.Value < 127 then
-        return string.char(KeyCode.Value)
-    end
-
-    return KeyCode.Name
-end
-
--- function Library:GetTextBounds(Text: string, Font: Font, Size: number, Width: number?): (number, number)
---     local Params = Instance.new("GetTextBoundsParams")
---     Params.Text = Text
---     Params.RichText = true
---     Params.Font = Font
---     Params.Size = Size
---     Params.Width = Width or workspace.CurrentCamera.ViewportSize.X - 32
-
---     local Bounds = TextService:GetTextBoundsAsync(Params)
---     return Bounds.X, Bounds.Y
--- end
-
-
-function Library:GetTextBounds(Text, FontObj, Size, Width)
-    Text = tostring(Text or "")
-    Size = tonumber(Size) or 16
-    Width = Width or workspace.CurrentCamera.ViewportSize.X - 32
-
-    -- Try modern API
-    local ok, Bounds = pcall(function()
-        local Params = Instance.new("GetTextBoundsParams")
-        Params.Text = Text
-        Params.RichText = true
-        Params.Size = Size
-        Params.Width = Width
-
-        -- try setting font safely
-        if FontObj then
-            Params.Font = FontObj
-        else
-            Params.Font = Font.fromEnum(Enum.Font.Gotham)
-        end
-
-        return TextService:GetTextBoundsAsync(Params)
-    end)
-
-    if ok and Bounds then
-        return Bounds.X, Bounds.Y
-    end
-
-    -- 🔁 fallback to old API (MOST IMPORTANT for Delta)
-    local fallbackFont = Enum.Font.Gotham
-
-    -- try to convert FontObj → Enum.Font if possible
-    pcall(function()
-        if typeof(FontObj) == "EnumItem" then
-            fallbackFont = FontObj
-        elseif typeof(FontObj) == "Font" then
-            -- ignore, not supported in fallback
-        end
-    end)
-
-    local ok2, size = pcall(function()
-        return TextService:GetTextSize(
-            Text,
-            Size,
-            fallbackFont,
-            Vector2.new(Width, math.huge)
-        )
-    end)
-
-    if ok2 and size then
-        return size.X, size.Y
-    end
-
-    -- 🧠 final fallback (estimate)
-    return #Text * Size * 0.55, Size
-end
-
-
-function Library:MouseIsOverFrame(Frame: GuiObject, Mouse: Vector2): boolean
-    local AbsPos, AbsSize = Frame.AbsolutePosition, Frame.AbsoluteSize
-    return Mouse.X >= AbsPos.X
-        and Mouse.X <= AbsPos.X + AbsSize.X
-        and Mouse.Y >= AbsPos.Y
-        and Mouse.Y <= AbsPos.Y + AbsSize.Y
-end
-
-function Library:SafeCallback(Func: (...any) -> ...any, ...: any)
-    if not (Func and typeof(Func) == "function") then
-        return
-    end
-
-    local Result = table.pack(xpcall(Func, function(Error)
-        task.defer(error, debug.traceback(Error, 2))
-        if Library.NotifyOnError then
-            Library:Notify(Error)
-        end
-
-        return Error
-    end, ...))
-
-    if not Result[1] then
+_G.is_running_gag2 = true
+print("exo start > ")
+print("Place Id ", game.PlaceId)
+print("GameId: ", V)
+local y = {}
+y.CollectionService = game:GetService("CollectionService")
+y.LocalizationService = game:GetService("LocalizationService")
+y.UserInputService = game:GetService("UserInputService")
+y.Players = game:GetService("Players")
+y.ReplicatedStorage = game:GetService("ReplicatedStorage")
+y.Workspace = game:GetService("Workspace")
+y.RunService = game:GetService("RunService")
+y.HttpService = game:GetService("HttpService")
+y.MarketplaceService = game:GetService("MarketplaceService")
+y.TeleportService = game:GetService("TeleportService")
+y.LocalPlayer = y.Players.LocalPlayer
+y.Backpack = y.LocalPlayer:WaitForChild("Backpack")
+y.PlayerGui = y.LocalPlayer:WaitForChild("PlayerGui")
+y.Character = y.LocalPlayer.Character or y.LocalPlayer.CharacterAdded:Wait()
+y.LocalPlayer.CharacterAdded:Connect(function(G) y.Character = G end)
+y.LocalPlayer.CharacterRemoving:Connect(function(G) if y.Character == G then y.Character = nil end end)
+y.SharedData = y.ReplicatedStorage:FindFirstChild("SharedData")
+y.SharedModules = y.ReplicatedStorage:FindFirstChild("SharedModules")
+y.StockValues = y.ReplicatedStorage:FindFirstChild("StockValues")
+y.CrateShop = y.StockValues:FindFirstChild("CrateShop")
+y.ExclusiveShop = y.StockValues:FindFirstChild("ExclusiveShop")
+y.GearShop = y.StockValues:FindFirstChild("GearShop")
+y.SeedShop = y.StockValues:FindFirstChild("SeedShop")
+y.fails = 0
+function y.safeRequire(G)
+    local V, Z = pcall(require, G)
+    if not V or Z == nil then
+        warn("[SafeRequire] Failed to load:", G)
+        y.fails = y.fails + 1
         return nil
     end
-
-    return table.unpack(Result, 2, Result.n)
+    return Z
 end
 
-function Library:MakeDraggable(UI: GuiObject, DragFrame: GuiObject, IgnoreToggled: boolean?, IsMainWindow: boolean?)
-    local StartPos
-    local FramePos
-    local Dragging = false
-    local Changed
-    DragFrame.InputBegan:Connect(function(Input: InputObject)
-        if not IsClickInput(Input) or IsMainWindow and Library.CantDragForced then
-            return
-        end
-
-        StartPos = Input.Position
-        FramePos = UI.Position
-        Dragging = true
-
-        Changed = Input.Changed:Connect(function()
-            if Input.UserInputState ~= Enum.UserInputState.End then
-                return
-            end
-
-            Dragging = false
-            if Changed and Changed.Connected then
-                Changed:Disconnect()
-                Changed = nil
-            end
-        end)
-    end)
-    Library:GiveSignal(UserInputService.InputChanged:Connect(function(Input: InputObject)
-        if
-            (not IgnoreToggled and not Library.Toggled)
-            or (IsMainWindow and Library.CantDragForced)
-            or not (ScreenGui and ScreenGui.Parent)
-        then
-            Dragging = false
-            if Changed and Changed.Connected then
-                Changed:Disconnect()
-                Changed = nil
-            end
-
-            return
-        end
-
-        if Dragging and IsHoverInput(Input) then
-            local Delta = Input.Position - StartPos
-            UI.Position =
-                UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
-        end
-    end))
-end
-
-function Library:MakeResizable(UI: GuiObject, DragFrame: GuiObject, Callback: () -> ()?)
-    local StartPos
-    local FrameSize
-    local Dragging = false
-    local Changed
-    DragFrame.InputBegan:Connect(function(Input: InputObject)
-        if not IsClickInput(Input) then
-            return
-        end
-
-        StartPos = Input.Position
-        FrameSize = UI.Size
-        Dragging = true
-
-        Changed = Input.Changed:Connect(function()
-            if Input.UserInputState ~= Enum.UserInputState.End then
-                return
-            end
-
-            Dragging = false
-            if Changed and Changed.Connected then
-                Changed:Disconnect()
-                Changed = nil
-            end
-        end)
-    end)
-    Library:GiveSignal(UserInputService.InputChanged:Connect(function(Input: InputObject)
-        if not UI.Visible or not (ScreenGui and ScreenGui.Parent) then
-            Dragging = false
-            if Changed and Changed.Connected then
-                Changed:Disconnect()
-                Changed = nil
-            end
-
-            return
-        end
-
-        if Dragging and IsHoverInput(Input) then
-            local Delta = Input.Position - StartPos
-            UI.Size = UDim2.new(
-                FrameSize.X.Scale,
-                math.clamp(FrameSize.X.Offset + Delta.X, Library.MinSize.X, math.huge),
-                FrameSize.Y.Scale,
-                math.clamp(FrameSize.Y.Offset + Delta.Y, Library.MinSize.Y, math.huge)
-            )
-            if Callback then
-                Library:SafeCallback(Callback)
+y.Networking = y.safeRequire(y.SharedModules:WaitForChild("Networking"))
+y.SeedData = y.safeRequire(y.SharedModules:WaitForChild("SeedData"))
+y.GearShopData = y.safeRequire(y.SharedModules:WaitForChild("GearShopData"))
+y.PetData = y.safeRequire(y.SharedData:WaitForChild("PetData"))
+y.RarityVisuals = y.safeRequire(y.SharedModules:WaitForChild("RarityVisuals"))
+y.ReplicaClient = y.safeRequire(y.ReplicatedStorage.ClientModules.ReplicaClient)
+y.SeedShopFlags = y.safeRequire(y.SharedModules.Flags.SeedShopFlags)
+y.GearShopFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("GearShopFlags"))
+y.MutationDataModule = y.SharedModules:WaitForChild("MutationData")
+y.MutationData = y.safeRequire(y.MutationDataModule)
+y.PetSizes = y.safeRequire(y.SharedData:WaitForChild("PetSizes"))
+y.PetTypes = y.safeRequire(y.SharedData:WaitForChild("PetTypes"))
+y.FruitVisualizerController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers.FruitVisualizerController)
+y.DroppedItems = y.Workspace:WaitForChild("DroppedItems")
+y.EventSeedDrops = (y.Workspace:WaitForChild("Map")):WaitForChild("SeedPackSpawnServerLocations")
+y.CollectFruitNet = y.Networking and (y.Networking.Garden and y.Networking.Garden.CollectFruit)
+y.WateringcanData = y.safeRequire(y.SharedModules:WaitForChild("WateringcanData"))
+y.GardenSyncController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers:WaitForChild("GardenSyncController"))
+function Addcantsleep()
+    if (getconnections or get_signal_cons) then
+        for G, V in pairs(((getconnections or get_signal_cons))(y.LocalPlayer.Idled)) do
+            if V.Disable then
+                V.Disable(V)
+            elseif V.Disconnect then
+                V.Disconnect(V)
             end
         end
-    end))
-end
-
-function Library:MakeCover(Holder: GuiObject, Place: string)
-    local Pos = Places[Place] or { 0, 0 }
-    local Size = Sizes[Place] or { 1, 0.5 }
-
-    local Cover = New("Frame", {
-        AnchorPoint = Vector2.new(Pos[1], Pos[2]),
-        BackgroundColor3 = Holder.BackgroundColor3,
-        Position = UDim2.fromScale(Pos[1], Pos[2]),
-        Size = UDim2.fromScale(Size[1], Size[2]),
-        Parent = Holder,
-    })
-
-    return Cover
-end
-
-function Library:MakeLine(Frame: GuiObject, Info)
-    local Line = New("Frame", {
-        AnchorPoint = Info.AnchorPoint or Vector2.zero,
-        BackgroundColor3 = "OutlineColor",
-        Position = Info.Position,
-        Size = Info.Size,
-        Parent = Frame,
-    })
-
-    return Line
-end
-
-function Library:MakeOutline(Frame: GuiObject, Corner: number?, ZIndex: number?)
-    local Holder = New("Frame", {
-        BackgroundColor3 = "Dark",
-        Position = UDim2.fromOffset(-2, -2),
-        Size = UDim2.new(1, 4, 1, 4),
-        ZIndex = ZIndex,
-        Parent = Frame,
-    })
-
-    local Outline = New("Frame", {
-        BackgroundColor3 = "OutlineColor",
-        Position = UDim2.fromOffset(1, 1),
-        Size = UDim2.new(1, -2, 1, -2),
-        ZIndex = ZIndex,
-        Parent = Holder,
-    })
-
-    if Corner and Corner > 0 then
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Corner + 1),
-            Parent = Holder,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Corner),
-            Parent = Outline,
-        })
-    end
-
-    return Holder
-end
-
-function Library:AddDraggableButton(Text: string, Func)
-    local Table = {}
-
-    local Button = New("TextButton", {
-        BackgroundColor3 = "BackgroundColor",
-        Position = UDim2.fromOffset(6, 6),
-        TextSize = 16,
-        ZIndex = 10,
-        Parent = ScreenGui,
-
-        DPIExclude = {
-            Position = true,
-        },
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius - 1),
-        Parent = Button,
-    })
-    Library:MakeOutline(Button, Library.CornerRadius, 9)
-
-    Table.Button = Button
-    Button.MouseButton1Click:Connect(function()
-        Library:SafeCallback(Func, Table)
-    end)
-    Library:MakeDraggable(Button, Button, true)
-
-    function Table:SetText(NewText: string)
-        local X, Y = Library:GetTextBounds(NewText, Library.Scheme.Font, 16)
-
-        Button.Text = NewText
-        Button.Size = UDim2.fromOffset(X * Library.DPIScale * 2, Y * Library.DPIScale * 2)
-        Library:UpdateDPI(Button, {
-            Size = UDim2.fromOffset(X * 2, Y * 2),
-        })
-    end
-    Table:SetText(Text)
-
-    return Table
-end
-
-function Library:AddDraggableMenu(Name: string)
-    local Background = Library:MakeOutline(ScreenGui, Library.CornerRadius, 10)
-    Background.AutomaticSize = Enum.AutomaticSize.Y
-    Background.Position = UDim2.fromOffset(6, 6)
-    Background.Size = UDim2.fromOffset(0, 0)
-    Library:UpdateDPI(Background, {
-        Position = false,
-        Size = false,
-    })
-
-    local Holder = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        Position = UDim2.fromOffset(2, 2),
-        Size = UDim2.new(1, -4, 1, -4),
-        Parent = Background,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius - 1),
-        Parent = Holder,
-    })
-    Library:MakeLine(Holder, {
-        Position = UDim2.fromOffset(0, 34),
-        Size = UDim2.new(1, 0, 0, 1),
-    })
-
-    local Label = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 34),
-        Text = Name,
-        TextSize = 15,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = Holder,
-    })
-    New("UIPadding", {
-        PaddingLeft = UDim.new(0, 12),
-        PaddingRight = UDim.new(0, 12),
-        Parent = Label,
-    })
-
-    local Container = New("Frame", {
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(0, 35),
-        Size = UDim2.new(1, 0, 1, -35),
-        Parent = Holder,
-    })
-    New("UIListLayout", {
-        Padding = UDim.new(0, 7),
-        Parent = Container,
-    })
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 7),
-        PaddingLeft = UDim.new(0, 7),
-        PaddingRight = UDim.new(0, 7),
-        PaddingTop = UDim.new(0, 7),
-        Parent = Container,
-    })
-
-    Library:MakeDraggable(Background, Label, true)
-    return Background, Container
-end
-
---// Watermark \\--
-do
-    local WatermarkBackground = Library:MakeOutline(ScreenGui, Library.CornerRadius, 10)
-    WatermarkBackground.AutomaticSize = Enum.AutomaticSize.Y
-    --WatermarkBackground.Position = UDim2.fromOffset(6, 6)
-    -- 1 (X Scale): Go 100% across the screen's width (to the right edge).
-    -- -6 (X Offset): Move left by 6 pixels (creating your margin).
-    -- 0 (Y Scale): Go 0% down the screen's height.
-    -- 6 (Y Offset): Move down by 6 pixels (the top margi
-    WatermarkBackground.AnchorPoint = Vector2.new(1, 0)
-    WatermarkBackground.Position = UDim2.new(1, -50, 0, -50)
-    WatermarkBackground.Size = UDim2.fromOffset(0, 0)
-    WatermarkBackground.Visible = false
-
-    Library:UpdateDPI(WatermarkBackground, {
-        Position = false,
-        Size = false,
-    })
-
-    local Holder = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        Position = UDim2.fromOffset(2, 2),
-        Size = UDim2.new(1, -4, 1, -4),
-        Parent = WatermarkBackground,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius - 1),
-        Parent = Holder,
-    })
-
-    local WatermarkLabel = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 32),
-        Position = UDim2.fromOffset(0, -8 * Library.DPIScale + 7),
-        Text = "",
-        TextSize = 15,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = Holder,
-    })
-    New("UIPadding", {
-        PaddingLeft = UDim.new(0, 12),
-        PaddingRight = UDim.new(0, 12),
-        Parent = WatermarkLabel,
-    })
-
-    Library:MakeDraggable(WatermarkBackground, WatermarkLabel, true)
-
-    local function ResizeWatermark()
-        local X, Y = Library:GetTextBounds(WatermarkLabel.Text, Library.Scheme.Font, 15)
-        WatermarkBackground.Size = UDim2.fromOffset((12 + X + 12 + 4) * Library.DPIScale, Y * Library.DPIScale * 2 + 4)
-        Library:UpdateDPI(WatermarkBackground, {
-            Size = UDim2.fromOffset(12 + X + 12 + 4, Y * 2 + 4),
-        })
-    end
-
-    function Library:SetWatermarkVisibility(Visible: boolean)
-        WatermarkBackground.Visible = Visible
-        if Visible then
-            ResizeWatermark()
-        end
-    end
-
-    function Library:SetWatermark(Text: string)
-        WatermarkLabel.Text = Text
-        ResizeWatermark()
     end
 end
 
---// Context Menu \\--
-local CurrentMenu
-function Library:AddContextMenu(
-    Holder: GuiObject,
-    Size: UDim2 | () -> (),
-    Offset: { [number]: number } | () -> {},
-    List: number?,
-    ActiveCallback: (Active: boolean) -> ()?
-)
-    local Menu
-    if List then
-        Menu = New("ScrollingFrame", {
-            AutomaticCanvasSize = List == 2 and Enum.AutomaticSize.Y or Enum.AutomaticSize.None,
-            AutomaticSize = List == 1 and Enum.AutomaticSize.Y or Enum.AutomaticSize.None,
-            BackgroundColor3 = "BackgroundColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-            CanvasSize = UDim2.fromOffset(0, 0),
-            ScrollBarImageColor3 = "OutlineColor",
-            ScrollBarThickness = List == 2 and 2 or 0,
-            Size = typeof(Size) == "function" and Size() or Size,
-            TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-            Visible = false,
-            ZIndex = 10,
-            Parent = ScreenGui,
-
-            DPIExclude = {
-                Position = true,
-            },
-        })
-    else
-        Menu = New("Frame", {
-            BackgroundColor3 = "BackgroundColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Size = typeof(Size) == "function" and Size() or Size,
-            Visible = false,
-            ZIndex = 10,
-            Parent = ScreenGui,
-
-            DPIExclude = {
-                Position = true,
-            },
-        })
+pcall(function() Addcantsleep() end)
+-- Make sure the Obsidian library is loaded
+local Z = G.Library
+if not Z or type(Z.CreateWindow) ~= "function" then
+    -- If G.Library is missing or broken, load Obsidian directly
+    Z = loadstring(game:HttpGet("https://exotichub.app/live_mskmb7a2p8dj.lua"))()
+    if not Z then
+        warn("Failed to load Obsidian UI library – UI will not work")
+        Z = {}  -- dummy table to avoid crashes
     end
-
-    local Table = {
-        Active = false,
-        Holder = Holder,
-        Menu = Menu,
-        List = nil,
-        Signal = nil,
-
-        Size = Size,
-    }
-
-    if List then
-        Table.List = New("UIListLayout", {
-            Parent = Menu,
-        })
-    end
-
-    function Table:Open()
-        if CurrentMenu == Table then
-            return
-        elseif CurrentMenu then
-            CurrentMenu:Close()
-        end
-
-        CurrentMenu = Table
-        Table.Active = true
-
-        if typeof(Offset) == "function" then
-            Menu.Position = UDim2.fromOffset(
-                math.floor(Holder.AbsolutePosition.X + Offset()[1]),
-                math.floor(Holder.AbsolutePosition.Y + Offset()[2])
-            )
-        else
-            Menu.Position = UDim2.fromOffset(
-                math.floor(Holder.AbsolutePosition.X + Offset[1]),
-                math.floor(Holder.AbsolutePosition.Y + Offset[2])
-            )
-        end
-        if typeof(Table.Size) == "function" then
-            Menu.Size = Table.Size()
-        else
-            Menu.Size = ApplyDPIScale(Table.Size)
-        end
-        if typeof(ActiveCallback) == "function" then
-            Library:SafeCallback(ActiveCallback, true)
-        end
-
-        Menu.Visible = true
-
-        Table.Signal = Holder:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
-            if typeof(Offset) == "function" then
-                Menu.Position = UDim2.fromOffset(
-                    math.floor(Holder.AbsolutePosition.X + Offset()[1]),
-                    math.floor(Holder.AbsolutePosition.Y + Offset()[2])
-                )
-            else
-                Menu.Position = UDim2.fromOffset(
-                    math.floor(Holder.AbsolutePosition.X + Offset[1]),
-                    math.floor(Holder.AbsolutePosition.Y + Offset[2])
-                )
-            end
-        end)
-    end
-
-    function Table:Close()
-        if CurrentMenu ~= Table then
-            return
-        end
-        Menu.Visible = false
-
-        if Table.Signal then
-            Table.Signal:Disconnect()
-            Table.Signal = nil
-        end
-        Table.Active = false
-        CurrentMenu = nil
-        if typeof(ActiveCallback) == "function" then
-            Library:SafeCallback(ActiveCallback, false)
-        end
-    end
-
-    function Table:Toggle()
-        if Table.Active then
-            Table:Close()
-        else
-            Table:Open()
-        end
-    end
-
-    function Table:SetSize(Size)
-        Table.Size = Size
-        Menu.Size = typeof(Size) == "function" and Size() or Size
-    end
-
-    return Table
+    G.Library = Z
 end
 
-Library:GiveSignal(UserInputService.InputBegan:Connect(function(Input: InputObject)
-    if IsClickInput(Input, true) then
-        local Location = Input.Position
-
-        if
-            CurrentMenu
-            and not (
-                Library:MouseIsOverFrame(CurrentMenu.Menu, Location)
-                or Library:MouseIsOverFrame(CurrentMenu.Holder, Location)
-            )
-        then
-            CurrentMenu:Close()
-        end
-    end
-end))
-
-
-
-
-
-
-
-
---// Popup Dialog \\--
---// Popup Dialog (fixed clickable version) \\--
-local ActiveDialog
-
-local function DialogToVector2(value, fallback)
-    if typeof(value) == "Vector2" then
-        return Vector2.new(value.X, value.Y)
-    elseif typeof(value) == "table" then
-        local x = tonumber(value.X or value[1])
-        local y = tonumber(value.Y or value[2])
-        if x and y then
-            return Vector2.new(x, y)
-        end
-    end
-    return fallback
+-- Create the main window
+local j = Z:CreateWindow("Exotic Hub")
+if not j or type(j.AddTab) ~= "function" then
+    warn("Failed to create Obsidian window – UI will not work")
+    j = {}  -- dummy table
 end
-
-function Library:Dialog(DialogInfo)
-    DialogInfo = Library:Validate(DialogInfo, {
-        Type = "confirm", -- "confirm" | "info"
-        Title = "Confirm",
-        Description = "Are you sure?",
-        ConfirmText = "Confirm",
-        CancelText = "Cancel",
-        OkText = "OK",
-
-        Risky = true,      -- confirm button red by default
-        AllowEscape = true,
-        Wait = false,
-        Scale = nil,       -- optional Vector2 scale override
-
-        Callback = function() end, -- function(accepted:boolean, reason:string)
-        OnConfirm = function() end,
-        OnCancel = function() end,
-        OnClose = function() end,
-    })
-
-    local isInfo = string.lower(tostring(DialogInfo.Type or "confirm")) == "info"
-
-    if ActiveDialog then
-        ActiveDialog:Close(false, "replaced")
-    end
-
-    local resultEvent = DialogInfo.Wait and Instance.new("BindableEvent") or nil
-    local closed = false
-    local connections = {}
-    local previousModal = ModalElement.Modal
-    ModalElement.Modal = true
-
-    local function hook(conn)
-        table.insert(connections, conn)
-        return conn
-    end
-
-    local function getViewport()
-        local v = (Library.ScreenGui and Library.ScreenGui.AbsoluteSize) or Vector2.zero
-        if v.X <= 0 or v.Y <= 0 then
-            v = (workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize) or Vector2.new(1280, 720)
-        end
-        return v
-    end
-
-    local blocker = New("TextButton", {
-        Name = "DialogBlocker",
-        Active = true,
-        AutoButtonColor = false,
-        BackgroundColor3 = "Dark",
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Modal = true,
-        Size = UDim2.fromScale(1, 1),
-        Text = "",
-        TextTransparency = 1,
-        ZIndex = 118,
-        Parent = Library.ScreenGui,
-
-        DPIExclude = {
-            Size = true,
-        },
-    })
-
-    local popup = New("Frame", {
-        Name = "DialogPopup",
-        Active = true,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "MainColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromScale(0.58, 0.42),
-        ZIndex = 130,
-        Parent = Library.ScreenGui,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 4),
-        Parent = popup,
-    })
-
-    New("UIStroke", {
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Thickness = 1.2,
-        Transparency = 0.1,
-        Color = Library.Scheme.OutlineColor:Lerp(Library.Scheme.AccentColor, 0.25),
-        Parent = popup,
-    })
-
-    local headerBg = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        BorderSizePixel = 0,
-        ZIndex = 130,
-        Parent = popup,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 4),
-        Parent = headerBg,
-    })
-
-    local headerLine = New("Frame", {
-        BackgroundColor3 = "OutlineColor",
-        BorderSizePixel = 0,
-        ZIndex = 131,
-        Parent = popup,
-    })
-
-    local body = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        ZIndex = 131,
-        Parent = popup,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 2),
-        Parent = body,
-    })
-
-    local header = New("Frame", {
-        Active = true,
-        BackgroundTransparency = 1,
-        ZIndex = 132,
-        Parent = popup,
-    })
-
-    local title = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Text = tostring(DialogInfo.Title),
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        ZIndex = 133,
-        Parent = header,
-    })
-
-    local descScroll = New("ScrollingFrame", {
-        Active = true,
-        AutomaticCanvasSize = Enum.AutomaticSize.None,
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        CanvasSize = UDim2.fromOffset(0, 0),
-        ScrollBarImageColor3 = "OutlineColor",
-        ScrollBarThickness = 3,
-        ScrollingDirection = Enum.ScrollingDirection.Y,
-        TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-        BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-        ZIndex = 133,
-        Parent = body,
-    })
-
-    local desc = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Text = tostring(DialogInfo.Description),
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        TextTransparency = 0.1,
-        ZIndex = 133,
-        Parent = descScroll,
-    })
-
-    local buttonsHolder = New("Frame", {
-        BackgroundTransparency = 1,
-        ZIndex = 133,
-        Parent = body,
-    })
-local function makeButton(text, kind)
-    local btn = New("TextButton", {
-        Active = true,
-        AutoButtonColor = false,
-        BorderSizePixel = 1,
-        BorderColor3 = "OutlineColor",
-        Text = text,
-        TextTransparency = 0,
-        ZIndex = 134,
-        Parent = buttonsHolder,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-        Parent = btn,
-    })
-
-    local stroke = New("UIStroke", {
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Thickness = 1,
-        Transparency = 0.15,
-        Parent = btn,
-    })
-
-    local idleTextTransparency = 0.05
-
-    if kind == "confirm" then
-        local bg = DialogInfo.Risky and Library.Scheme.Red or Library.Scheme.AccentColor
-        btn.BackgroundColor3 = bg
-        btn.TextColor3 = Library.Scheme.White
-        btn.TextStrokeColor3 = Library.Scheme.Dark
-        btn.TextStrokeTransparency = 0.78
-        stroke.Color = bg:Lerp(Library.Scheme.White, 0.22)
-        stroke.Transparency = 0.08
-        idleTextTransparency = 0.02
-    else
-        btn.BackgroundColor3 = Library.Scheme.MainColor
-        btn.TextColor3 = Library.Scheme.White
-        btn.TextStrokeColor3 = Library.Scheme.Dark
-        btn.TextStrokeTransparency = 0.85
-        stroke.Color = Library.Scheme.OutlineColor:Lerp(Library.Scheme.White, 0.06)
-        stroke.Transparency = 0.14
-        idleTextTransparency = 0.08
-    end
-
-    btn.TextTransparency = idleTextTransparency
-
-    local hoverTween
-    hook(btn.MouseEnter:Connect(function()
-        StopTween(hoverTween)
-        hoverTween = TweenService:Create(btn, Library.TweenInfo, {
-            TextTransparency = 0,
-        })
-        hoverTween:Play()
-    end))
-
-    hook(btn.MouseLeave:Connect(function()
-        StopTween(hoverTween)
-        hoverTween = TweenService:Create(btn, Library.TweenInfo, {
-            TextTransparency = idleTextTransparency,
-        })
-        hoverTween:Play()
-    end))
-
-    return btn
+G.Window = j
+local i = type(G.IsHeadless) == "function" and G.IsHeadless() == true
+y.AppName = "Exotic Hub"
+y.CurentV = "v15"
+y.invite_link_url = "https://exotichub.app/join"
+y.invite_link_short = "exotichub.app/join"
+local c = {}
+local J = {}
+local T = {}
+local d = {}
+local u = {}
+local q = {}
+local g = {}
+local E = {}
+local a = {}
+local H = {}
+local r = {}
+J.is_pro = true
+J.GetCheckIfPro = function() return true end
+if type(G.RegisterReset) == "function" then G.RegisterReset(function() J.is_pro = false end) end
+J.RarityRank = { Common = 1, Uncommon = 2, Rare = 3, Epic = 4, Legendary = 5, Mythic = 6, Super = 7, Secret = 8 }
+J.TeleportLockNames = {
+    SeedPackCollector = "Seed Collection",
+    SeedPlacer = "Seed Placement System",
+    FruitCollector =
+    "Fruit Collector",
+    PetFarmReturn = "Pet Farm Return",
+    EventCollector = "Event Collection",
+    GardenItemCollector =
+    "Garden Item Collector",
+    PremiumFruitCollector = "Premium Fruit Collector",
+    SprinklerPlacer = "Sprinkler Placement",
+    PetFinderPremium =
+    "Pet Finder Premium",
+    WaterPlants = "Water Plants",
+    Other = "Other"
+}
+J.GetProMessage = function()
+    local G = string.format(
+        "\240\159\148\146 <stroke th=\'0.1\' joins=\'round\' sizing=\'fixed\' color=\'#8C1600\'><font color=\'#FA2B00\'> Premium Feature - Join discord server to get Key.</font></stroke>")
+    return G
 end
-
-    local confirmBtn = makeButton(isInfo and tostring(DialogInfo.OkText) or tostring(DialogInfo.ConfirmText), "confirm")
-    local cancelBtn = nil
-    if not isInfo then
-        cancelBtn = makeButton(tostring(DialogInfo.CancelText), "cancel")
-    end
-
-    local scaleX, scaleY
-    do
-        local v = getViewport()
-        local portrait = v.Y > v.X or v.X < 760
-
-        local defaultScale = isInfo
-            and (portrait and Vector2.new(0.92, 0.46) or Vector2.new(0.50, 0.32))
-            or (portrait and Vector2.new(0.92, 0.62) or Vector2.new(0.58, 0.42))
-
-        local chosen = defaultScale
-        if typeof(DialogInfo.Scale) == "Vector2" then
-            chosen = DialogInfo.Scale
-        elseif typeof(DialogInfo.Scale) == "table" then
-            local sx = tonumber(DialogInfo.Scale.X or DialogInfo.Scale[1])
-            local sy = tonumber(DialogInfo.Scale.Y or DialogInfo.Scale[2])
-            if sx and sy then
-                chosen = Vector2.new(sx, sy)
-            end
-        end
-
-        scaleX, scaleY = chosen.X, chosen.Y
-    end
-
-    local function applyLayout()
-        local v = getViewport()
-        local portrait = v.Y > v.X or v.X < 760
-        local stacked = portrait and not isInfo
-
-        local minW, maxW = (portrait and 0.80 or 0.42), (portrait and 0.96 or 0.72)
-        local minH, maxH = (portrait and 0.42 or 0.28), (portrait and 0.76 or 0.62)
-
-        scaleX = math.clamp(scaleX, minW, maxW)
-        scaleY = math.clamp(scaleY, minH, maxH)
-        popup.Size = UDim2.fromScale(scaleX, scaleY)
-
-        local w, h = popup.AbsoluteSize.X, popup.AbsoluteSize.Y
-        local padX = math.max(12, math.floor(w * 0.04))
-        local padY = math.max(10, math.floor(h * 0.05))
-        local gap = math.max(8, math.floor(h * 0.03))
-        local headerH = math.max(32, math.floor(h * 0.19))
-        local btnH = math.max(32, math.floor(h * 0.13))
-
-        local titleSize = math.clamp(math.floor(h * 0.1), 14, 22)
-        local descSize = math.clamp(math.floor(h * 0.08), 13, 18)
-        local btnText = math.clamp(math.floor(h * 0.08), 13, 18)
-
-        header.Position = UDim2.fromOffset(padX, padY)
-        header.Size = UDim2.new(1, -(padX * 2), 0, headerH)
-        title.Size = UDim2.fromScale(1, 1)
-        title.TextSize = titleSize
-
-        headerBg.Position = UDim2.fromOffset(0, 0)
-        headerBg.Size = UDim2.new(1, 0, 0, padY + headerH + math.floor(gap * 0.5))
-        headerLine.Position = UDim2.fromOffset(0, padY + headerH + math.floor(gap * 0.5))
-        headerLine.Size = UDim2.new(1, 0, 0, 1)
-
-        local bodyTop = padY + headerH + gap + 2
-        body.Position = UDim2.fromOffset(padX, bodyTop)
-        body.Size = UDim2.new(1, -(padX * 2), 1, -(bodyTop + padY))
-
-        local innerX = math.max(10, math.floor(padX * 0.75))
-        local innerY = math.max(10, math.floor(padY * 0.75))
-        local footerH = isInfo and btnH or (stacked and (btnH * 2 + gap) or btnH)
-
-        buttonsHolder.Size = UDim2.new(1, -(innerX * 2), 0, footerH)
-        buttonsHolder.Position = UDim2.new(0, innerX, 1, -(innerY + footerH))
-
-        confirmBtn.TextSize = btnText
-        if cancelBtn then
-            cancelBtn.TextSize = btnText
-        end
-
-        if isInfo then
-            local bw = math.max(110, math.floor(buttonsHolder.AbsoluteSize.X * 0.5))
-            confirmBtn.Size = UDim2.fromOffset(bw, btnH)
-            confirmBtn.Position = UDim2.new(0.5, -math.floor(bw / 2), 0, 0)
-        elseif stacked then
-            confirmBtn.Size = UDim2.new(1, 0, 0, btnH)
-            confirmBtn.Position = UDim2.fromOffset(0, 0)
-            cancelBtn.Size = UDim2.new(1, 0, 0, btnH)
-            cancelBtn.Position = UDim2.fromOffset(0, btnH + gap)
-        else
-            local totalW = buttonsHolder.AbsoluteSize.X
-            local bw = math.max(96, math.floor((totalW - gap) / 2))
-            confirmBtn.Size = UDim2.fromOffset(bw, btnH)
-            confirmBtn.Position = UDim2.fromOffset(0, 0)
-            cancelBtn.Size = UDim2.fromOffset(bw, btnH)
-            cancelBtn.Position = UDim2.new(1, -bw, 0, 0)
-        end
-
-        local descY = innerY
-        local descH = body.AbsoluteSize.Y - (innerY + footerH + gap + innerY)
-        descH = math.max(54, descH)
-
-        descScroll.Position = UDim2.fromOffset(innerX, descY)
-        descScroll.Size = UDim2.new(1, -(innerX * 2), 0, descH)
-        desc.TextSize = descSize
-        desc.Size = UDim2.new(1, -6, 0, 0)
-
-        local tx, ty = Library:GetTextBounds(desc.Text, desc.FontFace, desc.TextSize, math.max(16, descScroll.AbsoluteSize.X - 8))
-        desc.Size = UDim2.fromOffset(math.max(0, math.ceil(tx)), math.max(descH, math.ceil(ty)))
-        descScroll.CanvasSize = UDim2.fromOffset(0, math.ceil(ty))
-        descScroll.CanvasPosition = Vector2.zero
-    end
-
-    local Dialog = {}
-    ActiveDialog = Dialog
-
-    local function finalize(accepted, reason)
-        if closed then return end
-        closed = true
-
-        if ActiveDialog == Dialog then
-            ActiveDialog = nil
-        end
-
-        for i = #connections, 1, -1 do
-            local c = connections[i]
-            if c and c.Connected then
-                c:Disconnect()
-            end
-            connections[i] = nil
-        end
-
-        ModalElement.Modal = previousModal
-
-        if resultEvent then
-            resultEvent:Fire(accepted, reason)
-        end
-
-        task.defer(function()
-            if accepted then
-                Library:SafeCallback(DialogInfo.OnConfirm, reason)
-            else
-                Library:SafeCallback(DialogInfo.OnCancel, reason)
-            end
-            Library:SafeCallback(DialogInfo.Callback, accepted, reason)
-            Library:SafeCallback(DialogInfo.OnClose, accepted, reason)
-        end)
-
-        TweenService:Create(blocker, Library.TweenInfo, {
-            BackgroundTransparency = 1,
-        }):Play()
-
-        task.delay(Library.TweenInfo.Time, function()
-            if popup and popup.Parent then popup:Destroy() end
-            if blocker and blocker.Parent then blocker:Destroy() end
-            if resultEvent then
-                resultEvent:Destroy()
-                resultEvent = nil
-            end
-        end)
-    end
-
-    function Dialog:Close(accepted, reason)
-        finalize(accepted == true, reason or "manual")
-    end
-
-    hook(confirmBtn.Activated:Connect(function()
-        finalize(true, isInfo and "ok" or "confirm")
-    end))
-
-    if cancelBtn then
-        hook(cancelBtn.Activated:Connect(function()
-            finalize(false, "cancel")
-        end))
-    end
-
-    hook(UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-        if gameProcessedEvent then return end
-
-        if input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.KeypadEnter then
-            finalize(true, isInfo and "ok" or "confirm")
-            return
-        end
-
-        if DialogInfo.AllowEscape and input.KeyCode == Enum.KeyCode.Escape then
-            finalize(false, "escape")
-            return
-        end
-    end))
-
-    if Library.ScreenGui then
-        hook(Library.ScreenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(applyLayout))
-    end
-
-    applyLayout()
-
-    pcall(function()
-        Library:MakeDraggable(popup, header, true, false)
-    end)
-
-    TweenService:Create(blocker, Library.TweenInfo, {
-        BackgroundTransparency = 0.52,
-    }):Play()
-
-    if DialogInfo.Wait and resultEvent then
-        local accepted, reason = resultEvent.Event:Wait()
-        return accepted, reason
-    end
-
-    return Dialog
+local Y = {
+    web_api_key = "",
+    webhook_enabled = true,
+    webhook_url = "",
+    webhook_pet_buys = true,
+    webhook_mail_manual = true,
+    webhook_mail_auto = true,
+    webhook_mail_claims = true,
+    pet_finder_enabled = false,
+    pet_finder_buy_list = {},
+    pet_finder_auto_hop = false,
+    pet_finder_hop_minutes = 5,
+    pet_finder_purchase_log = {},
+    water_plant_wait_effect = false,
+    auto_water_plants = false,
+    water_plant_selected_cans = {},
+    water_plant_mode =
+    "Growing Plant",
+    water_plant_target_plant = "",
+    water_plant_saved_position = {},
+    hide_player_ui = false,
+    auto_sprinkler_place = false,
+    sprinkler_place_selected = {},
+    sprinkler_place_default_target = 1,
+    sprinkler_place_overrides = {},
+    sprinkler_place_mode =
+    "Farm Middle",
+    sprinkler_place_target_plant = "",
+    sprinkler_place_saved_position = {},
+    sprinkler_place_teleport = false,
+    sprinkler_place_delay = .6,
+    shovel_plant_variant_blacklist = {},
+    hide_plant_models = false,
+    sell_when_backpack_full = false,
+    auto_idle_touch = true,
+    auto_collect_event_seeds = true,
+    auto_collect_drop_seeds = true,
+    is_frist_run = false,
+    seed_avoid = {},
+    enabled_seed_shop = false,
+    gear_shop_avoid = {},
+    enabled_gear_shop = false,
+    auto_collect_fruit_enabled = false,
+    collect_fruit_list = {},
+    auto_seedplace = false,
+    allowed_seedsplace = {},
+    seed_place_default_target = 10,
+    seed_place_delay = .3,
+    seed_place_mode =
+    "Random",
+    seed_place_saved_position = {},
+    seed_place_max_garden_plants = 800,
+    seed_place_overrides = {},
+    seed_place_wall_mode = false,
+    seed_place_stack_mode = false,
+    seed_place_stack_mode_underground = false,
+    auto_sell_sellallinventory = false,
+    turbo_sell = false,
+    hide_log_ui = false,
+    collection_teleport = true,
+    char_farm_middle = false,
+    auto_shovel_fruits = false,
+    shovel_fruit_types = {},
+    shovel_mutation_whitelist = {},
+    shovel_mutation_blacklist = {},
+    shovel_min_weight = 0,
+    shovel_max_weight = 99,
+    shovel_variants = { Normal = true, Gold = true, Rainbow = true },
+    auto_shovel_plants = false,
+    shovel_plant_types = {},
+    shovel_plant_min_height = 0,
+    shovel_plant_max_height = 200,
+    shovel_plant_variants = {},
+    shovel_growing_plants = false,
+    shovel_plants_keep = 10,
+    trowel_plant_types = {},
+    trowel_use_fixed_spot = true,
+    trowel_saved_position = {},
+    pet_return_farm = false,
+    pet_return_farm_timer = 60,
+    mail_auto_send_enabled = false,
+    mail_auto_accept = false,
+    mail_include_comment = false,
+    mail_next_send_at = 0,
+    mail_manual_order = {},
+    mail_auto_rules = {},
+    mail_receipts = {},
+    mail_ignore_batch_limit = false,
+    auto_use_daily_deal = true
+}
+local e = type(getgenv) == "function" and getgenv() or _G
+local s = type(e.gag2_config) == "table" and e.gag2_config or nil
+J.player_userid = y.LocalPlayer.UserId
+if not J.player_userid then
+    warn("Invalid player detected.")
+    return
 end
-
-function Library:Confirm(...)
-    local first = select(1, ...)
-    local info = typeof(first) == "table" and first or {
-        Title = first or "Confirm",
-        Description = select(2, ...) or "",
-        Callback = select(3, ...),
-    }
-
-    info.Type = "confirm"
-    return Library:Dialog(info)
-end
-
-function Library:InfoPopup(...)
-    local first = select(1, ...)
-    local info = typeof(first) == "table" and first or {
-        Title = first or "Info",
-        Description = select(2, ...) or "",
-        Callback = select(3, ...),
-    }
-
-    info.Type = "info"
-    return Library:Dialog(info)
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---// Tooltip \\--
-local TooltipLabel = New("TextLabel", {
-    BackgroundColor3 = "BackgroundColor",
-    BorderColor3 = "OutlineColor",
-    BorderSizePixel = 1,
-    TextSize = 14,
-    TextWrapped = true,
-    Visible = false,
-    ZIndex = 20,
-    Parent = ScreenGui,
-})
-TooltipLabel:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
-    local X, Y = Library:GetTextBounds(
-        TooltipLabel.Text,
-        TooltipLabel.FontFace,
-        TooltipLabel.TextSize,
-        workspace.CurrentCamera.ViewportSize.X - TooltipLabel.AbsolutePosition.X - 4
-    )
-
-    TooltipLabel.Size = UDim2.fromOffset(X + 8 * Library.DPIScale, Y + 4 * Library.DPIScale)
-    Library:UpdateDPI(TooltipLabel, {
-        Size = UDim2.fromOffset(X, Y),
-        DPIOffset = {
-            Size = { 8, 4 },
-        },
-    })
-end)
-
-local CurrentHoverInstance
-function Library:AddTooltip(InfoStr: string, DisabledInfoStr: string, HoverInstance: GuiObject)
-    local TooltipTable = {
-        Disabled = false,
-        Hovering = false,
-        Signals = {},
-    }
-
-    local function DoHover()
-        if
-            CurrentHoverInstance == HoverInstance
-            or (CurrentMenu and Library:MouseIsOverFrame(CurrentMenu.Menu, Mouse))
-            or (TooltipTable.Disabled and typeof(DisabledInfoStr) ~= "string")
-            or (not TooltipTable.Disabled and typeof(InfoStr) ~= "string")
-        then
-            return
-        end
-        CurrentHoverInstance = HoverInstance
-
-        TooltipLabel.Text = TooltipTable.Disabled and DisabledInfoStr or InfoStr
-        TooltipLabel.Visible = true
-
-        while
-            Library.Toggled
-            and Library:MouseIsOverFrame(HoverInstance, Mouse)
-            and not (CurrentMenu and Library:MouseIsOverFrame(CurrentMenu.Menu, Mouse))
-        do
-            TooltipLabel.Position = UDim2.fromOffset(
-                Mouse.X + (Library.ShowCustomCursor and 8 or 14),
-                Mouse.Y + (Library.ShowCustomCursor and 8 or 12)
-            )
-
-            RunService.RenderStepped:Wait()
-        end
-
-        TooltipLabel.Visible = false
-        CurrentHoverInstance = nil
+J.alt_Plants_Physical = J.alt_Plants_Physical or {}
+J.MakeAltFolder = function(G)
+    if not G then
+        warn("MakeAltFolder requires a userId!")
+        return nil
     end
-
-    table.insert(TooltipTable.Signals, HoverInstance.MouseEnter:Connect(DoHover))
-    table.insert(TooltipTable.Signals, HoverInstance.MouseMoved:Connect(DoHover))
-    table.insert(
-        TooltipTable.Signals,
-        HoverInstance.MouseLeave:Connect(function()
-            if CurrentHoverInstance ~= HoverInstance then
-                return
-            end
-
-            TooltipLabel.Visible = false
-            CurrentHoverInstance = nil
-        end)
-    )
-
-    function TooltipTable:Destroy()
-        for Index = #TooltipTable.Signals, 1, -1 do
-            local Connection = table.remove(TooltipTable.Signals, Index)
-            Connection:Disconnect()
-        end
-
-        if CurrentHoverInstance == HoverInstance then
-            TooltipLabel.Visible = false
-            CurrentHoverInstance = nil
-        end
+    local V = tostring(G) .. "_Plants"
+    local Z = y.ReplicatedStorage:FindFirstChild(V)
+    if Z then
+        J.alt_Plants_Physical[G] = Z
+        return Z
     end
-
-    return TooltipTable
+    local j = Instance.new("Folder")
+    j.Name = V
+    j.Parent = y.ReplicatedStorage
+    J.alt_Plants_Physical[G] = j
+    return j
 end
-
-function Library:OnUnload(Callback)
-    table.insert(Library.UnloadSignals, Callback)
-end
-
-function Library:Unload()
-    for Index = #Library.Signals, 1, -1 do
-        local Connection = table.remove(Library.Signals, Index)
-        Connection:Disconnect()
-    end
-
-    for _, Callback in pairs(Library.UnloadSignals) do
-        Library:SafeCallback(Callback)
-    end
-
-    Library.Unloaded = true
-    ScreenGui:Destroy()
-    ModalScreenGui:Destroy()
-    getgenv().Library = nil
-end
-
-local CheckIcon = Library:GetIcon("check")
-local ArrowIcon = Library:GetIcon("chevron-up")
-local ResizeIcon = Library:GetIcon("move-diagonal-2")
-local KeyIcon = Library:GetIcon("key")
-
-local BaseAddons = {}
-do
-    local Funcs = {}
-
-    function Funcs:AddKeyPicker(Idx, Info)
-        Info = Library:Validate(Info, Templates.KeyPicker)
-
-        local ParentObj = self
-        local ToggleLabel = ParentObj.TextLabel
-
-        local KeyPicker = {
-            Text = Info.Text,
-            Value = Info.Default,
-            Toggled = false,
-            Mode = Info.Mode,
-            SyncToggleState = Info.SyncToggleState,
-
-            Callback = Info.Callback,
-            ChangedCallback = Info.ChangedCallback,
-            Changed = Info.Changed,
-            Clicked = Info.Clicked,
-
-            Type = "KeyPicker",
-        }
-
-        if KeyPicker.Mode == "Press" then
-            assert(ParentObj.Type == "Label", "KeyPicker with the mode 'Press' can be only applied on Labels.")
-            
-            KeyPicker.SyncToggleState = false
-            Info.Modes = { "Press" }
-            Info.Mode = "Press"
-        end
-
-        if KeyPicker.SyncToggleState then
-            Info.Modes = { "Toggle" }
-            Info.Mode = "Toggle"
-        end
-
-        local SpecialKeys = {
-            ["MB1"] = Enum.UserInputType.MouseButton1,
-            ["MB2"] = Enum.UserInputType.MouseButton2,
-            ["MB3"] = Enum.UserInputType.MouseButton3
-        }
-
-        local SpecialKeysInput = {
-            [Enum.UserInputType.MouseButton1] = "MB1",
-            [Enum.UserInputType.MouseButton2] = "MB2",
-            [Enum.UserInputType.MouseButton3] = "MB3"
-        }
-
-        local Picker = New("TextButton", {
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Size = UDim2.fromOffset(18, 18),
-            Text = KeyPicker.Value,
-            TextSize = 14,
-            Parent = ToggleLabel,
-        })
-
-        local KeybindsToggle = { Normal = KeyPicker.Mode ~= "Toggle" }; do
-            local Holder = New("TextButton", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 16),
-                Text = "",
-                Visible = not Info.NoUI,
-                Parent = Library.KeybindContainer,
-            })
-
-            local Label = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 1),
-                Text = "",
-                TextSize = 14,
-                TextTransparency = 0.5,
-                Parent = Holder,
-
-                DPIExclude = {
-                    Size = true,
-                },
-            })
-
-            local Checkbox = New("Frame", {
-                BackgroundColor3 = "MainColor",
-                Size = UDim2.fromOffset(14, 14),
-                SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                Parent = Holder,
-            })
-            New("UICorner", {
-                CornerRadius = UDim.new(0, Library.CornerRadius / 2),
-                Parent = Checkbox,
-            })
-            New("UIStroke", {
-                Color = "OutlineColor",
-                Parent = Checkbox,
-            })
-
-            local CheckImage = New("ImageLabel", {
-                Image = CheckIcon and CheckIcon.Url or "",
-                ImageColor3 = "FontColor",
-                ImageRectOffset = CheckIcon and CheckIcon.ImageRectOffset or Vector2.zero,
-                ImageRectSize = CheckIcon and CheckIcon.ImageRectSize or Vector2.zero,
-                ImageTransparency = 1,
-                Position = UDim2.fromOffset(2, 2),
-                Size = UDim2.new(1, -4, 1, -4),
-                Parent = Checkbox,
-            })
-
-            function KeybindsToggle:Display(State)
-                Label.TextTransparency = State and 0 or 0.5
-                CheckImage.ImageTransparency = State and 0 or 1
-            end
-
-            function KeybindsToggle:SetText(Text)
-                local X = Library:GetTextBounds(Text, Label.FontFace, Label.TextSize)
-                Label.Text = Text
-                Label.Size = UDim2.new(0, X, 1, 0)
-            end
-
-            function KeybindsToggle:SetVisibility(Visibility)
-                Holder.Visible = Visibility
-            end
-
-            function KeybindsToggle:SetNormal(Normal)
-                KeybindsToggle.Normal = Normal
-
-                Holder.Active = not Normal
-                Label.Position = Normal and UDim2.fromOffset(0, 0) or UDim2.fromOffset(22 * Library.DPIScale, 0)
-                Checkbox.Visible = not Normal
-            end
-
-            Holder.MouseButton1Click:Connect(function()
-                if KeybindsToggle.Normal then
-                    return
+J.MakeAltFolder(J.player_userid)
+local N = "exotichub99"
+if not isfolder(N) then makefolder(N) end
+local W = N .. ("/" .. (tostring(J.player_userid) .. "gag2.json"))
+u.Config = {
+    Excluded = { pet_finder_purchase_log = true, mail_receipts = true },
+    OverrideEnabled = type(s) == "table",
+    ToLua = function(
+        G, V)
+        V = tonumber(V) or 0
+        local y = type(G)
+        if y == "string" then return string.format("%q", G) end
+        if y == "number" or y == "boolean" then return tostring(G) end
+        if y ~= "table" then return "nil" end
+        local Z = {}
+        for G in pairs(G) do table.insert(Z, G) end
+        if #Z == 0 then return "{}" end
+        table.sort(Z,
+            function(G, V)
+                if type(G) == type(V) then
+                    if type(G) == "number" then return G < V end
+                    return tostring(G) < tostring(V)
                 end
-
-                KeyPicker.Toggled = not KeyPicker.Toggled
-                KeyPicker:DoClick()
+                return type(G) < type(V)
             end)
-
-            KeybindsToggle.Holder = Holder
-            KeybindsToggle.Label = Label
-            KeybindsToggle.Checkbox = Checkbox
-            KeybindsToggle.Loaded = true
-            table.insert(Library.KeybindToggles, KeybindsToggle)
-        end
-
-        local MenuTable = Library:AddContextMenu(Picker, UDim2.fromOffset(62, 0), function()
-            return { Picker.AbsoluteSize.X + 1.5, 0.5 }
-        end, 1)
-        KeyPicker.Menu = MenuTable
-
-        local ModeButtons = {}
-        for _, Mode in pairs(Info.Modes) do
-            local ModeButton = {}
-
-            local Button = New("TextButton", {
-                BackgroundColor3 = "MainColor",
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 21),
-                Text = Mode,
-                TextSize = 14,
-                TextTransparency = 0.5,
-                Parent = MenuTable.Menu,
-            })
-
-            function ModeButton:Select()
-                for _, Button in pairs(ModeButtons) do
-                    Button:Deselect()
-                end
-
-                KeyPicker.Mode = Mode
-
-                Button.BackgroundTransparency = 0
-                Button.TextTransparency = 0
-
-                MenuTable:Close()
-            end
-
-            function ModeButton:Deselect()
-                KeyPicker.Mode = nil
-
-                Button.BackgroundTransparency = 1
-                Button.TextTransparency = 0.5
-            end
-
-            Button.MouseButton1Click:Connect(function()
-                ModeButton:Select()
-            end)
-
-            if KeyPicker.Mode == Mode then
-                ModeButton:Select()
-            end
-
-            ModeButtons[Mode] = ModeButton
-        end
-
-        function KeyPicker:Display()
-            if Library.Unloaded then
-                return
-            end
-
-            local X, Y =
-                Library:GetTextBounds(KeyPicker.Value, Picker.FontFace, Picker.TextSize, ToggleLabel.AbsoluteSize.X)
-            Picker.Text = KeyPicker.Value
-            Picker.Size = UDim2.fromOffset(X + 9 * Library.DPIScale, Y + 4 * Library.DPIScale)
-        end
-
-        function KeyPicker:Update()
-            KeyPicker:Display()
-
-            if Info.NoUI then
-                return
-            end
-
-            if KeyPicker.Mode == "Toggle" and ParentObj.Type == "Toggle" and ParentObj.Disabled then
-                KeybindsToggle:SetVisibility(false)
-                return
-            end
-
-            local State = KeyPicker:GetState()
-            local ShowToggle = Library.ShowToggleFrameInKeybinds and KeyPicker.Mode == "Toggle"
-
-            if KeybindsToggle.Loaded then
-                if ShowToggle then
-                    KeybindsToggle:SetNormal(false)
-                else
-                    KeybindsToggle:SetNormal(true)
-                end
-
-                KeybindsToggle:SetText(("[%s] %s (%s)"):format(KeyPicker.Value, KeyPicker.Text, KeyPicker.Mode))
-                KeybindsToggle:SetVisibility(true)
-                KeybindsToggle:Display(State)
-            end
-
-            Library:UpdateKeybindFrame()
-        end
-
-        function KeyPicker:GetState()
-            if KeyPicker.Mode == "Always" then
-                return true
-            elseif KeyPicker.Mode == "Hold" then
-                local Key = KeyPicker.Value
-                if Key == "None" then
-                    return false
-                end
-
-                if SpecialKeys[Key] ~= nil then
-                    return UserInputService:IsMouseButtonPressed(SpecialKeys[Key]) and not UserInputService:GetFocusedTextBox();
-                else
-                    return UserInputService:IsKeyDown(Enum.KeyCode[Key]) and not UserInputService:GetFocusedTextBox();
-                end;
+        local j = string.rep("    ", V)
+        local i = string.rep("    ", V + 1)
+        local c = { "{" }
+        for y, Z in ipairs(Z) do
+            local j
+            if type(Z) == "string" and Z:match("^[%a_][%w_]*$") then
+                j = Z
             else
-                return KeyPicker.Toggled;
+                j = string.format("[%s]",
+                    u.Config.ToLua(Z, 0))
+            end
+            table.insert(c, string.format("%s%s = %s,", i, j, u.Config.ToLua(G[Z], V + 1)))
+        end
+        table.insert(c, j .. "}")
+        return table.concat(c, "\n")
+    end,
+    CopyTable = function(G)
+        if type(G) ~= "table" then return G end
+        local V = {}
+        for G, y in pairs(G) do V[G] = u.Config.CopyTable(y) end
+        return V
+    end,
+    Merge = function(G, V, y)
+        if type(G) ~= "table" or type(V) ~= "table" then return false end
+        for V, Z in pairs(V) do
+            local j = G[V]
+            if y and j == nil then continue end
+            if type(j) == "table" and type(Z) == "table" then
+                u.Config.Merge(j, Z, false)
+            elseif j == nil or type(j) == type(Z) then
+                G[V] =
+                    u.Config.CopyTable(Z)
             end
         end
-
-        function KeyPicker:OnChanged(Func)
-            KeyPicker.Changed = Func
+        return true
+    end,
+    ApplyOverride = function()
+        if not u.Config.OverrideEnabled then return false end
+        return u.Config.Merge(Y, s, true)
+    end,
+    GetCopyData = function()
+        local G = {}
+        for V, y in pairs(Y) do if not u.Config.Excluded[V] then G[V] = y end end
+        return G
+    end,
+    BuildCopyText = function()
+        local G = u.Config.GetCopyData()
+        if type(G) ~= "table" then return nil end
+        local V, y = pcall(function() return "getgenv().gag2_config = " .. u.Config.ToLua(G, 0) end)
+        if not V then return nil end
+        return y
+    end,
+    BuildCopyWithLoaderText = function()
+        local G = u.Config.BuildCopyText()
+        if type(G) ~= "string" or G == "" then return nil end
+        return table.concat(
+            { "getgenv().mode = \"noui\"", "getgenv().exo_key = \"YOUR_KEY\"", "", G, "",
+                "loadstring(game:HttpGet(\"https://exotichub.app/auto.lua\"))()" }, "\n")
+    end
+}
+u.Save = {
+    RequireSave = false,
+    SaveData = function(G)
+        if u.Config.OverrideEnabled then return false end
+        if G then
+            u.Save.SaveDataSync()
+            return
         end
-
-        function KeyPicker:OnClick(Func)
-            KeyPicker.Clicked = Func
+        u.Save.RequireSave = true
+    end,
+    LoadData = function()
+        if not isfile(W) then return end
+        local G = readfile(W)
+        if not G or G == "" then return end
+        local V, Z = pcall(y.HttpService.JSONDecode, y.HttpService, G)
+        if not V then return end
+        local function j(G, V)
+            for V, y in pairs(V) do
+                local Z = G[V]
+                if type(y) == "table" and type(Z) == "table" then j(Z, y) else G[V] = y end
+            end
+            return G
         end
-
-        function KeyPicker:DoClick()
-            if KeyPicker.Mode == "Press" then
-                if KeyPicker.Toggled and Info.WaitForCallback == true then
-                    return
+        j(Y, Z)
+    end,
+    SaveDataSync = function()
+        if u.Config.OverrideEnabled then return false end
+        local G, V = pcall(function() return y.HttpService:JSONEncode(Y) end)
+        if G then writefile(W, V) else end
+    end,
+    SaveLoop = function()
+        if u.Config.OverrideEnabled then return false end
+        task.spawn(function()
+            while true do
+                task.wait(.5)
+                if u.Config.OverrideEnabled then return false end
+                if u.Save.RequireSave then
+                    u.Save.RequireSave = false
+                    u.Save.SaveDataSync()
                 end
-
-                KeyPicker.Toggled = true
             end
-
-            if ParentObj.Type == "Toggle" and KeyPicker.SyncToggleState then
-                ParentObj:SetValue(KeyPicker.Toggled)
-            end
-
-            Library:SafeCallback(KeyPicker.Callback, KeyPicker.Toggled)
-            Library:SafeCallback(KeyPicker.Changed, KeyPicker.Toggled)
-
-            if KeyPicker.Mode == "Press" then
-                KeyPicker.Toggled = false
-            end
-        end
-
-        function KeyPicker:SetValue(Data)
-            local Key, Mode = Data[1], Data[2]
-
-            KeyPicker.Value = Key
-            if ModeButtons[Mode] then
-                ModeButtons[Mode]:Select()
-            end
-
-            KeyPicker:Update()
-        end
-
-        function KeyPicker:SetText(Text)
-            KeybindsToggle:SetText(Text)
-            KeyPicker:Update()
-        end
-
-        local Picking = false
-        Picker.MouseButton1Click:Connect(function()
-            if Picking then
-                return
-            end
-
-            Picking = true
-
-            Picker.Text = "..."
-            Picker.Size = UDim2.fromOffset(29 * Library.DPIScale, 18 * Library.DPIScale)
-
-            local Input = UserInputService.InputBegan:Wait()
-            local Key = "Unknown"
-
-            if SpecialKeysInput[Input.UserInputType] ~= nil then
-                Key = SpecialKeysInput[Input.UserInputType];
-
-            elseif Input.UserInputType == Enum.UserInputType.Keyboard then
-                Key = Input.KeyCode == Enum.KeyCode.Escape and "None" or Input.KeyCode.Name
-            end
-
-            KeyPicker.Value = Key
-            KeyPicker:Update()
-
-            Library:SafeCallback(
-                KeyPicker.ChangedCallback,
-                Input.KeyCode == Enum.KeyCode.Unknown and Input.UserInputType or Input.KeyCode
-            )
-            Library:SafeCallback(
-                KeyPicker.Changed,
-                Input.KeyCode == Enum.KeyCode.Unknown and Input.UserInputType or Input.KeyCode
-            )
-
-            RunService.RenderStepped:Wait()
-            Picking = false
         end)
-        Picker.MouseButton2Click:Connect(MenuTable.Toggle)
-
-        Library:GiveSignal(UserInputService.InputBegan:Connect(function(Input: InputObject)
-            if
-                KeyPicker.Mode == "Always"
-                or KeyPicker.Value == "Unknown"
-                or KeyPicker.Value == "None"
-                or Picking
-                or UserInputService:GetFocusedTextBox()
-            then
-                return
-            end
-
-            local Key = KeyPicker.Value
-            local HoldingKey = false
-
-            if 
-                Key and (
-                    SpecialKeysInput[Input.UserInputType] == Key or 
-                    (Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == Key)
-                ) 
-            then
-                HoldingKey = true
-            end
-
-            if KeyPicker.Mode == "Toggle" then
-                if HoldingKey then
-                    KeyPicker.Toggled = not KeyPicker.Toggled
-                    KeyPicker:DoClick()
-                end
-
-            elseif KeyPicker.Mode == "Press" then
-                if HoldingKey then
-                    KeyPicker:DoClick()
-                end
-            end
-
-            KeyPicker:Update()
-        end))
-
-        Library:GiveSignal(UserInputService.InputEnded:Connect(function()
-            if
-                KeyPicker.Value == "Unknown"
-                or KeyPicker.Value == "None"
-                or Picking
-                or UserInputService:GetFocusedTextBox()
-            then
-                return
-            end
-
-            KeyPicker:Update()
-        end))
-
-        KeyPicker:Update()
-
-        if ParentObj.Addons then
-            table.insert(ParentObj.Addons, KeyPicker)
-        end
-
-        Options[Idx] = KeyPicker
-
-        return self
     end
-
-    local HueSequenceTable = {}
-    for Hue = 0, 1, 0.1 do
-        table.insert(HueSequenceTable, ColorSequenceKeypoint.new(Hue, Color3.fromHSV(Hue, 1, 1)))
-    end
-    function Funcs:AddColorPicker(Idx, Info)
-        Info = Library:Validate(Info, Templates.ColorPicker)
-
-        local ParentObj = self
-        local ToggleLabel = ParentObj.TextLabel
-
-        local ColorPicker = {
-            Value = Info.Default,
-            Transparency = Info.Transparency or 0,
-            Title = Info.Title,
-
-            Callback = Info.Callback,
-            Changed = Info.Changed,
-
-            Type = "ColorPicker",
-        }
-        ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = ColorPicker.Value:ToHSV()
-
-        local Holder = New("TextButton", {
-            BackgroundColor3 = ColorPicker.Value,
-            BorderColor3 = Library:GetDarkerColor(ColorPicker.Value),
-            BorderSizePixel = 1,
-            Size = UDim2.fromOffset(18, 18),
-            Text = "",
-            Parent = ToggleLabel,
-        })
-
-        local HolderTransparency = New("ImageLabel", {
-            Image = ObsidianImageManager.GetAsset("TransparencyTexture"),
-            ImageTransparency = (1 - ColorPicker.Transparency),
-            ScaleType = Enum.ScaleType.Tile,
-            Size = UDim2.fromScale(1, 1),
-            TileSize = UDim2.fromOffset(9, 9),
-            Parent = Holder,
-        })
-
-        --// Color Menu \\--
-        local ColorMenu = Library:AddContextMenu(
-            Holder,
-            UDim2.fromOffset(Info.Transparency and 256 or 234, 0),
-            function()
-                return { 0.5, Holder.AbsoluteSize.Y + 1.5 }
-            end,
-            1
-        )
-        ColorMenu.List.Padding = UDim.new(0, 8)
-        ColorPicker.ColorMenu = ColorMenu
-
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 6),
-            PaddingLeft = UDim.new(0, 6),
-            PaddingRight = UDim.new(0, 6),
-            PaddingTop = UDim.new(0, 6),
-            Parent = ColorMenu.Menu,
-        })
-
-        if typeof(ColorPicker.Title) == "string" then
-            New("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 8),
-                Text = ColorPicker.Title,
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = ColorMenu.Menu,
-            })
-        end
-
-        local ColorHolder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 200),
-            Parent = ColorMenu.Menu,
-        })
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            Padding = UDim.new(0, 6),
-            Parent = ColorHolder,
-        })
-
-        --// Sat Map
-        local SatVipMap = New("ImageButton", {
-            BackgroundColor3 = ColorPicker.Value,
-            Image = ObsidianImageManager.GetAsset("SaturationMap"),
-            Size = UDim2.fromOffset(200, 200),
-            Parent = ColorHolder,
-        })
-
-        local SatVibCursor = New("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundColor3 = "White",
-            Size = UDim2.fromOffset(6, 6),
-            Parent = SatVipMap,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(1, 0),
-            Parent = SatVibCursor,
-        })
-        New("UIStroke", {
-            Color = "Dark",
-            Parent = SatVibCursor,
-        })
-
-        --// Hue
-        local HueSelector = New("TextButton", {
-            Size = UDim2.fromOffset(16, 200),
-            Text = "",
-            Parent = ColorHolder,
-        })
-        New("UIGradient", {
-            Color = ColorSequence.new(HueSequenceTable),
-            Rotation = 90,
-            Parent = HueSelector,
-        })
-
-        local HueCursor = New("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundColor3 = "White",
-            BorderColor3 = "Dark",
-            BorderSizePixel = 1,
-            Position = UDim2.fromScale(0.5, ColorPicker.Hue),
-            Size = UDim2.new(1, 2, 0, 1),
-            Parent = HueSelector,
-        })
-
-        --// Alpha
-        local TransparencySelector, TransparencyColor, TransparencyCursor
-        if Info.Transparency then
-            TransparencySelector = New("ImageButton", {
-                Image = ObsidianImageManager.GetAsset("TransparencyTexture"),
-                ScaleType = Enum.ScaleType.Tile,
-                Size = UDim2.fromOffset(16, 200),
-                TileSize = UDim2.fromOffset(8, 8),
-                Parent = ColorHolder,
-            })
-
-            TransparencyColor = New("Frame", {
-                BackgroundColor3 = ColorPicker.Value,
-                Size = UDim2.fromScale(1, 1),
-                Parent = TransparencySelector,
-            })
-            New("UIGradient", {
-                Rotation = 90,
-                Transparency = NumberSequence.new({
-                    NumberSequenceKeypoint.new(0, 0),
-                    NumberSequenceKeypoint.new(1, 1),
-                }),
-                Parent = TransparencyColor,
-            })
-
-            TransparencyCursor = New("Frame", {
-                AnchorPoint = Vector2.new(0.5, 0.5),
-                BackgroundColor3 = "White",
-                BorderColor3 = "Dark",
-                BorderSizePixel = 1,
-                Position = UDim2.fromScale(0.5, ColorPicker.Transparency),
-                Size = UDim2.new(1, 2, 0, 1),
-                Parent = TransparencySelector,
-            })
-        end
-
-        local InfoHolder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 20),
-            Parent = ColorMenu.Menu,
-        })
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalFlex = Enum.UIFlexAlignment.Fill,
-            Padding = UDim.new(0, 8),
-            Parent = InfoHolder,
-        })
-
-        local HueBox = New("TextBox", {
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            ClearTextOnFocus = false,
-            Size = UDim2.fromScale(1, 1),
-            Text = "#??????",
-            TextSize = 14,
-            Parent = InfoHolder,
-        })
-
-        local RgbBox = New("TextBox", {
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            ClearTextOnFocus = false,
-            Size = UDim2.fromScale(1, 1),
-            Text = "?, ?, ?",
-            TextSize = 14,
-            Parent = InfoHolder,
-        })
-
-        --// Context Menu \\--
-        local ContextMenu = Library:AddContextMenu(Holder, UDim2.fromOffset(93, 0), function()
-            return { Holder.AbsoluteSize.X + 1.5, 0.5 }
-        end, 1)
-        ColorPicker.ContextMenu = ContextMenu
-        do
-            local function CreateButton(Text, Func)
-                local Button = New("TextButton", {
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 21),
-                    Text = Text,
-                    TextSize = 14,
-                    Parent = ContextMenu.Menu,
+}
+if u.Config.OverrideEnabled then u.Config.ApplyOverride() else u.Save.LoadData() end
+if Y.seed_place_mode == "Farm Corner" then
+    Y.seed_place_mode = "Farm Middle"
+    u.Save.SaveDataSync()
+end
+u.Save.SaveLoop()
+local X = { k = 1000.0, K = 1000.0, m = 1000000.0, M = 1000000.0, b = 1000000000.0, B = 1000000000.0, t = 1000000000000.0, T = 1000000000000.0, q = 1e+015, Q = 1e+015, Qa = 1e+015, qi = 1e+018, Qi = 1e+018, sx = 1e+021, Sx = 1e+021, sp = 1e+024, Sp = 1e+024, oc = 1e+027, Oc = 1e+027, no = 1e+030, No = 1e+030, dc = 1e+033, Dc = 1e+033 }
+local h = { "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc" }
+J.Notify = function(G, V)
+    G = tostring(G or "")
+    if G == "" or not Z or type(Z.Notify) ~= "function" then return false end
+    return pcall(function() Z:Notify(G, tonumber(V) or 2.5) end)
+end
+d.WebApi = {
+    Url = "https://exotichub.app/api/linkapidevice",
+    Busy = false,
+    LinkDevice = function()
+        if d.WebApi.Busy then return false, "Link request already running" end
+        local G = (tostring(Y.web_api_key or "")):match("^%s*(.-)%s*$")
+        local V = tostring(y.LocalPlayer and y.LocalPlayer.Name or "")
+        local Z = tostring(y.LocalPlayer and y.LocalPlayer.UserId or "")
+        if G == "" then return false, "Enter your Web API key first" end
+        if V == "" or Z == "" then return false, "Roblox account data is unavailable" end
+        d.WebApi.Busy = true
+        local j, i = pcall(function()
+            local j = y.HttpService:JSONEncode({ webapi = G, un = V, pid = Z })
+            local i = type(syn) == "table" and syn.request or type(http) == "table" and http.request or
+                type(http_request) == "function" and http_request or type(request) == "function" and request or
+                type(fluxus) == "table" and fluxus.request or type(krnl) == "table" and krnl.request
+            if type(i) == "function" then
+                local G = i({
+                    Url = d.WebApi.Url,
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body =
+                        j
                 })
-
-                Button.MouseButton1Click:Connect(function()
-                    Library:SafeCallback(Func)
-                    ContextMenu:Close()
-                end)
+                if type(G) ~= "table" then error("Invalid request response") end
+                return G.Body or G.body or ""
             end
-
-            CreateButton("Copy color", function()
-                Library.CopiedColor = { ColorPicker.Value, ColorPicker.Transparency }
-            end)
-
-            CreateButton("Paste color", function()
-                ColorPicker:SetValueRGB(Library.CopiedColor[1], Library.CopiedColor[2])
-            end)
-
-            if setclipboard then
-                CreateButton("Copy Hex", function()
-                    setclipboard(tostring(ColorPicker.Value:ToHex()))
-                end)
-                CreateButton("Copy RGB", function()
-                    setclipboard(table.concat({
-                        math.floor(ColorPicker.Value.R * 255),
-                        math.floor(ColorPicker.Value.G * 255),
-                        math.floor(ColorPicker.Value.B * 255),
-                    }, ", "))
-                end)
-            end
-        end
-
-        --// End \\--
-
-        function ColorPicker:SetHSVFromRGB(Color)
-            ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color:ToHSV()
-        end
-
-        function ColorPicker:Display()
-            if Library.Unloaded then
-                return
-            end
-
-            ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib)
-
-            Holder.BackgroundColor3 = ColorPicker.Value
-            Holder.BorderColor3 = Library:GetDarkerColor(ColorPicker.Value)
-            HolderTransparency.ImageTransparency = (1 - ColorPicker.Transparency)
-
-            SatVipMap.BackgroundColor3 = Color3.fromHSV(ColorPicker.Hue, 1, 1)
-            if TransparencyColor then
-                TransparencyColor.BackgroundColor3 = ColorPicker.Value
-            end
-
-            SatVibCursor.Position = UDim2.fromScale(ColorPicker.Sat, 1 - ColorPicker.Vib)
-            HueCursor.Position = UDim2.fromScale(0.5, ColorPicker.Hue)
-            if TransparencyCursor then
-                TransparencyCursor.Position = UDim2.fromScale(0.5, ColorPicker.Transparency)
-            end
-
-            HueBox.Text = "#" .. ColorPicker.Value:ToHex()
-            RgbBox.Text = table.concat({
-                math.floor(ColorPicker.Value.R * 255),
-                math.floor(ColorPicker.Value.G * 255),
-                math.floor(ColorPicker.Value.B * 255),
-            }, ", ")
-        end
-
-        function ColorPicker:Update()
-            ColorPicker:Display()
-
-            Library:SafeCallback(ColorPicker.Callback, ColorPicker.Value)
-            Library:SafeCallback(ColorPicker.Changed, ColorPicker.Value)
-        end
-
-        function ColorPicker:OnChanged(Func)
-            ColorPicker.Changed = Func
-        end
-
-        function ColorPicker:SetValue(HSV, Transparency)
-            local Color = Color3.fromHSV(HSV[1], HSV[2], HSV[3])
-
-            ColorPicker.Transparency = Info.Transparency and Transparency or 0
-            ColorPicker:SetHSVFromRGB(Color)
-            ColorPicker:Update()
-        end
-
-        function ColorPicker:SetValueRGB(Color, Transparency)
-            ColorPicker.Transparency = Info.Transparency and Transparency or 0
-            ColorPicker:SetHSVFromRGB(Color)
-            ColorPicker:Update()
-        end
-
-        Holder.MouseButton1Click:Connect(ColorMenu.Toggle)
-        Holder.MouseButton2Click:Connect(ContextMenu.Toggle)
-
-        SatVipMap.InputBegan:Connect(function(Input: InputObject)
-            while IsDragInput(Input) do
-                local MinX = SatVipMap.AbsolutePosition.X
-                local MaxX = MinX + SatVipMap.AbsoluteSize.X
-                local LocationX = math.clamp(Mouse.X, MinX, MaxX)
-
-                local MinY = SatVipMap.AbsolutePosition.Y
-                local MaxY = MinY + SatVipMap.AbsoluteSize.Y
-                local LocationY = math.clamp(Mouse.Y, MinY, MaxY)
-
-                local OldSat = ColorPicker.Sat
-                local OldVib = ColorPicker.Vib
-                ColorPicker.Sat = (LocationX - MinX) / (MaxX - MinX)
-                ColorPicker.Vib = 1 - ((LocationY - MinY) / (MaxY - MinY))
-
-                if ColorPicker.Sat ~= OldSat or ColorPicker.Vib ~= OldVib then
-                    ColorPicker:Update()
-                end
-
-                RunService.RenderStepped:Wait()
-            end
+            return y.HttpService:PostAsync(d.WebApi.Url, j, Enum.HttpContentType.ApplicationJson)
         end)
-        HueSelector.InputBegan:Connect(function(Input: InputObject)
-            while IsDragInput(Input) do
-                local Min = HueSelector.AbsolutePosition.Y
-                local Max = Min + HueSelector.AbsoluteSize.Y
-                local Location = math.clamp(Mouse.Y, Min, Max)
-
-                local OldHue = ColorPicker.Hue
-                ColorPicker.Hue = (Location - Min) / (Max - Min)
-
-                if ColorPicker.Hue ~= OldHue then
-                    ColorPicker:Update()
-                end
-
-                RunService.RenderStepped:Wait()
-            end
-        end)
-        if TransparencySelector then
-            TransparencySelector.InputBegan:Connect(function(Input: InputObject)
-                while IsDragInput(Input) do
-                    local Min = TransparencySelector.AbsolutePosition.Y
-                    local Max = TransparencySelector.AbsolutePosition.Y + TransparencySelector.AbsoluteSize.Y
-                    local Location = math.clamp(Mouse.Y, Min, Max)
-
-                    local OldTransparency = ColorPicker.Transparency
-                    ColorPicker.Transparency = (Location - Min) / (Max - Min)
-
-                    if ColorPicker.Transparency ~= OldTransparency then
-                        ColorPicker:Update()
-                    end
-
-                    RunService.RenderStepped:Wait()
-                end
-            end)
-        end
-
-        HueBox.FocusLost:Connect(function(Enter)
-            if not Enter then
-                return
-            end
-
-            local Success, Color = pcall(Color3.fromHex, HueBox.Text)
-            if Success and typeof(Color) == "Color3" then
-                ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color:ToHSV()
-            end
-
-            ColorPicker:Update()
-        end)
-        RgbBox.FocusLost:Connect(function(Enter)
-            if not Enter then
-                return
-            end
-
-            local R, G, B = RgbBox.Text:match("(%d+),%s*(%d+),%s*(%d+)")
-            if R and G and B then
-                ColorPicker:SetHSVFromRGB(Color3.fromRGB(R, G, B))
-            end
-
-            ColorPicker:Update()
-        end)
-
-        ColorPicker:Display()
-
-        if ParentObj.Addons then
-            table.insert(ParentObj.Addons, ColorPicker)
-        end
-
-        Options[Idx] = ColorPicker
-
-        return self
+        d.WebApi.Busy = false
+        if not j or type(i) ~= "string" or i == "" then return false, "Device link request failed" end
+        local c, J = pcall(y.HttpService.JSONDecode, y.HttpService, i)
+        if not c or type(J) ~= "table" then return false, "Invalid server response" end
+        local T = tostring(J.msg or J.message or "Unknown response")
+        if J.success == true then return true, T, J end
+        return false, T, J
     end
-
-    BaseAddons.__index = Funcs
-    BaseAddons.__namecall = function(_, Key, ...)
-        return Funcs[Key](...)
-    end
-end
-
-local BaseGroupbox = {}
-do
-    local Funcs = {}
-
-    function Funcs:AddDividerx()
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Holder = New("Frame", {
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Size = UDim2.new(1, 0, 0, 2),
-            Parent = Container,
-        })
-
-        Groupbox:Resize()
-
-        table.insert(Groupbox.Elements, {
-            Holder = Holder,
-            Type = "Divider",
-        })
-    end
-    
-    
-    -- THIS IS THE NEW, CORRECTED CODE
-    function Funcs:AddDivider()
-        local Groupbox = self
-        local Container = Groupbox.Container
-    
-        local Holder = New("Frame", {
-            BackgroundColor3 = "OutlineColor", -- Use the background as the line color
-            BorderSizePixel = 0,               -- Remove the non-scaling border
-            Size = UDim2.new(1, 0, 0, 1),      -- Set height to 1px, which will be scaled
-            Parent = Container,
-        })
-    
-        Groupbox:Resize()
-    
-        table.insert(Groupbox.Elements, {
-            Holder = Holder,
-            Type = "Divider",
-        })
-    end
-    
-    
-    function Funcs:AddSpacer(Height)
-        -- Default to 20px height if no value is provided
-        Height = (typeof(Height) == "number" and Height) or 20
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        -- Create a simple, invisible frame to act as the spacer
-        local SpacerFrame = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, Height), -- Full width, specified height
-            Parent = Container,
-        })
-
-        -- Update the groupbox's size to include the new spacer
-        Groupbox:Resize()
-
-        -- Add it to the elements list for layout consistency
-        table.insert(Groupbox.Elements, {
-            Holder = SpacerFrame,
-            Type = "Spacer",
-            Visible = true,
-        })
-
-        return self -- Return the groupbox to allow for method chaining
-    end
-
-    function Funcs:AddLabel(...)
-        local Data = {}
-        local Addons = {}
-
-        local First = select(1, ...)
-        local Second = select(2, ...)
-
-        if typeof(First) == "table" or typeof(Second) == "table" then
-            local Params = typeof(First) == "table" and First or Second
-
-            Data.Text = Params.Text or ""
-            Data.DoesWrap = Params.DoesWrap or false
-            Data.Size = Params.Size or 14
-            Data.Visible = Params.Visible or true
-            Data.Idx = typeof(Second) == "table" and First or nil
-        else
-            Data.Text = First or ""
-            Data.DoesWrap = Second or false
-            Data.Size = 14
-            Data.Visible = true
-            Data.Idx = select(3, ...) or nil
-        end
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Label = {
-            Text = Data.Text,
-            DoesWrap = Data.DoesWrap,
-
-            Addons = Addons,
-
-            Visible = Data.Visible,
-            Type = "Label",
-        }
-
-        local TextLabel = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 18),
-            Text = Label.Text,
-            TextSize = Data.Size,
-            TextWrapped = Label.DoesWrap,
-            TextXAlignment = Groupbox.IsKeyTab and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left,
-            Parent = Container,
-        })
-
-        function Label:SetVisible(Visible: boolean)
-            Label.Visible = Visible
-
-            TextLabel.Visible = Label.Visible
-            Groupbox:Resize()
-        end
-
-        function Label:SetText(Text: string)
-            Label.Text = Text
-            TextLabel.Text = Text
-
-            if Label.DoesWrap then
-                local _, Y =
-                    Library:GetTextBounds(Label.Text, TextLabel.FontFace, TextLabel.TextSize, TextLabel.AbsoluteSize.X)
-                TextLabel.Size = UDim2.new(1, 0, 0, Y + 4 * Library.DPIScale)
-            end
-
-            Groupbox:Resize()
-        end
-
-        if Label.DoesWrap then
-            local _, Y =
-                Library:GetTextBounds(Label.Text, TextLabel.FontFace, TextLabel.TextSize, TextLabel.AbsoluteSize.X)
-            TextLabel.Size = UDim2.new(1, 0, 0, Y + 4 * Library.DPIScale)
-        else
-            New("UIListLayout", {
-                FillDirection = Enum.FillDirection.Horizontal,
-                HorizontalAlignment = Enum.HorizontalAlignment.Right,
-                Padding = UDim.new(0, 6),
-                Parent = TextLabel,
-            })
-        end
-
-        if Data.DoesWrap then
-            local Last = TextLabel.AbsoluteSize
-
-            TextLabel:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-                if TextLabel.AbsoluteSize == Last then
-                    return
-                end
-
-                local _, Y =
-                    Library:GetTextBounds(Label.Text, TextLabel.FontFace, TextLabel.TextSize, TextLabel.AbsoluteSize.X)
-                TextLabel.Size = UDim2.new(1, 0, 0, Y + 4 * Library.DPIScale)
-
-                Last = TextLabel.AbsoluteSize
-                Groupbox:Resize()
-            end)
-        end
-
-        Groupbox:Resize()
-
-        Label.TextLabel = TextLabel
-        Label.Container = Container
-        if not Data.DoesWrap then
-            setmetatable(Label, BaseAddons)
-        end
-
-        Label.Holder = TextLabel
-        table.insert(Groupbox.Elements, Label)
-
-        if Data.Idx then
-            Labels[Data.Idx] = Label
-        else
-            table.insert(Labels, Label)
-        end
-
-        return Label
-    end
-    
-    
-    function Funcs:AddButtonxx(...)
-    local function GetInfo(...)
-        local Info = {}
-
-        local First = select(1, ...)
-        local Second = select(2, ...)
-
-        if typeof(First) == "table" or typeof(Second) == "table" then
-            local Params = typeof(First) == "table" and First or Second
-
-            Info.Text = Params.Text or ""
-            Info.Func = Params.Func or function() end
-            Info.DoubleClick = Params.DoubleClick
-
-            Info.Tooltip = Params.Tooltip
-            Info.DisabledTooltip = Params.DisabledTooltip
-
-            Info.Risky = Params.Risky or false
-            Info.Disabled = Params.Disabled or false
-            Info.Visible = Params.Visible or true
-            Info.Idx = typeof(Second) == "table" and First or nil
-        else
-            Info.Text = First or ""
-            Info.Func = Second or function() end
-            Info.DoubleClick = false
-
-            Info.Tooltip = nil
-            Info.DisabledTooltip = nil
-
-            Info.Risky = false
-            Info.Disabled = false
-            Info.Visible = true
-            Info.Idx = select(3, ...) or nil
-        end
-
-        return Info
-    end
-
-    local Info = GetInfo(...)
-    local Groupbox = self
-    local Container = Groupbox.Container
-    local Registry = Library.Registry
-
-    local function EnsureRegistry(Obj)
-        if not Registry then
-            return nil
-        end
-
-        Registry[Obj] = Registry[Obj] or {}
-        return Registry[Obj]
-    end
-
-    local function SetRegistry(Reg, Prop, Value)
-        if Reg then
-            Reg[Prop] = Value
-        end
-    end
-
-    local function StopBtnTween(Btn)
-        if Btn.Tween then
-            StopTween(Btn.Tween)
-            Btn.Tween = nil
-        end
-        if Btn.LabelTween then
-            StopTween(Btn.LabelTween)
-            Btn.LabelTween = nil
-        end
-        if Btn.StrokeTween then
-            StopTween(Btn.StrokeTween)
-            Btn.StrokeTween = nil
-        end
-        if Btn.AccentTween then
-            StopTween(Btn.AccentTween)
-            Btn.AccentTween = nil
-        end
-    end
-
-    local Holder = New("Frame", {
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 0),
-        Parent = Container,
-    })
-
-    New("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalFlex = Enum.UIFlexAlignment.Fill,
-        Padding = UDim.new(0, 6),
-        Parent = Holder,
-    })
-
-    local function CreateButton(Btn)
-        local Base = New("TextButton", {
-            Active = not Btn.Disabled,
-            AutoButtonColor = false,
-            BackgroundColor3 = "MainColor",
-            BackgroundTransparency = Btn.Disabled and 0.80 or 0.38,
-            Size = UDim2.new(1, 0, 0, 20),
-            Text = "",
-            Visible = Btn.Visible,
-            Parent = Holder,
-        })
-
-        New("UICorner", {
-            CornerRadius = UDim.new(0, 4),
-            Parent = Base,
-        })
-
-        New("UISizeConstraint", {
-            MinSize = Vector2.new(0, 20),
-            Parent = Base,
-        })
-
-        local Stroke = New("UIStroke", {
-            Color = "OutlineColor",
-            Transparency = Btn.Disabled and 0.70 or 0.25,
-            Parent = Base,
-        })
-
-        local Accent = New("Frame", {
-            AnchorPoint = Vector2.new(0, 0.5),
-            BackgroundColor3 = "AccentColor",
-            BackgroundTransparency = Btn.Disabled and 0.92 or 0.45,
-            BorderSizePixel = 0,
-            Position = UDim2.new(0, 4, 0.5, 0),
-            Size = UDim2.fromOffset(2, 10),
-            ZIndex = 2,
-            Parent = Base,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(1, 0),
-            Parent = Accent,
-        })
-
-        local Label = New("TextLabel", {
-            AutomaticSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 10, 0, 3),
-            Size = UDim2.new(1, -16, 0, 0),
-            Text = Btn.Text,
-            TextColor3 = Btn.Risky and Library.Scheme.Red or Library.Scheme.FontColor,
-            TextSize = 14,
-            TextTransparency = Btn.Disabled and 0.8 or 0.4,
-            TextWrapped = true,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Top,
-            Parent = Base,
-        })
-
-        local function UpdateHeight()
-            local h = math.max(Label.AbsoluteSize.Y + 6, 20)
-            Base.Size = UDim2.new(1, 0, 0, h)
-            Groupbox:Resize()
-        end
-
-        Label:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateHeight)
-        task.defer(UpdateHeight)
-
-        Btn.BaseReg = EnsureRegistry(Base)
-        Btn.StrokeReg = EnsureRegistry(Stroke)
-        Btn.AccentReg = EnsureRegistry(Accent)
-        Btn.LabelReg = EnsureRegistry(Label)
-
-        SetRegistry(Btn.BaseReg, "BackgroundColor3", Btn.Disabled and "BackgroundColor" or "MainColor")
-        SetRegistry(Btn.StrokeReg, "Color", "OutlineColor")
-        SetRegistry(Btn.AccentReg, "BackgroundColor3", "AccentColor")
-        SetRegistry(Btn.LabelReg, "TextColor3", Btn.Risky and "Red" or "FontColor")
-
-        return Base, Stroke, Accent, Label
-    end
-
-    local function ApplyVisual(Btn, Instant)
-        if Library.Unloaded then
-            return
-        end
-
-        StopBtnTween(Btn)
-
-        local Hovering = Btn.Hovering and not Btn.Disabled and not Btn.Locked
-
-        local TargetBgColor = Btn.Disabled and Library.Scheme.BackgroundColor or Library.Scheme.MainColor
-        local TargetBgTransparency = Btn.Disabled and 0.80 or (Hovering and 0.22 or 0.38)
-        local TargetTextTransparency = Btn.Disabled and 0.8 or (Hovering and 0 or 0.4)
-        local TargetStrokeTransparency = Btn.Disabled and 0.70 or (Hovering and 0.10 or 0.25)
-        local TargetAccentTransparency = Btn.Disabled and 0.92 or (Hovering and 0.10 or 0.45)
-
-        Btn.Base.Active = not Btn.Disabled
-        Btn.Base.BackgroundColor3 = TargetBgColor
-        Btn.Stroke.Color = Library.Scheme.OutlineColor
-
-        if Btn.Accent then
-            Btn.Accent.BackgroundTransparency = TargetAccentTransparency
-        end
-
-        if not Btn.Locked then
-            Btn.Label.TextColor3 = Btn.Risky and Library.Scheme.Red or Library.Scheme.FontColor
-            SetRegistry(Btn.LabelReg, "TextColor3", Btn.Risky and "Red" or "FontColor")
-        end
-
-        SetRegistry(Btn.BaseReg, "BackgroundColor3", Btn.Disabled and "BackgroundColor" or "MainColor")
-        SetRegistry(Btn.StrokeReg, "Color", "OutlineColor")
-
-        if Instant or Btn.Disabled then
-            Btn.Base.BackgroundTransparency = TargetBgTransparency
-            Btn.Label.TextTransparency = TargetTextTransparency
-            Btn.Stroke.Transparency = TargetStrokeTransparency
-            return
-        end
-
-        Btn.Tween = TweenService:Create(Btn.Base, Library.TweenInfo, {
-            BackgroundTransparency = TargetBgTransparency,
-        })
-        Btn.LabelTween = TweenService:Create(Btn.Label, Library.TweenInfo, {
-            TextTransparency = TargetTextTransparency,
-        })
-        Btn.StrokeTween = TweenService:Create(Btn.Stroke, Library.TweenInfo, {
-            Transparency = TargetStrokeTransparency,
-        })
-
-        Btn.Tween:Play()
-        Btn.LabelTween:Play()
-        Btn.StrokeTween:Play()
-
-        if Btn.Accent then
-            Btn.AccentTween = TweenService:Create(Btn.Accent, Library.TweenInfo, {
-                BackgroundTransparency = TargetAccentTransparency,
-            })
-            Btn.AccentTween:Play()
-        end
-    end
-
-    local function InitEvents(Btn)
-        Btn.Base.MouseEnter:Connect(function()
-            Btn.Hovering = true
-            ApplyVisual(Btn, false)
-        end)
-
-        Btn.Base.MouseLeave:Connect(function()
-            Btn.Hovering = false
-            if Btn.Locked then
-                return
-            end
-            ApplyVisual(Btn, false)
-        end)
-
-        Btn.Base.MouseButton1Click:Connect(function()
-            if Btn.Disabled or Btn.Locked then
-                return
-            end
-
-            if Btn.DoubleClick then
-                Btn.Locked = true
-                StopBtnTween(Btn)
-
-                Btn.Label.Text = "Are you sure?"
-                Btn.Label.TextColor3 = Library.Scheme.AccentColor
-                SetRegistry(Btn.LabelReg, "TextColor3", "AccentColor")
-
-                local Clicked = WaitForEvent(Btn.Base.MouseButton1Click, 0.5)
-
-                Btn.Label.Text = Btn.Text
-                Btn.Locked = false
-                ApplyVisual(Btn, true)
-
-                if Clicked then
-                    Library:SafeCallback(Btn.Func)
-                end
-
-                RunService.RenderStepped:Wait()
-                return
-            end
-
-            Library:SafeCallback(Btn.Func)
-        end)
-    end
-
-    local Button = {
-        Text = Info.Text,
-        Func = Info.Func,
-        DoubleClick = Info.DoubleClick,
-
-        Tooltip = Info.Tooltip,
-        DisabledTooltip = Info.DisabledTooltip,
-        TooltipTable = nil,
-
-        Risky = Info.Risky,
-        Disabled = Info.Disabled,
-        Visible = Info.Visible,
-
-        Tween = nil,
-        LabelTween = nil,
-        StrokeTween = nil,
-        AccentTween = nil,
-        Hovering = false,
-        Locked = false,
-        Type = "Button",
-    }
-
-    Button.Base, Button.Stroke, Button.Accent, Button.Label = CreateButton(Button)
-    InitEvents(Button)
-
-    function Button:AddButton(...)
-        local SubInfo = GetInfo(...)
-
-        local SubButton = {
-            Text = SubInfo.Text,
-            Func = SubInfo.Func,
-            DoubleClick = SubInfo.DoubleClick,
-
-            Tooltip = SubInfo.Tooltip,
-            DisabledTooltip = SubInfo.DisabledTooltip,
-            TooltipTable = nil,
-
-            Risky = SubInfo.Risky,
-            Disabled = SubInfo.Disabled,
-            Visible = SubInfo.Visible,
-
-            Tween = nil,
-            LabelTween = nil,
-            StrokeTween = nil,
-            AccentTween = nil,
-            Hovering = false,
-            Locked = false,
-            Type = "SubButton",
-        }
-
-        Button.SubButton = SubButton
-        SubButton.Base, SubButton.Stroke, SubButton.Accent, SubButton.Label = CreateButton(SubButton)
-        InitEvents(SubButton)
-
-        function SubButton:UpdateColors()
-            ApplyVisual(SubButton, true)
-        end
-
-        function SubButton:SetDisabled(Disabled: boolean)
-            SubButton.Disabled = Disabled
-
-            if SubButton.TooltipTable then
-                SubButton.TooltipTable.Disabled = SubButton.Disabled
-            end
-
-            ApplyVisual(SubButton, true)
-        end
-
-        function SubButton:SetVisible(Visible: boolean)
-            SubButton.Visible = Visible
-            SubButton.Base.Visible = SubButton.Visible
-            Groupbox:Resize()
-        end
-
-        function SubButton:SetText(Text: string)
-            SubButton.Text = Text
-            SubButton.Label.Text = Text
-        end
-
-        if typeof(SubButton.Tooltip) == "string" or typeof(SubButton.DisabledTooltip) == "string" then
-            SubButton.TooltipTable = Library:AddTooltip(SubButton.Tooltip, SubButton.DisabledTooltip, SubButton.Base)
-            SubButton.TooltipTable.Disabled = SubButton.Disabled
-        end
-
-        SubButton:UpdateColors()
-
-        if SubInfo.Idx then
-            Buttons[SubInfo.Idx] = SubButton
-        else
-            table.insert(Buttons, SubButton)
-        end
-
-        return SubButton
-    end
-
-    function Button:UpdateColors()
-        ApplyVisual(Button, true)
-    end
-
-    function Button:SetDisabled(Disabled: boolean)
-        Button.Disabled = Disabled
-
-        if Button.TooltipTable then
-            Button.TooltipTable.Disabled = Button.Disabled
-        end
-
-        ApplyVisual(Button, true)
-    end
-
-    function Button:SetVisible(Visible: boolean)
-        Button.Visible = Visible
-        Holder.Visible = Button.Visible
-        Groupbox:Resize()
-    end
-
-    function Button:SetText(Text: string)
-        Button.Text = Text
-        Button.Label.Text = Text
-    end
-
-    if typeof(Button.Tooltip) == "string" or typeof(Button.DisabledTooltip) == "string" then
-        Button.TooltipTable = Library:AddTooltip(Button.Tooltip, Button.DisabledTooltip, Button.Base)
-        Button.TooltipTable.Disabled = Button.Disabled
-    end
-
-    Button:UpdateColors()
-    Groupbox:Resize()
-
-    Button.Holder = Holder
-    table.insert(Groupbox.Elements, Button)
-
-    if Info.Idx then
-        Buttons[Info.Idx] = Button
+}
+c.CopyToClipBoard = function(G)
+    if setclipboard then
+        setclipboard(G); (game:GetService("StarterGui")):SetCore("SendNotification",
+            { Title = "Text", Text = " Copied to clipboard!", Duration = 2 })
     else
-        table.insert(Buttons, Button)
+        J.Notify("\226\157\140 Clipboard copy not supported", 3)
     end
-
-    return Button
 end
-
- 
-
-    
-    function Funcs:AddButton(...)
-    local function GetInfo(...)
-        local Info = {}
-
-        local First = select(1, ...)
-        local Second = select(2, ...)
-
-        if typeof(First) == "table" or typeof(Second) == "table" then
-            local Params = typeof(First) == "table" and First or Second
-
-            Info.Text = Params.Text or ""
-            Info.Func = Params.Func or function() end
-            Info.DoubleClick = Params.DoubleClick
-
-            Info.Tooltip = Params.Tooltip
-            Info.DisabledTooltip = Params.DisabledTooltip
-
-            Info.Risky = Params.Risky or false
-            Info.Disabled = Params.Disabled or false
-            Info.Visible = Params.Visible or true
-            Info.Idx = typeof(Second) == "table" and First or nil
-        else
-            Info.Text = First or ""
-            Info.Func = Second or function() end
-            Info.DoubleClick = false
-
-            Info.Tooltip = nil
-            Info.DisabledTooltip = nil
-
-            Info.Risky = false
-            Info.Disabled = false
-            Info.Visible = true
-            Info.Idx = select(3, ...) or nil
-        end
-
-        return Info
-    end
-    local Info = GetInfo(...)
-
-    local Groupbox = self
-    local Container = Groupbox.Container
-
-    local Button = {
-        Text = Info.Text,
-        Func = Info.Func,
-        DoubleClick = Info.DoubleClick,
-
-        Tooltip = Info.Tooltip,
-        DisabledTooltip = Info.DisabledTooltip,
-        TooltipTable = nil,
-
-        Risky = Info.Risky,
-        Disabled = Info.Disabled,
-        Visible = Info.Visible,
-
-        Tween = nil,
-        Type = "Button",
-    }
-
-    local Holder = New("Frame", {
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 0),
-        Parent = Container,
-    })
-
-    New("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalFlex = Enum.UIFlexAlignment.Fill,
-        Padding = UDim.new(0, 9),
-        Parent = Holder,
-    })
-
-       local function CreateButton(Btn)
-            local Base = New("TextButton", {
-                Active = not Btn.Disabled,
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundColor3 = Btn.Disabled and "BackgroundColor" or "MainColor",
-                Size = UDim2.new(1, 0, 0, 0),
-                Text = Btn.Text,
-                TextSize = 14,
-                TextTransparency = 0.4,
-                TextWrapped = true,
-                Visible = Btn.Visible,
-                Parent = Holder,
-            })
-        
-            New("UICorner", {
-                CornerRadius = UDim.new(0, 6),
-                Parent = Base,
-            })
-        
-            New("UIPadding", {
-                PaddingTop = UDim.new(0, 7),
-                PaddingBottom = UDim.new(0, 7),
-                PaddingLeft = UDim.new(0, 9),
-                PaddingRight = UDim.new(0, 9),
-                Parent = Base,
-            })
-        
-            local Stroke = New("UIStroke", {
-                Color = "OutlineColor",
-                Transparency = Btn.Disabled and 0.6 or 0.2,  -- slightly softer stroke
-                Thickness = 1,
-                Parent = Base,
-            })
-        
-            Base:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-                Groupbox:Resize()
-            end)
-        
-            return Base, Stroke
-        end
-
-    local function InitEvents(Btn)
-        Btn.Base.MouseEnter:Connect(function()
-            if Btn.Disabled then return end
-            Btn.Tween = TweenService:Create(Btn.Base, Library.TweenInfo, {
-                TextTransparency = 0,
-            })
-            Btn.Tween:Play()
-        end)
-
-        Btn.Base.MouseLeave:Connect(function()
-            if Btn.Disabled then return end
-            Btn.Tween = TweenService:Create(Btn.Base, Library.TweenInfo, {
-                TextTransparency = 0.4,
-            })
-            Btn.Tween:Play()
-        end)
-
-        Btn.Base.MouseButton1Click:Connect(function()
-            if Btn.Disabled or Btn.Locked then return end
-
-            if Btn.DoubleClick then
-                Btn.Locked = true
-
-                Btn.Base.Text = "Are you sure?"
-                Btn.Base.TextColor3 = Library.Scheme.AccentColor
-                Library.Registry[Btn.Base].TextColor3 = "AccentColor"
-
-                local Clicked = WaitForEvent(Btn.Base.MouseButton1Click, 0.5)
-
-                Btn.Base.Text = Btn.Text
-                Btn.Base.TextColor3 = Btn.Risky and Library.Scheme.Red or Library.Scheme.FontColor
-                Library.Registry[Btn.Base].TextColor3 = Btn.Risky and "Red" or "FontColor"
-
-                if Clicked then
-                    Library:SafeCallback(Btn.Func)
-                end
-
-                RunService.RenderStepped:Wait()
-                Btn.Locked = false
-                return
-            end
-
-            Library:SafeCallback(Btn.Func)
-        end)
-    end
-
-    Button.Base, Button.Stroke = CreateButton(Button)
-    InitEvents(Button)
-
-    function Button:AddButton(...)
-        local Info = GetInfo(...)
-
-        local SubButton = {
-            Text = Info.Text,
-            Func = Info.Func,
-            DoubleClick = Info.DoubleClick,
-
-            Tooltip = Info.Tooltip,
-            DisabledTooltip = Info.DisabledTooltip,
-            TooltipTable = nil,
-
-            Risky = Info.Risky,
-            Disabled = Info.Disabled,
-            Visible = Info.Visible,
-
-            Tween = nil,
-            Type = "SubButton",
-        }
-
-        Button.SubButton = SubButton
-        SubButton.Base, SubButton.Stroke = CreateButton(SubButton)
-        InitEvents(SubButton)
-
-        function SubButton:UpdateColors()
-            if Library.Unloaded then return end
-
-            StopTween(SubButton.Tween)
-
-            SubButton.Base.BackgroundColor3 = SubButton.Disabled and Library.Scheme.BackgroundColor
-                or Library.Scheme.MainColor
-            SubButton.Base.TextTransparency = SubButton.Disabled and 0.8 or 0.4
-            SubButton.Stroke.Transparency = SubButton.Disabled and 0.5 or 0
-
-            Library.Registry[SubButton.Base].BackgroundColor3 = SubButton.Disabled and "BackgroundColor"
-                or "MainColor"
-        end
-
-        function SubButton:SetDisabled(Disabled: boolean)
-            SubButton.Disabled = Disabled
-
-            if SubButton.TooltipTable then
-                SubButton.TooltipTable.Disabled = SubButton.Disabled
-            end
-
-            SubButton.Base.Active = not SubButton.Disabled
-            SubButton:UpdateColors()
-        end
-
-        function SubButton:SetVisible(Visible: boolean)
-            SubButton.Visible = Visible
-            SubButton.Base.Visible = SubButton.Visible
-            Groupbox:Resize()
-        end
-
-        function SubButton:SetText(Text: string)
-            SubButton.Text = Text
-            SubButton.Base.Text = Text
-            -- AbsoluteSize signal will fire and trigger Groupbox:Resize() automatically
-        end
-
-        if typeof(SubButton.Tooltip) == "string" or typeof(SubButton.DisabledTooltip) == "string" then
-            SubButton.TooltipTable =
-                Library:AddTooltip(SubButton.Tooltip, SubButton.DisabledTooltip, SubButton.Base)
-            SubButton.TooltipTable.Disabled = SubButton.Disabled
-        end
-
-        if SubButton.Risky then
-            SubButton.Base.TextColor3 = Library.Scheme.Red
-            Library.Registry[SubButton.Base].TextColor3 = "Red"
-        end
-
-        SubButton:UpdateColors()
-
-        if Info.Idx then
-            Buttons[Info.Idx] = SubButton
-        else
-            table.insert(Buttons, SubButton)
-        end
-
-        return SubButton
-    end
-
-    function Button:UpdateColors()
-        if Library.Unloaded then return end
-
-        StopTween(Button.Tween)
-
-        Button.Base.BackgroundColor3 = Button.Disabled and Library.Scheme.BackgroundColor
-            or Library.Scheme.MainColor
-        Button.Base.TextTransparency = Button.Disabled and 0.8 or 0.4
-        Button.Stroke.Transparency = Button.Disabled and 0.5 or 0
-
-        Library.Registry[Button.Base].BackgroundColor3 = Button.Disabled and "BackgroundColor" or "MainColor"
-    end
-
-    function Button:SetDisabled(Disabled: boolean)
-        Button.Disabled = Disabled
-
-        if Button.TooltipTable then
-            Button.TooltipTable.Disabled = Button.Disabled
-        end
-
-        Button.Base.Active = not Button.Disabled
-        Button:UpdateColors()
-    end
-
-    function Button:SetVisible(Visible: boolean)
-        Button.Visible = Visible
-        Holder.Visible = Button.Visible
-        Groupbox:Resize()
-    end
-
-    function Button:SetText(Text: string)
-        Button.Text = Text
-        Button.Base.Text = Text
-        -- AbsoluteSize signal will fire and trigger Groupbox:Resize() automatically
-    end
-
-    if typeof(Button.Tooltip) == "string" or typeof(Button.DisabledTooltip) == "string" then
-        Button.TooltipTable = Library:AddTooltip(Button.Tooltip, Button.DisabledTooltip, Button.Base)
-        Button.TooltipTable.Disabled = Button.Disabled
-    end
-
-    if Button.Risky then
-        Button.Base.TextColor3 = Library.Scheme.Red
-        Library.Registry[Button.Base].TextColor3 = "Red"
-    end
-
-    Button:UpdateColors()
-    Groupbox:Resize()
-
-    Button.Holder = Holder
-    table.insert(Groupbox.Elements, Button)
-
-    if Info.Idx then
-        Buttons[Info.Idx] = Button
-    else
-        table.insert(Buttons, Button)
-    end
-
-    return Button
+local function l(G)
+    if G == nil or (type(G) == "string" and G:match("^%s*$")) then return nil end
+    local V = tonumber(G)
+    if not V then return nil end
+    if V % 1 ~= 0 then return nil end
+    return V
 end
-    
-
-    function Funcs:AddButton_original(...)
-        local function GetInfo(...)
-            local Info = {}
-
-            local First = select(1, ...)
-            local Second = select(2, ...)
-
-            if typeof(First) == "table" or typeof(Second) == "table" then
-                local Params = typeof(First) == "table" and First or Second
-
-                Info.Text = Params.Text or ""
-                Info.Func = Params.Func or function() end
-                Info.DoubleClick = Params.DoubleClick
-
-                Info.Tooltip = Params.Tooltip
-                Info.DisabledTooltip = Params.DisabledTooltip
-
-                Info.Risky = Params.Risky or false
-                Info.Disabled = Params.Disabled or false
-                Info.Visible = Params.Visible or true
-                Info.Idx = typeof(Second) == "table" and First or nil
-            else
-                Info.Text = First or ""
-                Info.Func = Second or function() end
-                Info.DoubleClick = false
-
-                Info.Tooltip = nil
-                Info.DisabledTooltip = nil
-
-                Info.Risky = false
-                Info.Disabled = false
-                Info.Visible = true
-                Info.Idx = select(3, ...) or nil
-            end
-
-            return Info
+local function B(G)
+    if G == nil or (type(G) == "string" and G:match("^%s*$")) then return nil end
+    local V = tonumber(G)
+    if not V then return nil end
+    return V
+end
+c.IsLoadingCompleted = function()
+    local G = y.LocalPlayer:GetAttribute("GardenLoadingTotal") or 0
+    local V = y.LocalPlayer:GetAttribute("GardenLoadingProgress") or 0
+    if G == 0 and V == 0 then return true end
+    return false
+end
+c.formatShecklesNumber = function(G)
+    G = tonumber(G)
+    if not G then return "0" end
+    local V = { "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc" }
+    local y = math.abs(G)
+    if y < 1000 then return string.format("%.2f", G) end
+    local Z = math.log10(y)
+    local j = math.floor(Z / 3)
+    if j > #V then return string.format("%.2e", G) end
+    local i = 10 ^ ((j * 3))
+    local c = G / i
+    return string.format("%.2f%s", c, V[j])
+end
+c.JsonPrint = function(G) if y.HttpService then warn(y.HttpService:JSONEncode(G)) end end
+c.log = function(G) if G then print(G) else warn("(log) error passed val nil") end end
+T.Currency = {
+    ParseMoney = function(G)
+        if not G or type(G) ~= "string" then return 0 end
+        local V = G:gsub("[$,%s]", "")
+        V = (V:gsub("/s", "")):gsub("/min", "")
+        local y, Z = V:match("^([%d%.]+)(%a*)$")
+        local j = tonumber(y) or 0
+        if Z and Z ~= "" then
+            local V = X[Z]
+            if V then j = j * V else warn("Ulti: Unknown suffix \'" .. (Z .. ("\' in text: " .. G))) end
         end
-        local Info = GetInfo(...)
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Button = {
-            Text = Info.Text,
-            Func = Info.Func,
-            DoubleClick = Info.DoubleClick,
-
-            Tooltip = Info.Tooltip,
-            DisabledTooltip = Info.DisabledTooltip,
-            TooltipTable = nil,
-
-            Risky = Info.Risky,
-            Disabled = Info.Disabled,
-            Visible = Info.Visible,
-
-            Tween = nil,
-            Type = "Button",
-        }
-
-        local Holder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 21),
-            Parent = Container,
-        })
-
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalFlex = Enum.UIFlexAlignment.Fill,
-            Padding = UDim.new(0, 9),
-            Parent = Holder,
-        })
-
-        local function CreateButton(Button)
-            local Base = New("TextButton", {
-                Active = not Button.Disabled,
-                BackgroundColor3 = Button.Disabled and "BackgroundColor" or "MainColor",
-                Size = UDim2.fromScale(1, 1),
-                Text = Button.Text,
-                TextSize = 14,
-                TextTransparency = 0.4,
-                Visible = Button.Visible,
-                Parent = Holder,
-            })
-
-            local Stroke = New("UIStroke", {
-                Color = "OutlineColor",
-                Transparency = Button.Disabled and 0.5 or 0,
-                Parent = Base,
-            })
-
-            return Base, Stroke
+        return j
+    end,
+    FormatMoney = function(G)
+        local V = tonumber(G)
+        if not V then V = T.Currency.ParseMoney(G) end
+        if not V or V == 0 then return "0" end
+        if V < 1000 then return tostring(math.floor(V)) end
+        local y = 0
+        local Z = V
+        while Z >= 1000 and y < #h do
+            Z = Z / 1000
+            y = y + 1
         end
-
-        local function InitEvents(Button)
-            Button.Base.MouseEnter:Connect(function()
-                if Button.Disabled then
-                    return
-                end
-
-                Button.Tween = TweenService:Create(Button.Base, Library.TweenInfo, {
-                    TextTransparency = 0,
-                })
-                Button.Tween:Play()
-            end)
-            Button.Base.MouseLeave:Connect(function()
-                if Button.Disabled then
-                    return
-                end
-
-                Button.Tween = TweenService:Create(Button.Base, Library.TweenInfo, {
-                    TextTransparency = 0.4,
-                })
-                Button.Tween:Play()
-            end)
-
-            Button.Base.MouseButton1Click:Connect(function()
-                if Button.Disabled or Button.Locked then
-                    return
-                end
-
-                if Button.DoubleClick then
-                    Button.Locked = true
-
-                    Button.Base.Text = "Are you sure?"
-                    Button.Base.TextColor3 = Library.Scheme.AccentColor
-                    Library.Registry[Button.Base].TextColor3 = "AccentColor"
-
-                    local Clicked = WaitForEvent(Button.Base.MouseButton1Click, 0.5)
-
-                    Button.Base.Text = Button.Text
-                    Button.Base.TextColor3 = Button.Risky and Library.Scheme.Red or Library.Scheme.FontColor
-                    Library.Registry[Button.Base].TextColor3 = Button.Risky and "Red" or "FontColor"
-
-                    if Clicked then
-                        Library:SafeCallback(Button.Func)
-                    end
-
-                    RunService.RenderStepped:Wait() --// Mouse Button fires without waiting (i hate roblox)
-                    Button.Locked = false
-                    return
-                end
-
-                Library:SafeCallback(Button.Func)
-            end)
-        end
-
-        Button.Base, Button.Stroke = CreateButton(Button)
-        InitEvents(Button)
-
-        function Button:AddButton(...)
-            local Info = GetInfo(...)
-
-            local SubButton = {
-                Text = Info.Text,
-                Func = Info.Func,
-                DoubleClick = Info.DoubleClick,
-
-                Tooltip = Info.Tooltip,
-                DisabledTooltip = Info.DisabledTooltip,
-                TooltipTable = nil,
-
-                Risky = Info.Risky,
-                Disabled = Info.Disabled,
-                Visible = Info.Visible,
-
-                Tween = nil,
-                Type = "SubButton",
-            }
-
-            Button.SubButton = SubButton
-            SubButton.Base, SubButton.Stroke = CreateButton(SubButton)
-            InitEvents(SubButton)
-
-            function SubButton:UpdateColors()
-                if Library.Unloaded then
-                    return
-                end
-
-                StopTween(SubButton.Tween)
-
-                SubButton.Base.BackgroundColor3 = SubButton.Disabled and Library.Scheme.BackgroundColor
-                    or Library.Scheme.MainColor
-                SubButton.Base.TextTransparency = SubButton.Disabled and 0.8 or 0.4
-                SubButton.Stroke.Transparency = SubButton.Disabled and 0.5 or 0
-
-                Library.Registry[SubButton.Base].BackgroundColor3 = SubButton.Disabled and "BackgroundColor"
-                    or "MainColor"
-            end
-
-            function SubButton:SetDisabled(Disabled: boolean)
-                SubButton.Disabled = Disabled
-
-                if SubButton.TooltipTable then
-                    SubButton.TooltipTable.Disabled = SubButton.Disabled
-                end
-
-                SubButton.Base.Active = not SubButton.Disabled
-                SubButton:UpdateColors()
-            end
-
-            function SubButton:SetVisible(Visible: boolean)
-                SubButton.Visible = Visible
-
-                SubButton.Base.Visible = SubButton.Visible
-                Groupbox:Resize()
-            end
-
-            function SubButton:SetText(Text: string)
-                SubButton.Text = Text
-                SubButton.Base.Text = Text
-            end
-
-            if typeof(SubButton.Tooltip) == "string" or typeof(SubButton.DisabledTooltip) == "string" then
-                SubButton.TooltipTable =
-                    Library:AddTooltip(SubButton.Tooltip, SubButton.DisabledTooltip, SubButton.Base)
-                SubButton.TooltipTable.Disabled = SubButton.Disabled
-            end
-
-            if SubButton.Risky then
-                SubButton.Base.TextColor3 = Library.Scheme.Red
-                Library.Registry[SubButton.Base].TextColor3 = "Red"
-            end
-
-            SubButton:UpdateColors()
-
-            if Info.Idx then
-                Buttons[Info.Idx] = SubButton
-            else
-                table.insert(Buttons, SubButton)
-            end
-
-            return SubButton
-        end
-
-        function Button:UpdateColors()
-            if Library.Unloaded then
-                return
-            end
-
-            StopTween(Button.Tween)
-
-            Button.Base.BackgroundColor3 = Button.Disabled and Library.Scheme.BackgroundColor
-                or Library.Scheme.MainColor
-            Button.Base.TextTransparency = Button.Disabled and 0.8 or 0.4
-            Button.Stroke.Transparency = Button.Disabled and 0.5 or 0
-
-            Library.Registry[Button.Base].BackgroundColor3 = Button.Disabled and "BackgroundColor" or "MainColor"
-        end
-
-        function Button:SetDisabled(Disabled: boolean)
-            Button.Disabled = Disabled
-
-            if Button.TooltipTable then
-                Button.TooltipTable.Disabled = Button.Disabled
-            end
-
-            Button.Base.Active = not Button.Disabled
-            Button:UpdateColors()
-        end
-
-        function Button:SetVisible(Visible: boolean)
-            Button.Visible = Visible
-
-            Holder.Visible = Button.Visible
-            Groupbox:Resize()
-        end
-
-        function Button:SetText(Text: string)
-            Button.Text = Text
-            Button.Base.Text = Text
-        end
-
-        if typeof(Button.Tooltip) == "string" or typeof(Button.DisabledTooltip) == "string" then
-            Button.TooltipTable = Library:AddTooltip(Button.Tooltip, Button.DisabledTooltip, Button.Base)
-            Button.TooltipTable.Disabled = Button.Disabled
-        end
-
-        if Button.Risky then
-            Button.Base.TextColor3 = Library.Scheme.Red
-            Library.Registry[Button.Base].TextColor3 = "Red"
-        end
-
-        Button:UpdateColors()
-        Groupbox:Resize()
-
-        Button.Holder = Holder
-        table.insert(Groupbox.Elements, Button)
-
-        if Info.Idx then
-            Buttons[Info.Idx] = Button
-        else
-            table.insert(Buttons, Button)
-        end
-
-        return Button
+        local j = string.format("%.2f", Z)
+        j = j:gsub("%.?0+$", "")
+        return j .. h[y]
     end
-
-    function Funcs:AddCheckbox(Idx, Info)
-        Info = Library:Validate(Info, Templates.Toggle)
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Toggle = {
-            Text = Info.Text,
-            Value = Info.Default,
-
-            Tooltip = Info.Tooltip,
-            DisabledTooltip = Info.DisabledTooltip,
-            TooltipTable = nil,
-
-            Callback = Info.Callback,
-            Changed = Info.Changed,
-
-            Risky = Info.Risky,
-            Disabled = Info.Disabled,
-            Visible = Info.Visible,
-            Addons = {},
-
-            Type = "Toggle",
-        }
-
-        local Button = New("TextButton", {
-            Active = not Toggle.Disabled,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 18),
-            Text = "",
-            Visible = Toggle.Visible,
-            Parent = Container,
-        })
-
-        local Label = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(26, 0),
-            Size = UDim2.new(1, -26, 1, 0),
-            Text = Toggle.Text,
-            TextSize = 14,
-            TextTransparency = 0.4,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = Button,
-        })
-
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            Padding = UDim.new(0, 6),
-            Parent = Label,
-        })
-
-        local Checkbox = New("Frame", {
-            BackgroundColor3 = "MainColor",
-            Size = UDim2.fromScale(1, 1),
-            SizeConstraint = Enum.SizeConstraint.RelativeYY,
-            Parent = Button,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius / 2),
-            Parent = Checkbox,
-        })
-
-        local CheckboxStroke = New("UIStroke", {
-            Color = "OutlineColor",
-            Parent = Checkbox,
-        })
-
-        local CheckImage = New("ImageLabel", {
-            Image = CheckIcon and CheckIcon.Url or "",
-            ImageColor3 = "FontColor",
-            ImageRectOffset = CheckIcon and CheckIcon.ImageRectOffset or Vector2.zero,
-            ImageRectSize = CheckIcon and CheckIcon.ImageRectSize or Vector2.zero,
-            ImageTransparency = 1,
-            Position = UDim2.fromOffset(2, 2),
-            Size = UDim2.new(1, -4, 1, -4),
-            Parent = Checkbox,
-        })
-
-        function Toggle:UpdateColors()
-            Toggle:Display()
-        end
-
-        function Toggle:Display()
-            if Library.Unloaded then
-                return
-            end
-
-            CheckboxStroke.Transparency = Toggle.Disabled and 0.5 or 0
-
-            if Toggle.Disabled then
-                Label.TextTransparency = 0.8
-                CheckImage.ImageTransparency = Toggle.Value and 0.8 or 1
-
-                Checkbox.BackgroundColor3 = Library.Scheme.BackgroundColor
-                Library.Registry[Checkbox].BackgroundColor3 = "BackgroundColor"
-
-                return
-            end
-
-            TweenService:Create(Label, Library.TweenInfo, {
-                TextTransparency = Toggle.Value and 0 or 0.4,
-            }):Play()
-            TweenService:Create(CheckImage, Library.TweenInfo, {
-                ImageTransparency = Toggle.Value and 0 or 1,
-            }):Play()
-
-            Checkbox.BackgroundColor3 = Library.Scheme.MainColor
-            Library.Registry[Checkbox].BackgroundColor3 = "MainColor"
-        end
-
-        function Toggle:OnChanged(Func)
-            Toggle.Changed = Func
-        end
-
-        function Toggle:SetValue(Value)
-            if Toggle.Disabled then
-                return
-            end
-
-            Toggle.Value = Value
-            Toggle:Display()
-
-            for _, Addon in pairs(Toggle.Addons) do
-                if Addon.Type == "KeyPicker" and Addon.SyncToggleState then
-                    Addon.Toggled = Toggle.Value
-                    Addon:Update()
-                end
-            end
-
-            Library:SafeCallback(Toggle.Callback, Toggle.Value)
-            Library:SafeCallback(Toggle.Changed, Toggle.Value)
-            Library:UpdateDependencyBoxes()
-        end
-
-        function Toggle:SetDisabled(Disabled: boolean)
-            Toggle.Disabled = Disabled
-
-            if Toggle.TooltipTable then
-                Toggle.TooltipTable.Disabled = Toggle.Disabled
-            end
-
-            for _, Addon in pairs(Toggle.Addons) do
-                if Addon.Type == "KeyPicker" and Addon.SyncToggleState then
-                    Addon:Update()
-                end
-            end
-
-            Button.Active = not Toggle.Disabled
-            Toggle:Display()
-        end
-
-        function Toggle:SetVisible(Visible: boolean)
-            Toggle.Visible = Visible
-
-            Button.Visible = Toggle.Visible
-            Groupbox:Resize()
-        end
-
-        function Toggle:SetText(Text: string)
-            Toggle.Text = Text
-            Label.Text = Text
-        end
-
-        Button.MouseButton1Click:Connect(function()
-            if Toggle.Disabled then
-                return
-            end
-
-            Toggle:SetValue(not Toggle.Value)
-        end)
-
-        if typeof(Toggle.Tooltip) == "string" or typeof(Toggle.DisabledTooltip) == "string" then
-            Toggle.TooltipTable = Library:AddTooltip(Toggle.Tooltip, Toggle.DisabledTooltip, Button)
-            Toggle.TooltipTable.Disabled = Toggle.Disabled
-        end
-
-        if Toggle.Risky then
-            Label.TextColor3 = Library.Scheme.Red
-            Library.Registry[Label].TextColor3 = "Red"
-        end
-
-        Toggle:Display()
-        Groupbox:Resize()
-
-        Toggle.TextLabel = Label
-        Toggle.Container = Container
-        setmetatable(Toggle, BaseAddons)
-
-        Toggle.Holder = Button
-        table.insert(Groupbox.Elements, Toggle)
-
-        Toggles[Idx] = Toggle
-
-        return Toggle
+}
+T.App = {
+    GetAppName = function() return y.AppName end,
+    GetFooterInfo = function(G)
+        local V = string.format("%s (%s)", y.invite_link_short, y.CurentV)
+        if not G then V = string.format("<b><font color=\'#FFFB03\'>%s</font></b> (%s)", y.invite_link_short, y.CurentV) end
+        return V
     end
-    
-    
-  function Funcs:AddToggle(Idx, Info)
-    if Library.ForceCheckbox then
-        return Funcs.AddCheckbox(self, Idx, Info)
+}
+T.SERVER = { GetServerVersion = function() return game.PlaceVersion end }
+T.Others = { IsBetween = function(G, V, y) return G >= V and G <= y end }
+local L = game:GetService("RunService")
+r.applySmoothRainbow = function(G, V)
+    if not G or not ((G:IsA("TextLabel") or G:IsA("TextButton"))) then
+        warn("Target is not a valid text object!")
+        return nil
     end
-
-    Info = Library:Validate(Info, Templates.Toggle)
-
-    local Groupbox = self
-    local Container = Groupbox.Container
-    local Registry = Library.Registry
-
-    local function EnsureRegistry(Obj)
-        if not Registry then
-            return nil
-        end
-        Registry[Obj] = Registry[Obj] or {}
-        return Registry[Obj]
-    end
-
-    local Toggle = {
-        Text = Info.Text,
-        Value = Info.Default,
-
-        Tooltip = Info.Tooltip,
-        DisabledTooltip = Info.DisabledTooltip,
-        TooltipTable = nil,
-
-        Callback = Info.Callback,
-        Changed = Info.Changed,
-
-        Risky = Info.Risky,
-        Disabled = Info.Disabled,
-        Visible = Info.Visible,
-        Addons = {},
-
-        Type = "Toggle",
-    }
-
-    local Button = New("TextButton", {
-        Active = not Toggle.Disabled,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 0),
-        Text = "",
-        Visible = Toggle.Visible,
-        Parent = Container,
-    })
-
-    local Row = New("Frame", {
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundColor3 = "MainColor",
-        BackgroundTransparency = 0.6,
-        Size = UDim2.new(1, 0, 0, 0),
-        Parent = Button,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, 6),
-        Parent = Row,
-    })
-    local RowStroke = New("UIStroke", {
-        Color = "OutlineColor",
-        Transparency = 0.6,
-        Parent = Row,
-    })
-    New("UIPadding", {
-        PaddingTop = UDim.new(0, 6),
-        PaddingBottom = UDim.new(0, 6),
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
-        Parent = Row,
-    })
-
-    local Switch = New("Frame", {
-        AnchorPoint = Vector2.new(1, 0.5),
-        BackgroundColor3 = "MainColor",
-        Position = UDim2.new(1, 0, 0.5, 0),
-        Size = UDim2.fromOffset(36, 20),
-        Parent = Row,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(1, 0),
-        Parent = Switch,
-    })
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 2),
-        PaddingLeft = UDim.new(0, 2),
-        PaddingRight = UDim.new(0, 2),
-        PaddingTop = UDim.new(0, 2),
-        Parent = Switch,
-    })
-    local SwitchStroke = New("UIStroke", {
-        Color = "OutlineColor",
-        Parent = Switch,
-    })
-
-    local Ball = New("Frame", {
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        Size = UDim2.fromScale(1, 1),
-        SizeConstraint = Enum.SizeConstraint.RelativeYY,
-        Parent = Switch,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(1, 0),
-        Parent = Ball,
-    })
-
-    local Label = New("TextLabel", {
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, -44, 0, 0),
-        Text = Toggle.Text,
-        TextSize = 14,
-        TextTransparency = 0.4,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        Parent = Row,
-    })
-
-    New("UISizeConstraint", {
-        MinSize = Vector2.new(0, 20),
-        Parent = Row,
-    })
-
-    Label:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-        local h = math.max(Label.AbsoluteSize.Y, 20)
-        Row.Size = UDim2.new(1, 0, 0, h)
-        Groupbox:Resize()
-    end)
-
-    local SwitchReg = EnsureRegistry(Switch)
-    local SwitchStrokeReg = EnsureRegistry(SwitchStroke)
-    local BallReg = EnsureRegistry(Ball)
-    local LabelReg = EnsureRegistry(Label)
-
-    function Toggle:UpdateColors()
-        Toggle:Display()
-    end
-
-    function Toggle:Display()
-        if Library.Unloaded then return end
-
-        local Offset = Toggle.Value and 1 or 0
-
-        Row.BackgroundTransparency = Toggle.Disabled and 0.8 or 0.6
-        RowStroke.Transparency = Toggle.Disabled and 0.8 or 0.6
-
-        Switch.BackgroundTransparency = Toggle.Disabled and 0.75 or 0
-        SwitchStroke.Transparency = Toggle.Disabled and 0.75 or 0
-
-        Switch.BackgroundColor3 = Toggle.Value and Library.Scheme.AccentColor or Library.Scheme.MainColor
-        SwitchStroke.Color = Toggle.Value and Library.Scheme.AccentColor or Library.Scheme.OutlineColor
-
-        if SwitchReg then
-            SwitchReg.BackgroundColor3 = Toggle.Value and "AccentColor" or "MainColor"
-        end
-        if SwitchStrokeReg then
-            SwitchStrokeReg.Color = Toggle.Value and "AccentColor" or "OutlineColor"
-        end
-
-        if Toggle.Disabled then
-            Label.TextTransparency = 0.8
-            Ball.AnchorPoint = Vector2.new(Offset, 0)
-            Ball.Position = UDim2.fromScale(Offset, 0)
-
-            Ball.BackgroundColor3 = Library:GetDarkerColor(Library.Scheme.FontColor)
-            if BallReg then
-                BallReg.BackgroundColor3 = function()
-                    return Library:GetDarkerColor(Library.Scheme.FontColor)
-                end
-            end
+    V = V or .2
+    local y = 0
+    local Z
+    Z = L.Heartbeat:Connect(function(j)
+        if not G or not G.Parent then
+            Z:Disconnect()
             return
         end
-
-        TweenService:Create(Label, Library.TweenInfo, {
-            TextTransparency = Toggle.Value and 0 or 0.4,
-        }):Play()
-        TweenService:Create(Ball, Library.TweenInfo, {
-            AnchorPoint = Vector2.new(Offset, 0),
-            Position = UDim2.fromScale(Offset, 0),
-        }):Play()
-        TweenService:Create(Switch, Library.TweenInfo, {
-            BackgroundColor3 = Toggle.Value and Library.Scheme.AccentColor or Library.Scheme.MainColor,
-        }):Play()
-
-        Ball.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        if BallReg then
-            BallReg.BackgroundColor3 = function()
-                return Color3.fromRGB(255, 255, 255)
-            end
-        end
-    end
-
-    function Toggle:OnChanged(Func)
-        Toggle.Changed = Func
-    end
-
-    function Toggle:SetValue(Value)
-        if Toggle.Disabled then return end
-
-        Toggle.Value = Value
-        Toggle:Display()
-
-        for _, Addon in pairs(Toggle.Addons) do
-            if Addon.Type == "KeyPicker" and Addon.SyncToggleState then
-                Addon.Toggled = Toggle.Value
-                Addon:Update()
-            end
-        end
-
-        Library:SafeCallback(Toggle.Callback, Toggle.Value)
-        Library:SafeCallback(Toggle.Changed, Toggle.Value)
-        Library:UpdateDependencyBoxes()
-    end
-
-    function Toggle:SetDisabled(Disabled: boolean)
-        Toggle.Disabled = Disabled
-
-        if Toggle.TooltipTable then
-            Toggle.TooltipTable.Disabled = Toggle.Disabled
-        end
-
-        for _, Addon in pairs(Toggle.Addons) do
-            if Addon.Type == "KeyPicker" and Addon.SyncToggleState then
-                Addon:Update()
-            end
-        end
-
-        Button.Active = not Toggle.Disabled
-        Toggle:Display()
-    end
-
-    function Toggle:SetVisible(Visible: boolean)
-        Toggle.Visible = Visible
-        Button.Visible = Toggle.Visible
-        Groupbox:Resize()
-    end
-
-    function Toggle:SetText(Text: string)
-        Toggle.Text = Text
-        Label.Text = Text
-    end
-
-    Button.MouseButton1Click:Connect(function()
-        if Toggle.Disabled then return end
-        Toggle:SetValue(not Toggle.Value)
+        y = ((y + (j * V))) % 1
+        G.TextColor3 = Color3.fromHSV(y, .8, 1)
     end)
-
-    if typeof(Toggle.Tooltip) == "string" or typeof(Toggle.DisabledTooltip) == "string" then
-        Toggle.TooltipTable = Library:AddTooltip(Toggle.Tooltip, Toggle.DisabledTooltip, Button)
-        Toggle.TooltipTable.Disabled = Toggle.Disabled
-    end
-
-    if Toggle.Risky then
-        Label.TextColor3 = Library.Scheme.Red
-        if LabelReg then
-            LabelReg.TextColor3 = "Red"
-        end
-    end
-
-    Toggle:Display()
-    Groupbox:Resize()
-
-    Toggle.TextLabel = Label
-    Toggle.Container = Container
-    setmetatable(Toggle, BaseAddons)
-
-    Toggle.Holder = Button
-    table.insert(Groupbox.Elements, Toggle)
-
-    Toggles[Idx] = Toggle
-
-    return Toggle
+    return Z
 end
-
-    function Funcs:AddToggle_org(Idx, Info)
-        if Library.ForceCheckbox then
-            return Funcs.AddCheckbox(self, Idx, Info)
-        end
-
-        Info = Library:Validate(Info, Templates.Toggle)
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Toggle = {
-            Text = Info.Text,
-            Value = Info.Default,
-
-            Tooltip = Info.Tooltip,
-            DisabledTooltip = Info.DisabledTooltip,
-            TooltipTable = nil,
-
-            Callback = Info.Callback,
-            Changed = Info.Changed,
-
-            Risky = Info.Risky,
-            Disabled = Info.Disabled,
-            Visible = Info.Visible,
-            Addons = {},
-
-            Type = "Toggle",
-        }
-
-        local Button = New("TextButton", {
-            Active = not Toggle.Disabled,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 18),
-            Text = "",
-            Visible = Toggle.Visible,
-            Parent = Container,
-        })
-
-        local Label = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, -40, 1, 0),
-            Text = Toggle.Text,
-            TextSize = 14,
-            TextTransparency = 0.4,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = Button,
-        })
-
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            Padding = UDim.new(0, 6),
-            Parent = Label,
-        })
-
-        local Switch = New("Frame", {
-            AnchorPoint = Vector2.new(1, 0),
-            BackgroundColor3 = "MainColor",
-            Position = UDim2.fromScale(1, 0),
-            Size = UDim2.fromOffset(32, 18),
-            Parent = Button,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(1, 0),
-            Parent = Switch,
-        })
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 2),
-            PaddingLeft = UDim.new(0, 2),
-            PaddingRight = UDim.new(0, 2),
-            PaddingTop = UDim.new(0, 2),
-            Parent = Switch,
-        })
-        local SwitchStroke = New("UIStroke", {
-            Color = "OutlineColor",
-            Parent = Switch,
-        })
-
-        local Ball = New("Frame", {
-            BackgroundColor3 = "FontColor",
-            Size = UDim2.fromScale(1, 1),
-            SizeConstraint = Enum.SizeConstraint.RelativeYY,
-            Parent = Switch,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(1, 0),
-            Parent = Ball,
-        })
-
-        function Toggle:UpdateColors()
-            Toggle:Display()
-        end
-
-        function Toggle:Display()
-            if Library.Unloaded then
-                return
-            end
-
-            local Offset = Toggle.Value and 1 or 0
-
-            Switch.BackgroundTransparency = Toggle.Disabled and 0.75 or 0
-            SwitchStroke.Transparency = Toggle.Disabled and 0.75 or 0
-
-            Switch.BackgroundColor3 = Toggle.Value and Library.Scheme.AccentColor or Library.Scheme.MainColor
-            SwitchStroke.Color = Toggle.Value and Library.Scheme.AccentColor or Library.Scheme.OutlineColor
-
-            Library.Registry[Switch].BackgroundColor3 = Toggle.Value and "AccentColor" or "MainColor"
-            Library.Registry[SwitchStroke].Color = Toggle.Value and "AccentColor" or "OutlineColor"
-
-            if Toggle.Disabled then
-                Label.TextTransparency = 0.8
-                Ball.AnchorPoint = Vector2.new(Offset, 0)
-                Ball.Position = UDim2.fromScale(Offset, 0)
-
-                Ball.BackgroundColor3 = Library:GetDarkerColor(Library.Scheme.FontColor)
-                Library.Registry[Ball].BackgroundColor3 = function()
-                    return Library:GetDarkerColor(Library.Scheme.FontColor)
-                end
-
-                return
-            end
-
-            TweenService:Create(Label, Library.TweenInfo, {
-                TextTransparency = Toggle.Value and 0 or 0.4,
-            }):Play()
-            TweenService:Create(Ball, Library.TweenInfo, {
-                AnchorPoint = Vector2.new(Offset, 0),
-                Position = UDim2.fromScale(Offset, 0),
-            }):Play()
-
-            Ball.BackgroundColor3 = Library.Scheme.FontColor
-            Library.Registry[Ball].BackgroundColor3 = "FontColor"
-        end
-
-        function Toggle:OnChanged(Func)
-            Toggle.Changed = Func
-        end
-
-        function Toggle:SetValue(Value)
-            if Toggle.Disabled then
-                return
-            end
-
-            Toggle.Value = Value
-            Toggle:Display()
-
-            for _, Addon in pairs(Toggle.Addons) do
-                if Addon.Type == "KeyPicker" and Addon.SyncToggleState then
-                    Addon.Toggled = Toggle.Value
-                    Addon:Update()
-                end
-            end
-
-            Library:SafeCallback(Toggle.Callback, Toggle.Value)
-            Library:SafeCallback(Toggle.Changed, Toggle.Value)
-            Library:UpdateDependencyBoxes()
-        end
-
-        function Toggle:SetDisabled(Disabled: boolean)
-            Toggle.Disabled = Disabled
-
-            if Toggle.TooltipTable then
-                Toggle.TooltipTable.Disabled = Toggle.Disabled
-            end
-
-            for _, Addon in pairs(Toggle.Addons) do
-                if Addon.Type == "KeyPicker" and Addon.SyncToggleState then
-                    Addon:Update()
-                end
-            end
-
-            Button.Active = not Toggle.Disabled
-            Toggle:Display()
-        end
-
-        function Toggle:SetVisible(Visible: boolean)
-            Toggle.Visible = Visible
-
-            Button.Visible = Toggle.Visible
-            Groupbox:Resize()
-        end
-
-        function Toggle:SetText(Text: string)
-            Toggle.Text = Text
-            Label.Text = Text
-        end
-
-        Button.MouseButton1Click:Connect(function()
-            if Toggle.Disabled then
-                return
-            end
-
-            Toggle:SetValue(not Toggle.Value)
-        end)
-
-        if typeof(Toggle.Tooltip) == "string" or typeof(Toggle.DisabledTooltip) == "string" then
-            Toggle.TooltipTable = Library:AddTooltip(Toggle.Tooltip, Toggle.DisabledTooltip, Button)
-            Toggle.TooltipTable.Disabled = Toggle.Disabled
-        end
-
-        if Toggle.Risky then
-            Label.TextColor3 = Library.Scheme.Red
-            Library.Registry[Label].TextColor3 = "Red"
-        end
-
-        Toggle:Display()
-        Groupbox:Resize()
-
-        Toggle.TextLabel = Label
-        Toggle.Container = Container
-        setmetatable(Toggle, BaseAddons)
-
-        Toggle.Holder = Button
-        table.insert(Groupbox.Elements, Toggle)
-
-        Toggles[Idx] = Toggle
-
-        return Toggle
-    end
-
-    function Funcs:AddInput_old(Idx, Info)
-        Info = Library:Validate(Info, Templates.Input)
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Input = {
-            Text = Info.Text,
-            Value = Info.Default,
-            Finished = Info.Finished,
-            Numeric = Info.Numeric,
-            ClearTextOnFocus = Info.ClearTextOnFocus,
-            Placeholder = Info.Placeholder,
-            AllowEmpty = Info.AllowEmpty,
-            EmptyReset = Info.EmptyReset,
-
-            Tooltip = Info.Tooltip,
-            DisabledTooltip = Info.DisabledTooltip,
-            TooltipTable = nil,
-
-            Callback = Info.Callback,
-            Changed = Info.Changed,
-
-            Disabled = Info.Disabled,
-            Visible = Info.Visible,
-
-            Type = "Input",
-        }
-
-        local Holder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 39),
-            Visible = Input.Visible,
-            Parent = Container,
-        })
-
-        local Label = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 14),
-            Text = Input.Text,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = Holder,
-        })
-
-        local Box = New("TextBox", {
-            AnchorPoint = Vector2.new(0, 1),
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            ClearTextOnFocus = not Input.Disabled and Input.ClearTextOnFocus,
-            PlaceholderText = Input.Placeholder,
-            Position = UDim2.fromScale(0, 1),
-            Size = UDim2.new(1, 0, 0, 21),
-            Text = Input.Value,
-            TextEditable = not Input.Disabled,
-            TextScaled = true,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = Holder,
-        })
-
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 3),
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 8),
-            PaddingTop = UDim.new(0, 4),
-            Parent = Box,
-        })
-
-        function Input:UpdateColors()
-            if Library.Unloaded then
-                return
-            end
-
-            Label.TextTransparency = Input.Disabled and 0.8 or 0
-            Box.TextTransparency = Input.Disabled and 0.8 or 0
-        end
-
-        function Input:OnChanged(Func)
-            Input.Changed = Func
-        end
-
-        function Input:SetValue(Text)
-            if not Input.AllowEmpty and Trim(Text) == "" then
-                Text = Input.EmptyReset
-            end
-
-            if Info.MaxLength and #Text > Info.MaxLength then
-                Text = Text:sub(1, Info.MaxLength)
-            end
-
-            if Input.Numeric then
-                if #Text > 0 and not tonumber(Text) then
-                    Text = Input.Value
-                end
-            end
-
-            Input.Value = Text
-            Box.Text = Text
-
-            if not Input.Disabled then
-                Library:SafeCallback(Input.Callback, Input.Value)
-                Library:SafeCallback(Input.Changed, Input.Value)
-            end
-        end
-
-        function Input:SetDisabled(Disabled: boolean)
-            Input.Disabled = Disabled
-
-            if Input.TooltipTable then
-                Input.TooltipTable.Disabled = Input.Disabled
-            end
-
-            Box.ClearTextOnFocus = not Input.Disabled and Input.ClearTextOnFocus
-            Box.TextEditable = not Input.Disabled
-            Input:UpdateColors()
-        end
-
-        function Input:SetVisible(Visible: boolean)
-            Input.Visible = Visible
-
-            Holder.Visible = Input.Visible
-            Groupbox:Resize()
-        end
-
-        function Input:SetText(Text: string)
-            Input.Text = Text
-            Label.Text = Text
-        end
-
-        if Input.Finished then
-            Box.FocusLost:Connect(function(Enter)
-                if not Enter then
-                    return
-                end
-
-                Input:SetValue(Box.Text)
-            end)
-        else
-            Box:GetPropertyChangedSignal("Text"):Connect(function()
-                Input:SetValue(Box.Text)
-            end)
-        end
-
-        if typeof(Input.Tooltip) == "string" or typeof(Input.DisabledTooltip) == "string" then
-            Input.TooltipTable = Library:AddTooltip(Input.Tooltip, Input.DisabledTooltip, Box)
-            Input.TooltipTable.Disabled = Input.Disabled
-        end
-
-        Groupbox:Resize()
-
-        Input.Holder = Holder
-        table.insert(Groupbox.Elements, Input)
-
-        Options[Idx] = Input
-
-        return Input
-    end
-
-
-
- 
-
-
-     
-    function Funcs:AddInput(Idx, Info)
-        Info = Library:Validate(Info, Templates.Input)
-    
-        local Groupbox = self
-        local Container = Groupbox.Container
-    
-        local Input = {
-            Text = Info.Text,
-            Value = Info.Default,
-            Finished = Info.Finished,
-            Numeric = Info.Numeric,
-            ClearTextOnFocus = Info.ClearTextOnFocus,
-            Placeholder = Info.Placeholder,
-            AllowEmpty = Info.AllowEmpty,
-            EmptyReset = Info.EmptyReset,
-    
-            Tooltip = Info.Tooltip,
-            DisabledTooltip = Info.DisabledTooltip,
-            TooltipTable = nil,
-    
-            Callback = Info.Callback,
-            Changed = Info.Changed,
-    
-            Disabled = Info.Disabled,
-            Visible = Info.Visible,
-    
-            Type = "Input",
-        }
-    
-        local Holder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 48), -- Kept larger holder size
-            Visible = Input.Visible,
-            Parent = Container,
-        })
-    
-        local Label = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 14), -- Reverted to original 14
-            Text = Input.Text,
-            TextSize = 14, -- Reverted to original 14
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = Holder,
-        })
-    
-        local Box = New("TextBox", {
-            AnchorPoint = Vector2.new(0, 1),
-            BackgroundColor3 = "MainColor",
-            BorderSizePixel = 0,
-            ClearTextOnFocus = not Input.Disabled and Input.ClearTextOnFocus,
-            PlaceholderText = Input.Placeholder,
-            Position = UDim2.fromScale(0, 1),
-            Size = UDim2.new(1, 0, 0, 30), -- Adjusted to 30 to fill the space
-            Text = Input.Value,
-            TextEditable = not Input.Disabled,
-            TextScaled = false,
-            TextSize = 15,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = Holder,
-        })
-        
-        local Underline = New("Frame", {
-            BackgroundColor3 = "OutlineColor",
-            Position = UDim2.new(0, 0, 1, 0),
-            Size = UDim2.new(1, 0, 0, 1),
-            Parent = Box,
-        })
-    
-        local AccentLine = New("Frame", {
-            AnchorPoint = Vector2.new(0.5, 0),
-            BackgroundColor3 = "AccentColor",
-            Position = UDim2.fromScale(0.5, 0),
-            Size = UDim2.new(0, 0, 1, 0),
-            Parent = Underline,
-        })
-    
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 3),
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 8),
-            PaddingTop = UDim.new(0, 4),
-            Parent = Box,
-        })
-    
-        Box.Focused:Connect(function()
-            TweenService:Create(AccentLine, Library.TweenInfo, {
-                Size = UDim2.fromScale(1, 1)
-            }):Play()
-        end)
-        
-        Box.FocusLost:Connect(function(Enter)
-            TweenService:Create(AccentLine, Library.TweenInfo, {
-                Size = UDim2.fromScale(0, 1)
-            }):Play()
-            
-            if not Enter then
-                return
-            end
-    
-            if Input.Finished then
-                Input:SetValue(Box.Text)
-            end
-        end)
-    
-        function Input:UpdateColors()
-            if Library.Unloaded then return end
-            Label.TextTransparency = Input.Disabled and 0.8 or 0
-            Box.TextTransparency = Input.Disabled and 0.8 or 0
-        end
-    
-        function Input:OnChanged(Func)
-            Input.Changed = Func
-        end
-    
-        function Input:SetValue(Text)
-            if not Input.AllowEmpty and Trim(Text) == "" then
-                Text = Input.EmptyReset
-            end
-    
-            if Info.MaxLength and #Text > Info.MaxLength then
-                Text = Text:sub(1, Info.MaxLength)
-            end
-    
-            if Input.Numeric then
-                if #Text > 0 and not tonumber(Text) then
-                    Text = Input.Value
-                end
-            end
-    
-            Input.Value = Text
-            Box.Text = Text
-    
-            if not Input.Disabled then
-                Library:SafeCallback(Input.Callback, Input.Value)
-                Library:SafeCallback(Input.Changed, Input.Value)
-            end
-        end
-    
-        function Input:SetDisabled(Disabled: boolean)
-            Input.Disabled = Disabled
-    
-            if Input.TooltipTable then
-                Input.TooltipTable.Disabled = Input.Disabled
-            end
-    
-            Box.ClearTextOnFocus = not Input.Disabled and Input.ClearTextOnFocus
-            Box.TextEditable = not Input.Disabled
-            Input:UpdateColors()
-        end
-    
-        function Input:SetVisible(Visible: boolean)
-            Input.Visible = Visible
-            Holder.Visible = Input.Visible
-            Groupbox:Resize()
-        end
-    
-        function Input:SetText(Text: string)
-            Input.Text = Text
-            Label.Text = Text
-        end
-    
-        if not Input.Finished then
-            Box:GetPropertyChangedSignal("Text"):Connect(function()
-                Input:SetValue(Box.Text)
-            end)
-        end
-    
-        if typeof(Input.Tooltip) == "string" or typeof(Input.DisabledTooltip) == "string" then
-            Input.TooltipTable = Library:AddTooltip(Input.Tooltip, Input.DisabledTooltip, Box)
-            Input.TooltipTable.Disabled = Input.Disabled
-        end
-    
-        Groupbox:Resize()
-    
-        Input.Holder = Holder
-        table.insert(Groupbox.Elements, Input)
-        Options[Idx] = Input
-    
-        return Input
-    end
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    function Funcs:AddSlider(Idx, Info)
-        Info = Library:Validate(Info, Templates.Slider)
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Slider = {
-            Text = Info.Text,
-            Value = Info.Default,
-            Min = Info.Min,
-            Max = Info.Max,
-
-            Prefix = Info.Prefix,
-            Suffix = Info.Suffix,
-            Compact = Info.Compact,
-            Rounding = Info.Rounding,
-
-            Tooltip = Info.Tooltip,
-            DisabledTooltip = Info.DisabledTooltip,
-            TooltipTable = nil,
-
-            Callback = Info.Callback,
-            Changed = Info.Changed,
-
-            Disabled = Info.Disabled,
-            Visible = Info.Visible,
-
-            Type = "Slider",
-        }
-
-        local Holder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, Info.Compact and 13 or 31),
-            Visible = Slider.Visible,
-            Parent = Container,
-        })
-
-        local SliderLabel
-        if not Info.Compact then
-            SliderLabel = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 14),
-                Text = Slider.Text,
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = Holder,
-            })
-        end
-
-        local Bar = New("TextButton", {
-            Active = not Slider.Disabled,
-            AnchorPoint = Vector2.new(0, 1),
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Position = UDim2.fromScale(0, 1),
-            Size = UDim2.new(1, 0, 0, 13),
-            Text = "",
-            Parent = Holder,
-        })
-
-        local DisplayLabel = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Text = "",
-            TextSize = 14,
-            ZIndex = 2,
-            Parent = Bar,
-        })
-        New("UIStroke", {
-            ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
-            Color = "Dark",
-            LineJoinMode = Enum.LineJoinMode.Miter,
-            Parent = DisplayLabel,
-        })
-
-        local Fill = New("Frame", {
-            BackgroundColor3 = "AccentColor",
-            Size = UDim2.fromScale(0.5, 1),
-            Parent = Bar,
-
-            DPIExclude = {
-                Size = true,
-            },
-        })
-
-        function Slider:UpdateColors()
-            if Library.Unloaded then
-                return
-            end
-
-            if SliderLabel then
-                SliderLabel.TextTransparency = Slider.Disabled and 0.8 or 0
-            end
-            DisplayLabel.TextTransparency = Slider.Disabled and 0.8 or 0
-
-            Fill.BackgroundColor3 = Slider.Disabled and Library.Scheme.OutlineColor or Library.Scheme.AccentColor
-            Library.Registry[Fill].BackgroundColor3 = Slider.Disabled and "OutlineColor" or "AccentColor"
-        end
-
-        function Slider:Display()
-            if Library.Unloaded then
-                return
-            end
-
-            local CustomDisplayText = nil
-            if Info.FormatDisplayValue then
-                CustomDisplayText = Info.FormatDisplayValue(Slider, Slider.Value)
-            end
-
-            if CustomDisplayText then
-                DisplayLabel.Text = tostring(CustomDisplayText)
-            else
-                if Info.Compact then
-                    DisplayLabel.Text = string.format("%s: %s%s%s", Slider.Text, Slider.Prefix, Slider.Value, Slider.Suffix)
-                elseif Info.HideMax then
-                    DisplayLabel.Text = string.format("%s%s%s", Slider.Prefix, Slider.Value, Slider.Suffix)
-                else
-                    DisplayLabel.Text = string.format(
-                        "%s%s%s/%s%s%s",
-                        Slider.Prefix,
-                        Slider.Value,
-                        Slider.Suffix,
-                        Slider.Prefix,
-                        Slider.Max,
-                        Slider.Suffix
-                    )
-                end
-            end
-
-            local X = (Slider.Value - Slider.Min) / (Slider.Max - Slider.Min)
-            Fill.Size = UDim2.fromScale(X, 1)
-        end
-
-        function Slider:OnChanged(Func)
-            Slider.Changed = Func
-        end
-
-        function Slider:SetMax(Value)
-            assert(Value > Slider.Min, "Max value cannot be less than the current min value.")
-
-            Slider.Value = math.clamp(Slider.Value, Slider.Min, Value)
-            Slider.Max = Value
-            Slider:Display()
-        end
-
-        function Slider:SetMin(Value)
-            assert(Value < Slider.Max, "Min value cannot be greater than the current max value.")
-
-            Slider.Value = math.clamp(Slider.Value, Value, Slider.Max)
-            Slider.Min = Value
-            Slider:Display()
-        end
-
-        function Slider:SetValue(Str)
-            if Slider.Disabled then
-                return
-            end
-
-            local Num = tonumber(Str)
-            if not Num then
-                return
-            end
-
-            Num = math.clamp(Num, Slider.Min, Slider.Max)
-
-            Slider.Value = Num
-            Slider:Display()
-
-            Library:SafeCallback(Slider.Callback, Slider.Value)
-            Library:SafeCallback(Slider.Changed, Slider.Value)
-        end
-
-        function Slider:SetDisabled(Disabled: boolean)
-            Slider.Disabled = Disabled
-
-            if Slider.TooltipTable then
-                Slider.TooltipTable.Disabled = Slider.Disabled
-            end
-
-            Bar.Active = not Slider.Disabled
-            Slider:UpdateColors()
-        end
-
-        function Slider:SetVisible(Visible: boolean)
-            Slider.Visible = Visible
-
-            Holder.Visible = Slider.Visible
-            Groupbox:Resize()
-        end
-
-        function Slider:SetText(Text: string)
-            Slider.Text = Text
-            if SliderLabel then
-                SliderLabel.Text = Text
-                return
-            end
-            Slider:Display()
-        end
-
-        function Slider:SetPrefix(Prefix: string)
-            Slider.Prefix = Prefix
-            Slider:Display()
-        end
-
-        function Slider:SetSuffix(Suffix: string)
-            Slider.Suffix = Suffix
-            Slider:Display()
-        end
-
-        Bar.InputBegan:Connect(function(Input: InputObject)
-            if not IsClickInput(Input) or Slider.Disabled then
-                return
-            end
-
-            for _, Side in pairs(Library.ActiveTab.Sides) do
-                Side.ScrollingEnabled = false
-            end
-
-            while IsDragInput(Input) do
-                local Location = Mouse.X
-                local Scale = math.clamp((Location - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
-
-                local OldValue = Slider.Value
-                Slider.Value = Round(Slider.Min + ((Slider.Max - Slider.Min) * Scale), Slider.Rounding)
-
-                Slider:Display()
-                if Slider.Value ~= OldValue then
-                    Library:SafeCallback(Slider.Callback, Slider.Value)
-                    Library:SafeCallback(Slider.Changed, Slider.Value)
-                end
-
-                RunService.RenderStepped:Wait()
-            end
-
-            for _, Side in pairs(Library.ActiveTab.Sides) do
-                Side.ScrollingEnabled = true
-            end
-        end)
-
-        if typeof(Slider.Tooltip) == "string" or typeof(Slider.DisabledTooltip) == "string" then
-            Slider.TooltipTable = Library:AddTooltip(Slider.Tooltip, Slider.DisabledTooltip, Bar)
-            Slider.TooltipTable.Disabled = Slider.Disabled
-        end
-
-        Slider:UpdateColors()
-        Slider:Display()
-        Groupbox:Resize()
-
-        Slider.Holder = Holder
-        table.insert(Groupbox.Elements, Slider)
-
-        Options[Idx] = Slider
-
-        return Slider
-    end
-    
- 
- --[[
-    AddValueDropdown guide
-
-    This is the label/value version of AddDropdown. Use it when the text shown
-    to the user should be different from the value saved in settings or returned
-    to Callback/Changed. This is a separate function, so normal AddDropdown
-    calls keep the old behavior.
-
-    Old array behavior still works:
-
-        Values = {
-            "Honey Seed",
-            "Bee Balm",
-        }
-
-    Label/value options:
-
-        Values = {
-            { Text = "<font color=\"#ffd166\">Honey Seed</font>", Value = "Honey Seed" },
-            { Text = "<b>Bee Balm</b>", Value = "Bee Balm" },
-            { Text = "<font color=\"#ff66cc\">Huge Pet</font>", Value = "pet-uuid-123" },
-        }
-
-    Map style also works, but array style above is better because it keeps order:
-
-        Values = {
-            ["<b>Honey Seed</b>"] = "Honey Seed",
-            ["<font color=\"#ff66cc\">Huge Pet</font>"] = "pet-uuid-123",
-        }
-
-    In Multi mode, Callback and SetValue use the Value keys, not the Text:
-
-        Callback = function(Values)
-            FSettings.honey_incubator_seeds = Values
-            SaveData()
-        end
-
-        ddhoneyseeds:SetValues({
-            { Text = "<font color=\"#ffd166\">Honey Seed</font>", Value = "Honey Seed" },
-            { Text = "<b>Bee Balm</b>", Value = "Bee Balm" },
-        })
-
-        ddhoneyseeds:SetValue(FSettings.honey_incubator_seeds or {})
-
-    The saved table stays friendly for loops:
-
-        if FSettings.honey_incubator_seeds[seedName] then
-            -- selected
-        end
-]]
-function Funcs:AddValueDropdown(Idx, Info)
-    Info = Library:Validate(Info, Templates.Dropdown)
-    Info.LabelValueDropdown = true
-
-    local Groupbox = self
-    local Container = Groupbox.Container
-
-    if Info.SpecialType == "Player" then
-        Info.Values = GetPlayers(Info.ExcludeLocalPlayer)
-        Info.AllowNull = true
-    elseif Info.SpecialType == "Team" then
-        Info.Values = GetTeams()
-        Info.AllowNull = true
-    end
-
-    local UseValueOptions = Info.LabelValueDropdown == true
-
-    local function NormalizeDropdownValues(Values)
-        if not UseValueOptions then
-            return Values, nil, nil, nil
-        end
-
-        local NormalizedValues = {}
-        local NormalizedOptions = {}
-        local OptionByValue = {}
-        local ValueLookup = {}
-
-        local function AddOption(Text, Value, Raw)
-            if Value == nil then
-                return
-            end
-
-            if Text == nil then
-                Text = Value
-            end
-
-            local Option = {
-                Text = Text,
-                Value = Value,
-                Raw = Raw,
-            }
-
-            table.insert(NormalizedOptions, Option)
-            table.insert(NormalizedValues, Value)
-
-            OptionByValue[Value] = Option
-            ValueLookup[Value] = true
-        end
-
-        if typeof(Values) ~= "table" then
-            return NormalizedValues, NormalizedOptions, OptionByValue, ValueLookup
-        end
-
-        for _, Item in ipairs(Values) do
-            if typeof(Item) == "table" and (Item.Value ~= nil or Item.Text ~= nil or Item.Title ~= nil or Item.Label ~= nil or Item.Name ~= nil) then
-                local Text = Item.Text or Item.Title or Item.Label or Item.Name or Item[1] or Item.Value
-                local Value = Item.Value
-
-                if Value == nil then
-                    if Item[2] ~= nil then
-                        Value = Item[2]
-                    else
-                        Value = Text
-                    end
-                end
-
-                AddOption(Text, Value, Item)
-            else
-                AddOption(Item, Item, Item)
-            end
-        end
-
-        local MapOptions = {}
-        for Text, Value in pairs(Values) do
-            if typeof(Text) ~= "number" then
-                table.insert(MapOptions, {
-                    Text = Text,
-                    Value = Value,
-                })
-            end
-        end
-
-        table.sort(MapOptions, function(A, B)
-            return tostring(A.Text):lower() < tostring(B.Text):lower()
-        end)
-
-        for _, Option in ipairs(MapOptions) do
-            AddOption(Option.Text, Option.Value, Option)
-        end
-
-        return NormalizedValues, NormalizedOptions, OptionByValue, ValueLookup
-    end
-
-    local InitialValues, InitialOptions, InitialOptionByValue, InitialValueLookup = NormalizeDropdownValues(Info.Values)
-
-    local Dropdown = {
-        Text = typeof(Info.Text) == "string" and Info.Text or nil,
-        Value = Info.Multi and {} or nil,
-        Values = InitialValues,
-        RawValues = Info.Values,
-        ValueOptions = InitialOptions,
-        OptionByValue = InitialOptionByValue,
-        ValueLookup = InitialValueLookup,
-        DisabledValues = Info.DisabledValues,
-        Multi = Info.Multi,
-
-        SpecialType = Info.SpecialType,
-        ExcludeLocalPlayer = Info.ExcludeLocalPlayer,
-
-        Tooltip = Info.Tooltip,
-        DisabledTooltip = Info.DisabledTooltip,
-        TooltipTable = nil,
-
-        Callback = Info.Callback,
-        Changed = Info.Changed,
-
-        Disabled = Info.Disabled,
-        Visible = Info.Visible,
-
-        Type = "Dropdown",
-    }
-
-    local Holder = New("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, Dropdown.Text and 46 or 28),
-        Visible = Dropdown.Visible,
-        Parent = Container,
-    })
-
-    local Label = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 14),
-        Text = Dropdown.Text,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Visible = not not Info.Text,
-        Parent = Holder,
-    })
-
-    local Display = New("TextButton", {
-        Active = not Dropdown.Disabled,
-        AnchorPoint = Vector2.new(0, 1),
-        BackgroundColor3 = "MainColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        Position = UDim2.fromScale(0, 1),
-        Size = UDim2.new(1, 0, 0, 28),
-        Text = "---",
-        TextSize = 12,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = Holder,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius),
-        Parent = Display,
-    })
-
-    New("UIPadding", {
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 4),
-        Parent = Display,
-    })
-
-    local ArrowImage = New("ImageLabel", {
-        AnchorPoint = Vector2.new(1, 0.5),
-        Image = ArrowIcon and ArrowIcon.Url or "",
-        ImageColor3 = "FontColor",
-        ImageRectOffset = ArrowIcon and ArrowIcon.ImageRectOffset or Vector2.zero,
-        ImageRectSize = ArrowIcon and ArrowIcon.ImageRectSize or Vector2.zero,
-        ImageTransparency = 0.5,
-        Position = UDim2.new(1, -8, 0.5, 0),
-        Size = UDim2.fromOffset(16, 16),
-        Parent = Display,
-    })
-
-    local ClickBlocker = New("TextButton", {
-        Active = true,
-        AutoButtonColor = false,
-        BackgroundColor3 = "Dark",
-        BackgroundTransparency = 0.5, -- 50% dim
-        BorderSizePixel = 0,
-        Modal = true,
-        Size = UDim2.fromScale(1, 1),
-        Text = "",
-        Visible = false,
-        ZIndex = 119,
-        Parent = Library.ScreenGui,
-    })
-
-    local Popup = New("Frame", {
-        Active = true,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "MainColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromScale(0.56, 0.76),
-        Visible = false,
-        ZIndex = 120,
-        Parent = Library.ScreenGui,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 4),
-        Parent = Popup,
-    })
-
-    New("UIStroke", {
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Thickness = 1.2,
-        Transparency = 0.15,
-        Color = Library.Scheme.OutlineColor:Lerp(Library.Scheme.AccentColor, 0.28),
-        Parent = Popup,
-    })
-
-    local PopupHeaderBg = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        BorderSizePixel = 0,
-        ZIndex = 120,
-        Parent = Popup,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 4),
-        Parent = PopupHeaderBg,
-    })
-
-    local PopupHeaderDivider = New("Frame", {
-        BackgroundColor3 = "OutlineColor",
-        BorderSizePixel = 0,
-        ZIndex = 121,
-        Parent = Popup,
-    })
-
-    local PopupBody = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        ZIndex = 121,
-        Parent = Popup,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 2),
-        Parent = PopupBody,
-    })
-
-    local Header = New("Frame", {
-        Active = true,
-        BackgroundTransparency = 1,
-        ZIndex = 122,
-        Parent = Popup,
-    })
-
-    local Title = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Text = Dropdown.Text or "Select",
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 123,
-        Parent = Header,
-    })
-
-    local CloseButton = New("TextButton", {
-        BackgroundColor3 = "MainColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        Text = Info.Multi and "Done" or "Close",
-        ZIndex = 123,
-        Parent = Header,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-        Parent = CloseButton,
-    })
-
-    local CloseButtonStroke = New("UIStroke", {
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Thickness = 1,
-        Transparency = 0.25,
-        Parent = CloseButton,
-    })
-
-    local SearchInput = New("TextBox", {
-        BackgroundColor3 = "MainColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        PlaceholderText = "Search items...",
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Visible = Info.Searchable == true,
-        ZIndex = 123,
-        Parent = PopupBody,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-        Parent = SearchInput,
-    })
-
-    New("UIPadding", {
-        PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 8),
-        Parent = SearchInput,
-    })
-
-    local List = New("ScrollingFrame", {
-        AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        BackgroundColor3 = "MainColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-        CanvasSize = UDim2.fromOffset(0, 0),
-        ScrollBarImageColor3 = "OutlineColor",
-        ScrollBarThickness = 4,
-        TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-        ZIndex = 123,
-        Parent = PopupBody,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-        Parent = List,
-    })
-
-    local ListLayout = New("UIListLayout", {
-        Parent = List,
-    })
-
-    local ResizeHandle = New("TextButton", {
-        AnchorPoint = Vector2.new(1, 1),
-        AutoButtonColor = false,
-        BackgroundColor3 = "MainColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        Position = UDim2.fromScale(1, 1),
-        Size = UDim2.fromOffset(18, 18),
-        Text = "",
-        ZIndex = 124,
-        Parent = Popup,
-    })
-
-    New("UICorner", {
-        CornerRadius = UDim.new(0, 4),
-        Parent = ResizeHandle,
-    })
-
-    local Buttons = {}
-    local MenuState = { Active = false, Menu = Popup }
-    local PopupScale = { W = 0.56, H = 0.76 }
-    local CurrentRowHeight = 40
-    local CurrentOptionTextSize = 14
-
-    local function StripRichText(Text)
-        return tostring(Text or ""):gsub("<[^<>]->", "")
-    end
-
-    local function ContainsValue(Value)
-        if UseValueOptions then
-            return Dropdown.ValueLookup and Dropdown.ValueLookup[Value] == true
-        end
-
-        return table.find(Dropdown.Values, Value) ~= nil
-    end
-
-    local function ResolveOptionValue(Value)
-        if UseValueOptions and typeof(Value) == "table" and Value.Value ~= nil then
-            return Value.Value
-        end
-
-        return Value
-    end
-
-    local function GetOptionText(Value)
-        if UseValueOptions then
-            local Option = Dropdown.OptionByValue and Dropdown.OptionByValue[Value]
-            if Option and Option.Text ~= nil then
-                return Option.Text
-            end
-        end
-
-        return Value
-    end
-
-    local function GetDisplayText(Value)
-        if UseValueOptions then
-            local Option = Dropdown.OptionByValue and Dropdown.OptionByValue[Value]
-            local Text = Option and Option.Text or Value
-
-            if Info.FormatDisplayValue then
-                return Info.FormatDisplayValue(Value, Text, Option)
-            end
-
-            return Text
-        end
-
-        return Info.FormatDisplayValue and Info.FormatDisplayValue(Value) or Value
-    end
-
-    local function GetSearchText(Value)
-        if UseValueOptions then
-            return (StripRichText(GetOptionText(Value)) .. " " .. tostring(Value)):lower()
-        end
-
-        return tostring(Value):lower()
-    end
-
-    local function IsSelected(Value)
-        if Info.Multi then
-            return Dropdown.Value[Value] == true
-        end
-        return Dropdown.Value == Value
-    end
-
-    local function UpdateCloseButtonStyle()
-        if Info.Multi then
-            CloseButton.Text = "Done"
-            CloseButton.BackgroundColor3 = Library.Scheme.AccentColor:Lerp(Library.Scheme.MainColor, 0.2)
-            CloseButtonStroke.Color = Library.Scheme.AccentColor:Lerp(Library.Scheme.White, 0.2)
-            CloseButtonStroke.Transparency = 0.2
-        else
-            CloseButton.Text = "Close"
-            CloseButton.BackgroundColor3 = Library.Scheme.MainColor
-            CloseButtonStroke.Color = Library.Scheme.OutlineColor
-            CloseButtonStroke.Transparency = 0.35
-        end
-    end
-
-    local function GetPopupMetrics()
-        local viewport = Library.ScreenGui and Library.ScreenGui.AbsoluteSize or Vector2.new(1280, 720)
-        local isPortrait = viewport.Y > viewport.X
-
-        local minWScale = isPortrait and 0.78 or 0.42
-        local maxWScale = isPortrait and 0.96 or 0.82
-        local minHScale = isPortrait and 0.48 or 0.52
-        local maxHScale = 0.90
-
-        PopupScale.W = math.clamp(PopupScale.W, minWScale, maxWScale)
-        PopupScale.H = math.clamp(PopupScale.H, minHScale, maxHScale)
-
-        local width = viewport.X * PopupScale.W
-        local height = viewport.Y * PopupScale.H
-
-        local padX = width * 0.036
-        local padY = height * 0.03
-        local headerH = height * 0.08
-        local searchH = height * 0.085
-        local gap = height * 0.018
-
-        local titleText = math.clamp(math.floor(height * 0.038), 13, 22)
-        local inputText = math.clamp(math.floor(height * 0.031), 12, 18)
-
-        -- ~10% smaller rows/buttons than previous
-        local optionText = math.clamp(math.floor(height * 0.027), 12, 17)
-        local rowH = math.clamp(height * 0.078, 30, 52)
-
+c.UserDevice = {
+    IsMobile = function() return y.UserInputService.TouchEnabled end,
+    IsPC = function()
+        return y
+            .UserInputService.KeyboardEnabled and
+            (y.UserInputService.MouseEnabled and not y.UserInputService.TouchEnabled)
+    end,
+    IsConsole = function()
+        return
+            y.UserInputService.GamepadEnabled and not y.UserInputService.KeyboardEnabled
+    end,
+    Get = function()
+        if y.UserInputService.TouchEnabled then return "Mobile" end
+        if y.UserInputService.GamepadEnabled and not y.UserInputService.KeyboardEnabled then return "Console" end
+        return "PC"
+    end,
+    Raw = function()
         return {
-            width = width,
-            height = height,
-            padX = padX,
-            padY = padY,
-            headerH = headerH,
-            searchH = searchH,
-            gap = gap,
-            titleText = titleText,
-            inputText = inputText,
-            optionText = optionText,
-            rowH = rowH,
+            Touch = y.UserInputService.TouchEnabled,
+            Keyboard = y.UserInputService.KeyboardEnabled,
+            Mouse =
+                y.UserInputService.MouseEnabled,
+            Gamepad = y.UserInputService.GamepadEnabled
         }
     end
-
-    local function ApplyPopupLayout()
-        local M = GetPopupMetrics()
-        local closeH = math.floor(M.headerH * 0.72)
-        local closeW = math.max(78, math.floor(closeH * 2.05))
-        local bodyTop, innerPadX, innerPadY, listTop
-
-        Popup.Size = UDim2.fromScale(PopupScale.W, PopupScale.H)
-
-        Header.Position = UDim2.fromOffset(M.padX, M.padY)
-        Header.Size = UDim2.new(1, -M.padX * 2, 0, M.headerH)
-
-        Title.Position = UDim2.fromOffset(0, 0)
-        Title.Size = UDim2.new(1, -(closeW + 12), 1, 0)
-        Title.TextSize = M.titleText
-
-        CloseButton.Size = UDim2.fromOffset(closeW, closeH)
-        CloseButton.Position = UDim2.new(1, -closeW, 0.5, -math.floor(closeH / 2))
-        CloseButton.TextSize = math.max(12, M.inputText - 1)
-
-        PopupHeaderBg.Position = UDim2.fromOffset(0, 0)
-        PopupHeaderBg.Size = UDim2.new(1, 0, 0, M.padY + M.headerH + M.gap * 0.65)
-
-        PopupHeaderDivider.Position = UDim2.fromOffset(0, math.floor(M.padY + M.headerH + M.gap * 0.65))
-        PopupHeaderDivider.Size = UDim2.new(1, 0, 0, 1)
-
-        bodyTop = math.floor(M.padY + M.headerH + M.gap + 2)
-        PopupBody.Position = UDim2.fromOffset(M.padX, bodyTop)
-        PopupBody.Size = UDim2.new(1, -M.padX * 2, 1, -(bodyTop + M.padY))
-
-        innerPadX = math.max(10, math.floor(M.padX * 0.7))
-        innerPadY = math.max(10, math.floor(M.padY * 0.65))
-
-        if SearchInput.Visible then
-            SearchInput.Position = UDim2.fromOffset(innerPadX, innerPadY)
-            SearchInput.Size = UDim2.new(1, -(innerPadX * 2), 0, M.searchH)
-            SearchInput.TextSize = M.inputText
-
-            listTop = innerPadY + M.searchH + M.gap
-            List.Position = UDim2.fromOffset(innerPadX, listTop)
-            List.Size = UDim2.new(1, -(innerPadX * 2), 1, -(listTop + innerPadY))
-        else
-            List.Position = UDim2.fromOffset(innerPadX, innerPadY)
-            List.Size = UDim2.new(1, -(innerPadX * 2), 1, -(innerPadY * 2))
+}
+print("Platform : ", c.UserDevice.Get())
+print("SC Version: ", y.CurentV)
+J.LiveReplicaData = nil
+J.LiveReplicaConnection = nil
+d.DataReplica = {
+    AllBigDataKeys = {},
+    Load = function(G, V)
+        local Z = y.ReplicaClient
+        V = tonumber(V) or 10
+        if type(Z) ~= "table" or type(Z.OnNew) ~= "function" or type(Z.RequestData) ~= "function" then return false end
+        if type(G) ~= "string" or G == "" then return false end
+        if J.LiveReplicaConnection then
+            J.LiveReplicaConnection:Disconnect()
+            J.LiveReplicaConnection = nil
         end
-
-        CurrentRowHeight = M.rowH
-        CurrentOptionTextSize = M.optionText
-        ListLayout.Padding = UDim.new(0, math.max(4, math.floor(M.gap * 0.45)))
-
-        for _, Entry in pairs(Buttons) do
-            Entry.Button.Size = UDim2.new(1, -8, 0, CurrentRowHeight)
-            Entry.Button.TextSize = CurrentOptionTextSize
-        end
-    end
-
-    local function UpdateEntry(Entry)
-        local selected = IsSelected(Entry.Value)
-
-        Entry.Button.BackgroundColor3 = Library.Scheme.MainColor:Lerp(Library.Scheme.AccentColor, 0.15)
-        Entry.Button.BackgroundTransparency = selected and 0.5 or 1 
-        Entry.Button.TextTransparency = Entry.Disabled and 0.8 or (selected and 0.04 or 0.45)
-        Entry.Button.Text = tostring(GetOptionText(Entry.Value))
-    end
-
-    local function RefreshButtons()
-        for _, Entry in pairs(Buttons) do
-            UpdateEntry(Entry)
-        end
-    end
-
-    local function ClosePopup()
-        if not MenuState.Active then
-            return
-        end
-
-        MenuState.Active = false
-        ClickBlocker.Visible = false
-        Popup.Visible = false
-
-        if UserInputService:GetFocusedTextBox() == SearchInput then
-            pcall(function()
-                SearchInput:ReleaseFocus()
+        J.LiveReplicaData = nil
+        J.LiveReplicaConnection = Z.OnNew(G,
+            function(G)
+                if type(G) ~= "table" or type(G.Data) ~= "table" then return end
+                J.LiveReplicaData = G.Data
+                for G in pairs(G.Data) do table.insert(d.DataReplica.AllBigDataKeys, G) end
             end)
-        end
-
-        Dropdown:UpdateColors()
+        Z.RequestData()
+        local j = os.clock()
+        repeat task.wait() until J.LiveReplicaData ~= nil or os.clock() - j >= V
+        if J.LiveReplicaData == nil then return false end
+        return true
+    end,
+    GetData = function(G, V)
+        local y = J.LiveReplicaData
+        if type(y) ~= "table" then return V or nil end
+        local Z = y[G]
+        if Z == nil then return V or nil end
+        return Z
     end
-
-    local function BuildOrderedValues(Query: string, PrioritizeSelected: boolean)
-        local Selected = {}
-        local Unselected = {}
-
-        for _, Value in pairs(Dropdown.Values or {}) do
-            if Query ~= "" then
-                local SearchText = GetSearchText(Value)
-
-                if UseValueOptions then
-                    if not SearchText:find(Query, 1, true) then
-                        continue
-                    end
-                elseif not SearchText:match(Query) then
-                    continue
+}
+d.Money = { GetSheckles = function() return d.DataReplica.GetData("Sheckles", 0) end }
+if d.DataReplica.Load("PlayerState", 10) then end
+d.Data = {
+    GetRarityColor = function(G)
+        local V = "#FFFFFF"
+        local Z = y and y.RarityVisuals
+        if type(Z) ~= "table" or type(Z.GetStaticColor) ~= "function" or type(G) ~= "string" or G == "" then return V end
+        local j = Z.GetStaticColor(G)
+        if typeof(j) ~= "Color3" then return V end
+        local i = math.clamp(math.floor(j.R * 255 + .5), 0, 255)
+        local c = math.clamp(math.floor(j.G * 255 + .5), 0, 255)
+        local J = math.clamp(math.floor(j.B * 255 + .5), 0, 255)
+        return string.format("#%02X%02X%02X", i, c, J)
+    end
+}
+J.AllMutationNames = {}
+d.Mutations = {
+    Load = function()
+        table.clear(J.AllMutationNames)
+        local G = y.MutationDataModule
+        local V = y.MutationData
+        if not G then return false end
+        if type(V) ~= "table" or type(V.GetMutation) ~= "function" then return false end
+        local Z = {}
+        for G, y in ipairs(G:GetChildren()) do
+            if not y:IsA("ModuleScript") then continue end
+            local j = y.Name
+            if j == "" or Z[j] then continue end
+            local i, c = pcall(function() return V.GetMutation(j) end)
+            if i and type(c) == "table" then
+                Z[j] = true
+                table.insert(J.AllMutationNames, j)
+            end
+        end
+        table.sort(J.AllMutationNames)
+        return #J.AllMutationNames > 0
+    end,
+    GetNames = function()
+        local G = {}
+        for V, y in ipairs(J.AllMutationNames) do table.insert(G, y) end
+        return G
+    end
+}
+d.Mutations.Load()
+J.AllSeedsDataTable = {}
+J.SeedRarity = {}
+J.SeedSingleHarvest = {}
+J.SeedDataFast = {}
+J.SeedShopDataList = {}
+J.SeedPriceOverrides = {}
+d.SeedData = {
+    getCleanPriceOverrides = function()
+        if type(y.SeedShopFlags) ~= "table" then return end
+        local G = y.SeedShopFlags.PriceOverrides
+        if type(G) == "table" and G.Value then G = G.Value end
+        if type(G) == "table" then
+            for G, V in pairs(G) do
+                if type(G) == "string" and type(V) == "number" then
+                    J.SeedPriceOverrides[G] =
+                        V
                 end
             end
-
-            if PrioritizeSelected and IsSelected(Value) then
-                table.insert(Selected, Value)
-            else
-                table.insert(Unselected, Value)
-            end
         end
-
-        if not PrioritizeSelected then
-            return Unselected
-        end
-
-        for i = 1, #Unselected do
-            table.insert(Selected, Unselected[i])
-        end
-
-        return Selected
-    end
-
-    local function ApplySelection(Value)
-        local wasSelected = IsSelected(Value)
-        local nextSelected = not wasSelected
-
-        if Dropdown:GetActiveValues() == 1 and not nextSelected and not Info.AllowNull then
+    end,
+    IsSingleHarvest = function(G) return J.SeedSingleHarvest[G] end,
+    LoadAllSeeds = function()
+        if not y.SeedData then
+            warn("Seed Data failed to load.")
             return
         end
-
-        if Info.Multi then
-            Dropdown.Value[Value] = nextSelected and true or nil
-        else
-            Dropdown.Value = nextSelected and Value or nil
+        for G, V in ipairs(y.SeedData) do
+            local y = V.SeedName
+            local Z = V.SeedImage
+            local j = V.FruitImage
+            local i = J.SeedPriceOverrides[y] or V.PurchasePrice
+            local c = V.RestockShop
+            local T = V.SeedShopDisplayOrder
+            local d = V.YHeight
+            local u = V.RestockChance
+            local q = V.RestockValues
+            local g = V.IsSingleHarvest
+            local E = V.Rarity
+            local a = V.PrimeTime
+            local H = V.PlantModel
+            local r = V.MutationSeed
+            J.SeedRarity[y] = E
+            if g then J.SeedSingleHarvest[y] = true end
+            local Y = { name = y, price = i, rarity = E, single = g }
+            J.SeedDataFast[y] = Y
+            table.insert(J.AllSeedsDataTable, Y)
         end
-
-        Dropdown:Display()
-        RefreshButtons()
-
-        Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-        Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
-        Library:UpdateDependencyBoxes()
-
-        if not Info.Multi then
-            ClosePopup()
+    end,
+    GetSeedDataX = function(G) return J.SeedDataFast[G] or nil end,
+    LoadValidSeedsForShop = function()
+        local G = y.SeedShop.Items
+        for G, V in ipairs(G:GetChildren()) do
+            local y = V.Name or ""
+            local Z = J.SeedDataFast[y]
+            if not Z then
+                print("Seed not data ", y)
+                continue
+            end
+            J.SeedShopDataList[y] = true
         end
+    end,
+    GetSeedDataListDropDown = function()
+        local G = {}
+        for V, y in ipairs(J.AllSeedsDataTable) do
+            local Z = tostring(y.name or "Unknown")
+            local j = tonumber(y.price) or 0
+            local i = tostring(y.rarity or "Unknown")
+            local c = y.single == true
+            local J = c and "Single" or "Multi"
+            local T = d.Data.GetRarityColor(i)
+            local u = string.format(
+                "<font color=\"#FFFFFF\">%s</font> <font color=\"#00FF00\">$%s</font> <font color=\"%s\">%s</font> <font color=\"#FFFFFF\">%s</font>",
+                Z, tostring(j), T, i, J)
+            local q = { Text = u, Value = Z }
+            table.insert(G, q)
+        end
+        return G
+    end,
+    GetSeedShopDropDown = function()
+        local G = {}
+        for V, y in pairs(J.SeedShopDataList) do
+            local Z = V
+            local j = J.SeedDataFast[Z]
+            if not j then
+                print("Seed not data ", Z)
+                continue
+            end
+            local i = tostring(j.name or "Unknown")
+            local T = c.formatShecklesNumber(j.price)
+            local u = tostring(j.rarity or "Unknown")
+            local q = j.single == true
+            local g = q and "Single" or "Multi"
+            local E = d.Data.GetRarityColor(u)
+            local a = string.format(
+                "<font color=\"#FFFFFF\">%s</font> <font color=\"#00FF00\">$%s</font> <font color=\"%s\">%s</font> <font color=\"#FFFFFF\">%s</font>",
+                i, tostring(T), E, u, g)
+            local H = { Text = a, Value = i }
+            table.insert(G, H)
+        end
+        return G
     end
-
-    function Dropdown:BuildDropdownList(PrioritizeSelected)
-        local query = SearchInput.Visible and (SearchInput.Text or ""):lower() or ""
-        local orderedValues = BuildOrderedValues(query, PrioritizeSelected == true)
-        local disabledLookup = {}
-
-        for _, Value in pairs(Dropdown.DisabledValues or {}) do
-            disabledLookup[ResolveOptionValue(Value)] = true
+}
+d.SeedData.getCleanPriceOverrides()
+d.SeedData.LoadAllSeeds()
+d.SeedData.LoadValidSeedsForShop()
+J.AllGearShopData = {}
+J.AllGearShopTable = {}
+d.GearData = {
+    GetPrice = function(G, V)
+        local Z = y.GearShopFlags and y.GearShopFlags.PriceOverrides
+        if not Z or type(Z.Get) ~= "function" then return V end
+        local j = Z:Get()
+        local i = type(j) == "table" and j[G]
+        if type(i) == "number" and i >= 0 then return i end
+        return V
+    end,
+    LoadAllGearData = function()
+        local G = y.GearShopData
+        local V = G and G.Data
+        if type(V) ~= "table" then
+            warn("[GearData] Gear shop data was not found")
+            return false
         end
-
-        for Button, _ in pairs(Buttons) do
-            Button:Destroy()
+        for G, V in ipairs(V) do
+            if type(V) == "table" then
+                local y = V.RestockValues
+                local Z = G
+                local j = V.ItemName
+                local i = V.ItemType
+                local c = V.Rarity
+                local T = V.PriceInRobux
+                local u = V.RestockChance
+                local q = V.EquippableGear == true
+                local g = V.IMG or ""
+                local E = y and y.Min or nil
+                local a = y and y.Max or nil
+                local H = V
+                local r = d.GearData.GetPrice(j, V.Cost)
+                if j then
+                    local G = { name = j, type = i, rarity = c, price = r }
+                    J.AllGearShopData[j] = G
+                    table.insert(J.AllGearShopTable, G)
+                end
+            end
         end
-        table.clear(Buttons)
-
-        for i = 1, #orderedValues do
-            local Value = orderedValues[i]
-            local IsDisabled = disabledLookup[Value] == true
-
-            local Button = New("TextButton", {
-                BackgroundColor3 = "MainColor",
-                BackgroundTransparency = 1,
-                BorderColor3 = "OutlineColor",
-                BorderSizePixel = 0,
-                LayoutOrder = i,
-                Size = UDim2.new(1, -8, 0, CurrentRowHeight),
-                Text = "",
-                TextSize = CurrentOptionTextSize,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                ZIndex = 123,
-                Parent = List,
-            })
-
-            New("UICorner", {
-                CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-                Parent = Button,
-            })
-
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 12),
-                PaddingRight = UDim.new(0, 10),
-                Parent = Button,
-            })
-
-            local Entry = {
-                Button = Button,
-                Value = Value,
-                Disabled = IsDisabled,
-            }
-
-            if not IsDisabled then
-                Button.MouseButton1Click:Connect(function()
-                    if Dropdown.Disabled then
-                        return
-                    end
-                    ApplySelection(Value)
+        return true
+    end,
+    GetGearShopDropDown = function()
+        local G = {}
+        for V, y in pairs(J.AllGearShopTable) do
+            local Z = tostring(y.name or "Unknown")
+            local j = c.formatShecklesNumber(y.price)
+            local i = tostring(y.rarity or "Unknown")
+            local J = d.Data.GetRarityColor(i)
+            local T = string.format(
+                "<font color=\"#FFFFFF\">%s</font> <font color=\"#00FF00\">$%s</font> <font color=\"%s\">%s</font>", Z,
+                tostring(j), J, i)
+            local u = { Text = T, Value = Z }
+            table.insert(G, u)
+        end
+        return G
+    end,
+    GetGeatItemDetails = function(G) return J.AllGearShopData[G] end,
+    GetGearStockCurrent = function(G)
+        local V = y.GearShop.Items:FindFirstChild(G)
+        if V then return V.Value or 0 end
+        return nil
+    end
+}
+d.GearData.LoadAllGearData()
+J.PetRarity = {}
+J.PetDataTable = {}
+J.PetDataFast = {}
+d.PetData = {
+    LoadAllPetData = function()
+        table.clear(J.PetRarity)
+        table.clear(J.PetDataTable)
+        table.clear(J.PetDataFast)
+        for G, V in pairs(y.PetData) do
+            if type(V) == "table" and type(V.DisplayName) == "string" then
+                local y = V.DisplayName
+                local Z = V.Rarity
+                local j = V.BasePrice
+                local i = V.SpawnChance
+                local c = { petname = G, displayname = y, price = j, chance = i, rarity = Z }
+                J.PetDataFast[y] = c
+                J.PetRarity[y] = Z
+                table.insert(J.PetDataTable, c)
+            end
+        end
+    end,
+    GetDropDownPets = function()
+        local G = {}
+        for V, y in pairs(J.PetDataFast) do
+            local Z = tostring(y.displayname or "Unknown")
+            local j = c.formatShecklesNumber(y.price)
+            local i = tostring(y.rarity or "Unknown")
+            local J = tostring(y.chance or "0")
+            local T = d.Data.GetRarityColor(i)
+            local u = string.format(
+                "<font color=\"#FFFFFF\">%s</font> <font color=\"#00FF00\">$%s</font> <font color=\"%s\">%s</font> (%s)",
+                Z,
+                tostring(j), T, i, J)
+            local q = { Text = u, Value = Z }
+            table.insert(G, q)
+        end
+        return G
+    end
+}
+d.PetData.LoadAllPetData()
+d.PlayerData = {
+    GetBackpackSpaceUpgradesPurchased = function()
+        return y.LocalPlayer:GetAttribute(
+            "BackpackSpaceUpgradesPurchased") or 0
+    end,
+    GetFriends = function() return y.LocalPlayer:GetAttribute("Friends") or 0 end,
+    GetFruitCount = function()
+        return
+            y.LocalPlayer:GetAttribute("FruitCount") or 0
+    end,
+    GetIsInOwnGarden = function()
+        return y.LocalPlayer:GetAttribute(
+            "IsInOwnGarden") or false
+    end,
+    GetLoadingScreenActive = function()
+        return y.LocalPlayer:GetAttribute(
+            "LoadingScreenActive") or false
+    end,
+    GetLoadingScreenDone = function()
+        return y.LocalPlayer:GetAttribute(
+            "LoadingScreenDone") or false
+    end,
+    GetMaxEquippedPets = function()
+        return y.LocalPlayer:GetAttribute(
+            "MaxEquippedPets") or 3
+    end,
+    GetMaxFruitCapacity = function()
+        return y.LocalPlayer:GetAttribute("MaxFruitCapacity") or
+            100
+    end,
+    GetOfflineGrowthProcessed = function() return y.LocalPlayer:GetAttribute("OfflineGrowthProcessed") or false end,
+    GetOwnedGamepasses = function()
+        return
+            y.LocalPlayer:GetAttribute("OwnedGamepasses") or ""
+    end,
+    GetPlotId = function()
+        return y.LocalPlayer:GetAttribute(
+            "PlotId") or 0
+    end,
+    GetPrimeEnabled = function() return y.LocalPlayer:GetAttribute("PrimeEnabled") or false end,
+    GetSecondTimePlayer = function()
+        return
+            y.LocalPlayer:GetAttribute("SecondTimePlayer") or false
+    end,
+    GetStarterPackExpiresAt = function()
+        return y
+            .LocalPlayer:GetAttribute("StarterPackExpiresAt") or 0
+    end
+}
+d.Player = {
+    Rejoin = function() pcall(function() y.TeleportService:Teleport(game.PlaceId) end) end,
+    CameraSetUp = function()
+        pcall(function() y.LocalPlayer.CameraMaxZoomDistance = 350 end)
+    end,
+    GetUserid = function()
+        return y.LocalPlayer
+            .UserId
+    end,
+    GetTool_Holding = function() return y.Character and y.Character:FindFirstChildWhichIsA("Tool") end,
+    IsToolHeld = function(
+        G)
+        local V = d.Player.GetTool_Holding()
+        if not V then return false end
+        return V == G
+    end,
+    UnequipTools = function()
+        local G = y.Character
+        if not G then return false end
+        local V = G:FindFirstChildOfClass("Humanoid")
+        if not V then return end
+        V:UnequipTools()
+    end,
+    EquipTool = function(G)
+        local V = y.Character
+        if not V or not G then return false end
+        local Z = V:FindFirstChildOfClass("Humanoid")
+        if not Z then return false end
+        local j, i = pcall(function() Z:EquipTool(G) end)
+        if not j then
+            warn("\226\157\140 Failed to equip tool:", i)
+            return false
+        end
+        return true
+    end
+}
+d.Player.CameraSetUp()
+d.PlayerUI = {
+    Started = false,
+    OriginalStates = {},
+    TargetNames = { Plot1 = true, Plot2 = true, Plot3 = true, Plot4 = true, Plot5 = true, Plot6 = true, Plot7 = true, Plot8 = true, TeleportButtons = true },
+    GetProperty = function(
+        G)
+        if not G then return nil end
+        if G:IsA("LayerCollector") then return "Enabled" end
+        if G:IsA("GuiObject") then return "Visible" end
+        return nil
+    end,
+    ApplyObject = function(G)
+        if not G or not d.PlayerUI.TargetNames[G.Name] then return end
+        local V = d.PlayerUI.GetProperty(G)
+        if not V then return end
+        if Y.hide_player_ui then
+            if d.PlayerUI.OriginalStates[G] == nil then d.PlayerUI.OriginalStates[G] = { property = V, value = G[V] } end
+            G[V] = false
+            return
+        end
+        local y = d.PlayerUI.OriginalStates[G]
+        if y then
+            G[y.property] = y.value
+            d.PlayerUI.OriginalStates[G] = nil
+        end
+    end,
+    Apply = function()
+        local G = y.PlayerGui
+        if not G then return end
+        for V in pairs(d.PlayerUI.TargetNames) do d.PlayerUI.ApplyObject(G:FindFirstChild(V)) end
+    end,
+    Start = function()
+        if d.PlayerUI.Started then
+            d.PlayerUI.Apply()
+            return
+        end
+        d.PlayerUI.Started = true
+        d.PlayerUI.Apply()
+        y.PlayerGui.ChildAdded:Connect(function(G)
+            if d.PlayerUI.TargetNames[G.Name] then
+                task.defer(function()
+                    d.PlayerUI
+                        .ApplyObject(G)
                 end)
             end
-
-            UpdateEntry(Entry)
-            Buttons[Button] = Entry
-        end
-
-        List.CanvasPosition = Vector2.zero
-        ApplyPopupLayout()
-        Dropdown:Display()
-    end
-
-    function Dropdown:BuildDropdownListNew()
-        Dropdown:BuildDropdownList(true)
-    end
-
-    function Dropdown:RecalculateListSize(_)
-    end
-
-    function Dropdown:UpdateColors()
-        if Library.Unloaded then
-            return
-        end
-
-        Label.TextTransparency = Dropdown.Disabled and 0.8 or 0
-        Display.TextTransparency = Dropdown.Disabled and 0.8 or 0
-        ArrowImage.ImageTransparency = Dropdown.Disabled and 0.8 or (MenuState.Active and 0 or 0.5)
-        ArrowImage.Rotation = MenuState.Active and 180 or 0
-    end
-
-    function Dropdown:Display()
-        if Library.Unloaded then
-            return
-        end
-
-        local Str = ""
-
-        if Info.Multi then
-            local Parts = {}
-            local SelectedCount = 0
-            local DisplayLength = 0
-            local MaxDisplayItems = math.clamp(Info.MaxDisplayItems or 10, 0, 10)
-            local MaxDisplayCharacters = Info.MaxDisplayCharacters or 1200
-
-            for _, Value in pairs(Dropdown.Values) do
-                if Dropdown.Value[Value] then
-                    SelectedCount = SelectedCount + 1
-
-                    if #Parts < MaxDisplayItems then
-                        local Text = tostring(GetDisplayText(Value))
-                        local NextLength = DisplayLength + #Text + (#Parts > 0 and 2 or 0)
-
-                        if NextLength <= MaxDisplayCharacters then
-                            table.insert(Parts, Text)
-                            DisplayLength = NextLength
-                        end
-                    end
-                end
-            end
-
-            if SelectedCount == 0 then
-                Str = ""
-            elseif #Parts == SelectedCount then
-                Str = table.concat(Parts, ", ")
-            elseif #Parts == 0 then
-                Str = tostring(SelectedCount) .. " selected"
-            else
-                Str = table.concat(Parts, ", ") .. " +" .. tostring(SelectedCount - #Parts) .. " more"
-            end
-        else
-            if UseValueOptions then
-                Str = Dropdown.Value ~= nil and tostring(GetDisplayText(Dropdown.Value)) or ""
-            else
-                Str = Dropdown.Value and tostring(Dropdown.Value) or ""
-                if Str ~= "" and Info.FormatDisplayValue then
-                    Str = tostring(Info.FormatDisplayValue(Str))
-                end
-            end
-        end
-
-        Display.Text = (Str == "" and "---" or Str)
-    end
-
-    function Dropdown:OnChanged(Func)
-        Dropdown.Changed = Func
-    end
-
-    function Dropdown:GetActiveValues()
-        if Info.Multi then
-            local Table = {}
-            for Value, _ in pairs(Dropdown.Value) do
-                table.insert(Table, Value)
-            end
-            return Table
-        end
-        if UseValueOptions then
-            return Dropdown.Value ~= nil and 1 or 0
-        end
-
-        return Dropdown.Value and 1 or 0
-    end
-
-    function Dropdown:SetValue(Value, suppressCallback)
-        if Info.Multi then
-            local Table = {}
-
-            for Val, Active in pairs(Value or {}) do
-                if Active == true and ContainsValue(Val) then
-                    Table[Val] = true
-                elseif UseValueOptions and ContainsValue(Active) then
-                    Table[Active] = true
-                end
-            end
-
-            Dropdown.Value = Table
-        else
-            if ContainsValue(Value) then
-                Dropdown.Value = Value
-            elseif (UseValueOptions and Value == nil) or (not UseValueOptions and not Value) then
-                Dropdown.Value = nil
-            end
-        end
-
-        Dropdown:Display()
-        RefreshButtons()
-
-        if not Dropdown.Disabled then
-            Library:UpdateDependencyBoxes()
-            if not suppressCallback then
-                Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-                Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
-            end
-        end
-    end
-
-    function Dropdown:SetValues(Values)
-        if UseValueOptions then
-            local ValuesList, ValueOptions, OptionByValue, ValueLookup = NormalizeDropdownValues(Values)
-
-            Dropdown.RawValues = Values or {}
-            Dropdown.Values = ValuesList
-            Dropdown.ValueOptions = ValueOptions
-            Dropdown.OptionByValue = OptionByValue
-            Dropdown.ValueLookup = ValueLookup
-
-            if Info.Multi then
-                for Value, _ in pairs(Dropdown.Value) do
-                    if not ContainsValue(Value) then
-                        Dropdown.Value[Value] = nil
-                    end
-                end
-            elseif Dropdown.Value ~= nil and not ContainsValue(Dropdown.Value) then
-                Dropdown.Value = nil
-            end
-        else
-            Dropdown.Values = Values
-        end
-
-        Dropdown:BuildDropdownList(MenuState.Active)
-    end
-
-    function Dropdown:AddValues(Values)
-        if UseValueOptions then
-            if typeof(Dropdown.RawValues) ~= "table" then
-                Dropdown.RawValues = {}
-            end
-
-            if typeof(Values) == "table" then
-                for Key, Value in pairs(Values) do
-                    if typeof(Key) == "number" then
-                        table.insert(Dropdown.RawValues, Value)
-                    else
-                        Dropdown.RawValues[Key] = Value
-                    end
-                end
-            elseif Values ~= nil then
-                table.insert(Dropdown.RawValues, Values)
-            else
-                return
-            end
-
-            Dropdown:SetValues(Dropdown.RawValues)
-            return
-        end
-
-        if typeof(Values) == "table" then
-            for _, val in pairs(Values) do
-                table.insert(Dropdown.Values, val)
-            end
-        elseif typeof(Values) == "string" then
-            table.insert(Dropdown.Values, Values)
-        else
-            return
-        end
-
-        Dropdown:BuildDropdownList(MenuState.Active)
-    end
-
-    function Dropdown:SetDisabledValues(DisabledValues)
-        Dropdown.DisabledValues = DisabledValues
-        Dropdown:BuildDropdownList(MenuState.Active)
-    end
-
-    function Dropdown:AddDisabledValues(DisabledValues)
-        if typeof(DisabledValues) == "table" then
-            for _, val in pairs(DisabledValues) do
-                table.insert(Dropdown.DisabledValues, val)
-            end
-        elseif typeof(DisabledValues) == "string" then
-            table.insert(Dropdown.DisabledValues, DisabledValues)
-        elseif UseValueOptions and DisabledValues ~= nil then
-            table.insert(Dropdown.DisabledValues, DisabledValues)
-        else
-            return
-        end
-
-        Dropdown:BuildDropdownList(MenuState.Active)
-    end
-
-    function Dropdown:SetDisabled(Disabled: boolean)
-        Dropdown.Disabled = Disabled
-
-        if Dropdown.TooltipTable then
-            Dropdown.TooltipTable.Disabled = Dropdown.Disabled
-        end
-
-        ClosePopup()
-        Display.Active = not Dropdown.Disabled
-        Dropdown:UpdateColors()
-    end
-
-    function Dropdown:SetVisible(Visible: boolean)
-        Dropdown.Visible = Visible
-        Holder.Visible = Dropdown.Visible
-        Groupbox:Resize()
-    end
-
-    function Dropdown:SetText(Text: string)
-        Dropdown.Text = Text
-        Holder.Size = UDim2.new(1, 0, 0, (Text and 46 or 28) * Library.DPIScale)
-
-        Label.Text = Text and Text or ""
-        Label.Visible = not not Text
-        Title.Text = Text or "Select"
-    end
-
-    function MenuState:Open()
-        if MenuState.Active or Dropdown.Disabled then
-            return
-        end
-
-        MenuState.Active = true
-        ClickBlocker.Visible = true
-        Popup.Visible = true
-        Title.Text = Dropdown.Text or "Select"
-        UpdateCloseButtonStyle()
-
-        if SearchInput.Visible then
-            SearchInput.Text = ""
-        end
-
-        Dropdown:BuildDropdownList(true)
-        Dropdown:UpdateColors()
-    end
-
-    function MenuState:Close()
-        ClosePopup()
-    end
-
-    function MenuState:Toggle()
-        if MenuState.Active then
-            ClosePopup()
-        else
-            MenuState:Open()
-        end
-    end
-
-    Display.MouseButton1Click:Connect(function()
-        if Dropdown.Disabled then
-            return
-        end
-        MenuState:Toggle()
-    end)
-
-    CloseButton.MouseButton1Click:Connect(ClosePopup)
-
-    if SearchInput.Visible then
-        SearchInput:GetPropertyChangedSignal("Text"):Connect(function()
-            Dropdown:BuildDropdownList(true)
         end)
     end
-
-    if Library.ScreenGui then
-        Library:GiveSignal(Library.ScreenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-            ApplyPopupLayout()
-        end))
+}
+d.PlayerUI.Start()
+d.Teleport = {
+    LockedBy = "",
+    LockedUntil = 0,
+    LockProtected = false,
+    LockTeleport = function(G, V, y)
+        G = tostring(G or "")
+        V = tonumber(V) or 0
+        y = y == true
+        if G == "" or V <= 0 then return false end
+        local Z = os.clock()
+        local j = Z < d.Teleport.LockedUntil
+        local i = j and d.Teleport.LockedBy == G
+        if j and not i then
+            if d.Teleport.LockProtected then return false end
+            if not y then return false end
+        end
+        d.Teleport.LockedBy = G
+        d.Teleport.LockedUntil = Z + V
+        d.Teleport.LockProtected = y or i and d.Teleport.LockProtected
+        return true
+    end,
+    UnlockTeleport = function(G)
+        if d.Teleport.LockedBy ~= tostring(G or "") then return false end
+        d.Teleport.LockedBy = ""
+        d.Teleport.LockedUntil = 0
+        d.Teleport.LockProtected = false
+        return true
+    end,
+    IsLocked = function(G)
+        if os.clock() >= d.Teleport.LockedUntil then
+            d.Teleport.LockedBy = ""
+            d.Teleport.LockedUntil = 0
+            d.Teleport.LockProtected = false
+            return false
+        end
+        return d.Teleport.LockedBy ~= tostring(G or "")
+    end,
+    GetCurrentPosition = function()
+        local G = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
+        return G and G.CFrame or nil
+    end,
+    TeleportToCFrame = function(G, V)
+        if typeof(G) ~= "CFrame" then return false end
+        if d.Teleport.IsLocked(V) then return false end
+        local Z = y.Character
+        local j = Z and Z:FindFirstChild("HumanoidRootPart")
+        local i = Z and Z:FindFirstChildOfClass("Humanoid")
+        if not Z or not Z.Parent or not j or not i or i.Health <= 0 then return false end
+        i:Move(Vector3.zero)
+        j.AssemblyLinearVelocity = Vector3.zero
+        j.AssemblyAngularVelocity = Vector3.zero
+        Z:PivotTo(G)
+        j.AssemblyLinearVelocity = Vector3.zero
+        j.AssemblyAngularVelocity = Vector3.zero
+        return true
+    end,
+    TeleportTo = function(G, V, y)
+        if not G or not G.Parent then return false end
+        local Z
+        if G:IsA("Model") then Z = G:GetPivot() elseif G:IsA("BasePart") then Z = G.CFrame end
+        if not Z then return false end
+        if V then Z = Z + Vector3.new(5, 0, 0) end
+        return d.Teleport.TeleportToCFrame(Z, y)
+    end,
+    GetLockRemaining = function()
+        local G = d.Teleport.LockedUntil - os.clock()
+        if G <= 0 then
+            d.Teleport.LockedBy = ""
+            d.Teleport.LockedUntil = 0
+            d.Teleport.LockProtected = false
+            return 0
+        end
+        return math.ceil(G)
+    end,
+    GetLockDisplayName = function() return tostring(d.Teleport.LockedBy or "") end,
+    GetLockStatusText = function()
+        local G = d.Teleport.GetLockRemaining()
+        if G <= 0 then return "" end
+        return string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\148\146 [Teleport]</font> <font color=\'#FFCC66\'>Locked: %s (%ds)</font></stroke>",
+            d.Teleport.GetLockDisplayName(), G)
     end
-
-    pcall(function()
-        Library:MakeDraggable(Popup, Header, false, true)
-    end)
-
-    pcall(function()
-        Library:MakeResizable(Popup, ResizeHandle, function()
-            local viewport = Library.ScreenGui and Library.ScreenGui.AbsoluteSize or Vector2.new(1280, 720)
-            if viewport.X > 0 and viewport.Y > 0 then
-                PopupScale.W = Popup.AbsoluteSize.X / viewport.X
-                PopupScale.H = Popup.AbsoluteSize.Y / viewport.Y
+}
+d.Movement = {
+    InstantTravel = function(G)
+        local V = y.Character
+        local Z = V and V:FindFirstChild("HumanoidRootPart")
+        local j = d.Movement.GetPosition(G)
+        if not V or not V.Parent or not Z or typeof(j) ~= "Vector3" then return false end
+        V:PivotTo(CFrame.new(j + Vector3.new(0, 3, 0)))
+        Z.AssemblyLinearVelocity = Vector3.zero
+        Z.AssemblyAngularVelocity = Vector3.zero
+        return true
+    end,
+    RunToNoClip = function(G, V, Z, j)
+        local i = y.Character
+        local c = i and i:FindFirstChildOfClass("Humanoid")
+        local J = i and i:FindFirstChild("HumanoidRootPart")
+        if not i or not c or c.Health <= 0 or not J then return false end
+        local T = {}
+        local u = RaycastParams.new()
+        u.FilterType = Enum.RaycastFilterType.Exclude
+        u.FilterDescendantsInstances = { i }
+        local q = y.RunService.Stepped:Connect(function()
+            if not i.Parent or not J.Parent or c.Health <= 0 then return end
+            for G, V in ipairs(i:GetDescendants()) do
+                if V:IsA("BasePart") then
+                    if T[V] == nil then T[V] = V.CanCollide end
+                    V.CanCollide = false
+                end
             end
-            ApplyPopupLayout()
+            local G = J.Position + Vector3.new(0, 5, 0)
+            local V = workspace:Raycast(G, Vector3.new(0, -30, 0), u)
+            if not V then return end
+            local y = V.Position.Y
+            local Z = (y + c.HipHeight) + J.Size.Y / 2
+            if J.Position.Y < Z - .5 then J.CFrame = CFrame.new(J.Position.X, Z, J.Position.Z) * J.CFrame.Rotation end
         end)
-    end)
-
-    local Defaults = {}
-    local function AddDefaultValue(Value)
-        local Index = table.find(Dropdown.Values, Value)
-        if Index then
-            table.insert(Defaults, Index)
+        local g, E = pcall(function() return d.Movement.RunTo(G, V, Z, j) end)
+        q:Disconnect()
+        for G, V in pairs(T) do if G and G.Parent then G.CanCollide = V end end
+        if not g then
+            warn("[Movement NoClip]", E)
+            return false
         end
+        return E == true
+    end,
+    GetPosition = function(G)
+        if not G or not G.Parent then return nil end
+        if G:IsA("BasePart") then return G.Position end
+        if G:IsA("Model") then return (G:GetPivot()).Position end
+        local V = G:FindFirstChildWhichIsA("BasePart", true)
+        return V and V.Position or nil
+    end,
+    RunTo = function(G, V, Z, j)
+        V = math.max(tonumber(V) or 7, 2)
+        Z = math.max(tonumber(Z) or 30, 1)
+        j = tostring(j or "")
+        local i = os.clock()
+        while os.clock() - i < Z do
+            if not G or not G.Parent then return false end
+            local Z = y.Character
+            local i = Z and Z:FindFirstChildOfClass("Humanoid")
+            local c = Z and Z:FindFirstChild("HumanoidRootPart")
+            local J = d.Movement.GetPosition(G)
+            if not i or i.Health <= 0 or not c or not J then return false end
+            local T = i.WalkSpeed
+            i.WalkSpeed = 120
+            if ((c.Position - J)).Magnitude <= V then
+                i:MoveTo(c.Position)
+                return true
+            end
+            if j ~= "" then d.Teleport.LockTeleport(j, 2, true) end
+            i.Sit = false
+            i:MoveTo(J)
+            task.wait(.15)
+        end
+        local c = y.Character
+        local J = c and c:FindFirstChildOfClass("Humanoid")
+        local T = c and c:FindFirstChild("HumanoidRootPart")
+        if J and T then J:MoveTo(T.Position) end
+        return false
     end
-
-    if typeof(Info.Default) == "string" then
-        AddDefaultValue(Info.Default)
-    elseif typeof(Info.Default) == "table" then
-        for Key, Value in next, Info.Default do
-            if UseValueOptions and Value == true then
-                AddDefaultValue(Key)
-            elseif not (UseValueOptions and Value == false) then
-                AddDefaultValue(Value)
+}
+d.ProximityPrompt = {
+    ActivateProximityPrompt = function(G)
+        if not G or not G:IsA("ProximityPrompt") then return end
+        local V = G.HoldDuration
+        local y = G.MaxActivationDistance
+        G.HoldDuration = 0
+        G.MaxActivationDistance = 10000
+        fireproximityprompt(G)
+        G.HoldDuration = V
+        G.MaxActivationDistance = y
+    end,
+    FindProximityPrompt = function(G, V) return G:FindFirstChild(V, true) end,
+    FindProximityPromptByClass = function(G)
+        if not G then return nil end
+        return G:FindFirstChildWhichIsA("ProximityPrompt", true)
+    end
+}
+d.Backpack = {
+    GetBackpackAllItems = function()
+        local G = {}
+        local V = y.LocalPlayer:FindFirstChild("Backpack")
+        if not V then V = y.LocalPlayer:FindFirstChild("Backpack") end
+        if not V then return G end
+        local Z = d.Player.GetTool_Holding()
+        if Z then table.insert(G, Z) end
+        for V, y in ipairs(V:GetChildren()) do table.insert(G, y) end
+        return G
+    end,
+    GetAllSeedTools = function()
+        local G = {}
+        local V = d.Backpack.GetBackpackAllItems()
+        for V, y in ipairs(V) do
+            local Z = y:GetAttribute("SeedTool")
+            if not Z then continue end
+            table.insert(G, y)
+        end
+        return G
+    end,
+    GetSeedToolAndCountUsingName = function(G)
+        local V = y.LocalPlayer:FindFirstChild("Backpack")
+        local Z = V:FindFirstChild(G)
+        if not Z then Z = d.Player.GetTool_Holding() end
+        local j = Z and Z:GetAttribute("SeedTool") or nil
+        if not j then return nil, 0 end
+        local i = Z and Z:GetAttribute("Count") or 0
+        return Z, i
+    end,
+    GetAllFruits = function()
+        local G = {}
+        local V = d.Backpack.GetBackpackAllItems()
+        for V, y in ipairs(V) do
+            local Z = y:GetAttribute("Fruit")
+            local j = y:GetAttribute("FruitName")
+            if not j then continue end
+            local i = y:GetAttribute("Id") or ""
+            local c = tonumber(y:GetAttribute("weight") or 0)
+            local J = { ob = y, id = i, w = c }
+            table.insert(G, J)
+        end
+        table.sort(G, function(G, V) return G.w > V.w end)
+        return G
+    end
+}
+J.MyFarmPlot = nil
+J.OtherPlayerPlots = {}
+d.Farm = {
+    _Random = Random.new(),
+    GetOwnPlot = function()
+        if J.MyFarmPlot and (J.MyFarmPlot.Parent and tonumber(J.MyFarmPlot:GetAttribute("OwnerUserId")) == tonumber(J.player_userid)) then
+            return
+                J.MyFarmPlot
+        end
+        J.MyFarmPlot = nil
+        local G = y.Workspace:FindFirstChild("Gardens")
+        if not G then return nil end
+        for G, V in ipairs(G:GetChildren()) do
+            if tonumber(V:GetAttribute("OwnerUserId")) == tonumber(J.player_userid) then
+                J.MyFarmPlot = V
+                return V
             end
         end
-    elseif Dropdown.Values[Info.Default] ~= nil then
-        table.insert(Defaults, Info.Default)
-    elseif UseValueOptions then
-        AddDefaultValue(Info.Default)
+        return nil
+    end,
+    GetPlantArea = function(G)
+        if G ~= "PlantAreaColumn1" and G ~= "PlantAreaColumn2" then return nil end
+        local V = d.Farm.GetOwnPlot()
+        local y = V and V:FindFirstChild("Visual")
+        local Z = y and y:FindFirstChild(G)
+        return Z and (Z:IsA("BasePart") and Z) or nil
+    end,
+    TeleportToCenter = function(G)
+        local V = d.Farm.GetCenterPointPart()
+        if not V then return false end
+        local y
+        if V:IsA("BasePart") then y = V.CFrame elseif V:IsA("Model") then y = V:GetPivot() end
+        if not y then return false end
+        return d.Teleport.TeleportToCFrame(y * CFrame.new(0, 3, 0), G)
+    end,
+    GetPlantAreaAtPosition = function(G)
+        if typeof(G) ~= "Vector3" then return nil, nil end
+        for V, y in ipairs(d.Farm.GetPlantAreas()) do
+            local Z = y.CFrame:PointToObjectSpace(G)
+            if math.abs(Z.X) <= y.Size.X / 2 and math.abs(Z.Z) <= y.Size.Z / 2 then return y, Z end
+        end
+        return nil, nil
+    end,
+    GetMyPlantsFolder = function()
+        local G = d.Farm.GetOwnPlot()
+        if not G then return nil end
+        return G:FindFirstChild("Plants")
+    end,
+    GetMyPlantsFoldersNotMine = function()
+        if #J.OtherPlayerPlots > 0 then return J.OtherPlayerPlots end
+        J.OtherPlayerPlots = {}
+        local G = y.Workspace:FindFirstChild("Gardens")
+        if not G then return J.OtherPlayerPlots end
+        for G, V in ipairs(G:GetChildren()) do
+            if tonumber(V:GetAttribute("OwnerUserId")) ~= tonumber(J.player_userid) then
+                table.insert(J.OtherPlayerPlots, V)
+            end
+        end
+        return J.OtherPlayerPlots
+    end,
+    GetPlants = function()
+        local G = {}
+        local V = d.Farm.GetOwnPlot()
+        if not V then return G end
+        local y = V:FindFirstChild("Plants")
+        if not y then return G end
+        for V, y in ipairs(y:GetChildren()) do table.insert(G, y) end
+        local Z = J.alt_Plants_Physical[J.player_userid]
+        if Z then for V, y in ipairs(Z:GetChildren()) do table.insert(G, y) end end
+        return G
+    end,
+    GetPermanentCenterCFrame = function()
+        local G = d.Farm.GetCenterPointPart()
+        if G and G:IsA("BasePart") then return G.CFrame end
+        if G and G:IsA("Model") then return G:GetPivot() end
+        return nil
+    end,
+    GetPermanentCenterPosition = function()
+        local G = d.Farm.GetPermanentCenterCFrame()
+        return G and G.Position or nil
+    end,
+    ProjectPositionToPlantArea = function(G, V)
+        if typeof(G) ~= "Vector3" then return nil, nil, nil end
+        V = math.max(tonumber(V) or 1, 0)
+        local y
+        local Z
+        local j
+        local i = math.huge
+        for c, J in ipairs(d.Farm.GetPlantAreas()) do
+            local T = J.CFrame:PointToObjectSpace(G)
+            local d = math.max(J.Size.X / 2 - V, 0)
+            local u = math.max(J.Size.Z / 2 - V, 0)
+            local q = math.clamp(T.X, -d, d)
+            local g = math.clamp(T.Z, -u, u)
+            local E = Vector3.new(q, J.Size.Y / 2, g)
+            local a = J.CFrame:PointToWorldSpace(E)
+            local H = ((a - G)).Magnitude
+            if H < i then
+                i = H
+                y = a
+                Z = J
+                j = E
+            end
+        end
+        return y, Z, j
+    end,
+    GetPermanentPlantPosition = function(G)
+        local V = d.Farm.GetPermanentCenterPosition()
+        if typeof(V) ~= "Vector3" then return nil, nil, nil end
+        return d.Farm.ProjectPositionToPlantArea(V, G)
+    end,
+    GetPlantedSeedCounts = function()
+        local G = {}
+        for V, y in ipairs(d.Farm.GetPlants()) do
+            local Z = y:GetAttribute("SeedName")
+            if Z then G[Z] = ((G[Z] or 0)) + 1 end
+        end
+        return G
+    end,
+    GetSpawnPoint = function()
+        local G = d.Farm.GetOwnPlot()
+        if not G then return nil end
+        return G:FindFirstChild("SpawnPoint")
+    end,
+    GetPlantAreas = function()
+        local G = {}
+        local V = d.Farm.GetOwnPlot()
+        if not V then return G end
+        local y = V:FindFirstChild("Visual")
+        if not y then return G end
+        local Z = { "PlantAreaColumn1", "PlantAreaColumn2" }
+        for V, Z in ipairs(Z) do
+            local j = y:FindFirstChild(Z)
+            if j and j:IsA("BasePart") then table.insert(G, j) end
+        end
+        return G
+    end,
+    GetCenterPointPart = function()
+        local G = d.Farm.GetOwnPlot()
+        if not G then return nil end
+        local V = G:FindFirstChild("Visual")
+        if not V then return nil end
+        local y = V:FindFirstChild("PRIM")
+        return y
+    end,
+    DistanceFromPoint = function()
+        local G = d.Farm.GetCenterPointPart()
+        if not G then return math.huge end
+        local V = (y.LocalPlayer and y.LocalPlayer.Character) or y.Character
+        local Z = V and V:FindFirstChild("HumanoidRootPart")
+        if not Z then return math.huge end
+        local j
+        if G:IsA("BasePart") then
+            j = G.Position
+        elseif G:IsA("Model") then
+            j = (G:GetPivot()).Position
+        else
+            return math
+                .huge
+        end
+        return ((Z.Position - j)).Magnitude
+    end,
+    IsNearFarm = function(G)
+        G = tonumber(G) or 15
+        return d.Farm.DistanceFromPoint() <= G
+    end,
+    EnsureAtFarm = function(G)
+        G = tonumber(G) or 15
+        if d.Farm.IsNearFarm(G) then return true end
+        local V = d.Farm.GetSpawnPoint()
+        if not V or not V:IsA("BasePart") then return false end
+        local Z = y.LocalPlayer and y.LocalPlayer.Character or y.Character
+        if not Z or not Z.Parent then return false end
+        local j = d.Teleport.TeleportToCFrame(V.CFrame * CFrame.new(0, 3, 0), "EnsureAtFarm")
+        if not j then return false end
+        task.wait(.15)
+        return true
+    end,
+    GetRandomLocationForSeed = function(G)
+        local V = d.Farm.GetPlantAreas()
+        if #V == 0 then return nil end
+        local y = V[d.Farm._Random:NextInteger(1, #V)]
+        local Z = math.max(tonumber(G) or .5, 0)
+        local j = math.max((y.Size.X / 2) - Z, 0)
+        local i = math.max((y.Size.Z / 2) - Z, 0)
+        local c = d.Farm._Random:NextNumber(-j, j)
+        local J = d.Farm._Random:NextNumber(-i, i)
+        local T = Vector3.new(c, y.Size.Y / 2, J)
+        local u = y.CFrame:PointToWorldSpace(T)
+        return u, y
     end
-
-    if next(Defaults) then
-        for i = 1, #Defaults do
-            local Index = Defaults[i]
-            if Info.Multi then
-                Dropdown.Value[Dropdown.Values[Index]] = true
+}
+H.Hop = {
+    Random = Random.new((((os.time() + J.player_userid) + math.floor(os.clock() * 100000))) % 2147483647),
+    MaxPlayers = 8,
+    PagesPerDirection = 4,
+    TriedServers = {},
+    TeleportToJobId = function(
+        G, V)
+        local Z = y.LocalPlayer
+        G = tostring(G or "")
+        V = tonumber(V) or game.PlaceId
+        if not Z or G == "" then
+            warn("[Hop] Missing player or JobId")
+            return false
+        end
+        if not V or V <= 0 then
+            warn("[Hop] Invalid PlaceId")
+            return false
+        end
+        if G == game.JobId then
+            warn("[Hop] Already in selected server")
+            return false
+        end
+        local j, i = pcall(function() y.TeleportService:TeleportToPlaceInstance(V, G, Z) end)
+        if not j then
+            warn("[Hop] Teleport failed:", i)
+            return false
+        end
+        return true
+    end,
+    GetFriendServerIds = function()
+        local G = {}
+        local V = y.LocalPlayer
+        if not V then return G end
+        local Z, j = pcall(function() return V:GetFriendsOnlineAsync(200) end)
+        if not Z or type(j) ~= "table" then return G end
+        for V, y in ipairs(j) do
+            if type(y) ~= "table" then continue end
+            local Z = tonumber(y.PlaceId)
+            local j = tostring(y.GameId or "")
+            if Z == game.PlaceId and j ~= "" then G[j] = true end
+        end
+        return G
+    end,
+    FetchServers = function(G, V, Z, j)
+        if G ~= "Asc" and G ~= "Desc" then return false end
+        local i = nil
+        for c = 1, H.Hop.PagesPerDirection, 1 do
+            local J = string.format(
+                "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=%s&excludeFullGames=true&limit=100",
+                game.PlaceId,
+                G)
+            if i then J = J .. ("&cursor=" .. y.HttpService:UrlEncode(i)) end
+            local T, d = pcall(function() return y.HttpService:JSONDecode(game:HttpGet(J)) end)
+            if not T or type(d) ~= "table" or type(d.data) ~= "table" then break end
+            for G, y in ipairs(d.data) do
+                if type(y) ~= "table" then continue end
+                local i = tostring(y.id or "")
+                local c = tonumber(y.playing)
+                local J = tonumber(y.maxPlayers)
+                if i == "" or V[i] or j[i] then continue end
+                if not c or J ~= H.Hop.MaxPlayers or c < 0 or c >= J then continue end
+                j[i] = true
+                table.insert(Z, y)
+            end
+            i = d.nextPageCursor
+            if type(i) ~= "string" or i == "" then break end
+            task.wait(.1)
+        end
+        return true
+    end,
+    FindRandomServer = function()
+        local G = H.Hop.GetFriendServerIds()
+        G[game.JobId] = true
+        for V in pairs(H.Hop.TriedServers) do G[V] = true end
+        local V = {}
+        local y = {}
+        H.Hop.FetchServers("Asc", G, V, y)
+        H.Hop.FetchServers("Desc", G, V, y)
+        if #V == 0 then
+            warn("[Hop] No random non-friend server found")
+            return nil
+        end
+        local Z = H.Hop.Random:NextInteger(1, #V)
+        local j = V[Z]
+        local i = tostring(j.id or "")
+        if i == "" then return nil end
+        H.Hop.TriedServers[i] = true
+        print(string.format("[Hop] Random server: %s (%d/%d) | Pool: %d", i, tonumber(j.playing) or 0,
+            tonumber(j.maxPlayers) or 0, #V))
+        return i, j
+    end,
+    HopToNewServer = function()
+        local G = H.Hop.FindRandomServer()
+        if not G then return false end
+        return H.Hop.TeleportToJobId(G, game.PlaceId)
+    end,
+    HopToNewServerUsingJobid = function(G) return H.Hop.TeleportToJobId(G, game.PlaceId) end
+}
+d.AntiAfk = {
+    RequestHop = function()
+        local G = y.Networking
+        if not G then return end
+        local V = G.AntiAfk and G.AntiAfk.RequestHop
+        if not V then
+            warn("AntiAfk.RequestHop was not found")
+            return false
+        end
+        V:Fire()
+        return true
+    end
+}
+J.SellStatusText = ""
+d.SellManager = {
+    Busy = false,
+    DailyDealRetryAt = 0,
+    DailyDealKnown = false,
+    DailyDealAvailable = false,
+    DailyDealNextCheckAt = 0,
+    FormatDailyDealTime = function(
+        G)
+        G = math.max(math.floor(tonumber(G) or 0), 0)
+        local V = math.floor(G / 3600)
+        local y = math.floor(((G % 3600)) / 60)
+        local Z = G % 60
+        if V > 0 then return string.format("%dh %02dm", V, y) end
+        if y > 0 then return string.format("%dm %02ds", y, Z) end
+        return tostring(Z) .. "s"
+    end,
+    SetStatus = function(G, V)
+        if type(G) ~= "string" or G == "" then
+            J.SellStatusText = ""
+            return
+        end
+        J.SellStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\146\176 [Seller]</font> <font color=\'%s\'>%s</font></stroke>",
+            tostring(V or "#FFFFFF"), G)
+    end,
+    ReadDailyDealAvailable = function(G)
+        if type(G) == "boolean" then return G end
+        if type(G) == "string" then
+            local V = string.lower(G)
+            if V == "available" or V == "ready" or V == "true" then return true end
+            if V == "used" or V == "unavailable" or V == "false" then return false end
+            return nil
+        end
+        if type(G) ~= "table" then return nil end
+        if G.Used == true or G.used == true or G.Claimed == true or G.claimed == true then return false end
+        if G.Used == false or G.used == false then return true end
+        local V = { "Available", "available", "IsAvailable", "isAvailable", "CanUse", "canUse", "Eligible", "eligible",
+            "HasDeal", "hasDeal", "DailyDealAvailable", "dailyDealAvailable" }
+        for V, y in ipairs(V) do if type(G[y]) == "boolean" then return G[y] end end
+        local y = G.DailyDeal or G.dailyDeal or G.Deal or G.deal
+        if y ~= nil then return d.SellManager.ReadDailyDealAvailable(y) end
+        local Z = G.Status or G.status or G.Message or G.message
+        if Z ~= nil then return d.SellManager.ReadDailyDealAvailable(Z) end
+        if G[1] ~= nil then return d.SellManager.ReadDailyDealAvailable(G[1]) end
+        return nil
+    end,
+    CheckDailyDeal = function(G)
+        if not Y.auto_use_daily_deal then
+            d.SellManager.DailyDealKnown = false
+            d.SellManager.DailyDealAvailable = false
+            return false
+        end
+        if not G and os.clock() < d.SellManager.DailyDealNextCheckAt then
+            return d.SellManager.DailyDealKnown and
+                d.SellManager.DailyDealAvailable
+        end
+        local V = y.Networking and (y.Networking.NPCS and y.Networking.NPCS.CheckDailyDeal)
+        if not V or type(V.Fire) ~= "function" then return false end
+        d.SellManager.DailyDealNextCheckAt = os.clock() + 5
+        local Z, j = V:Fire()
+        local i = d.SellManager.ReadDailyDealAvailable(Z)
+        if i == nil then i = d.SellManager.ReadDailyDealAvailable(j) end
+        d.SellManager.DailyDealKnown = i ~= nil
+        d.SellManager.DailyDealAvailable = i == true
+        return d.SellManager.DailyDealAvailable
+    end,
+    SellFruit = function(G)
+        if type(G) ~= "string" or G == "" then return false, nil end
+        local V = y.Networking and (y.Networking.NPCS and y.Networking.NPCS.SellFruit)
+        if not V or type(V.Fire) ~= "function" then return false, nil end
+        return true, V:Fire(G)
+    end,
+    GetFruitBid = function(G)
+        if type(G) ~= "string" or G == "" then return nil end
+        local V = y.Networking and (y.Networking.NPCS and y.Networking.NPCS.GetFruitBid)
+        if not V or type(V.Fire) ~= "function" then return nil end
+        return V:Fire(G)
+    end,
+    PreviewSellAll = function()
+        local G = y.Networking and (y.Networking.NPCS and y.Networking.NPCS.PreviewSellAll)
+        if not G or type(G.Fire) ~= "function" then return nil end
+        return G:Fire()
+    end,
+    UseDailyDealAll = function()
+        local G = y.Networking and (y.Networking.NPCS and y.Networking.NPCS.UseDailyDealAll)
+        if not G or type(G.Fire) ~= "function" then return false, nil end
+        local V = d.PlayerData.GetFruitCount()
+        local Z = tonumber(d.Money.GetSheckles()) or 0
+        if V <= 0 then return false, nil end
+        d.SellManager.SetStatus(string.format("Trying Daily Deal on %d fruits...", V), "#FFD966")
+        local j, i = pcall(function() return G:Fire() end)
+        if not j then
+            d.SellManager.DailyDealRetryAt = os.clock() + 60
+            warn("[Daily Deal]", i)
+            return false, nil
+        end
+        if type(i) == "table" and i.Success == false then
+            local G = math.max(math.floor(tonumber(i.TimeRemaining) or 60), 1)
+            d.SellManager.DailyDealRetryAt = (os.clock() + G) + 2
+            d.SellManager.SetStatus(string.format("Daily Deal in %s", d.SellManager.FormatDailyDealTime(G)), "#FFCC66")
+            return false, i
+        end
+        local J = V
+        local T = Z
+        local u = os.clock()
+        repeat
+            task.wait(.1)
+            J = d.PlayerData.GetFruitCount()
+            T = tonumber(d.Money.GetSheckles()) or Z
+        until J < V or T > Z or os.clock() - u >= 3
+        local q = type(i) == "table" and i.Success == true or J < V or T > Z
+        if not q then
+            d.SellManager.DailyDealRetryAt = os.clock() + 60
+            d.SellManager.SetStatus("Daily Deal failed - selling normally", "#FF6666")
+            return false, i
+        end
+        local g = math.max(T - Z, 0)
+        local E = type(i) == "table" and tonumber(i.TimeRemaining) or 86400
+        d.SellManager.DailyDealRetryAt = os.clock() + math.max(E, 60)
+        d.SellManager.SetStatus(string.format("Daily Deal used | +$%s", c.formatShecklesNumber(g)), "#66FF99")
+        return true, { result = i, fruits = V, earned = g, beforeSheckles = Z, afterSheckles = T }
+    end,
+    SellUsingBackpack = function()
+        local G = d.Backpack.GetAllFruits()
+        for G, V in ipairs(G) do
+            d.SellManager.SellFruit(V.id)
+            task.wait(.05)
+        end
+    end,
+    SellAllInternal = function()
+        local G = d.PlayerData.GetFruitCount()
+        if G <= 0 then
+            d.SellManager.SetStatus("")
+            return false, nil
+        end
+        local V = d.FruitCollect.IsMaxFruitInventory()
+        local Z = math.max(math.ceil(d.SellManager.DailyDealRetryAt - os.clock()), 0)
+        if Y.auto_use_daily_deal and Z <= 0 then
+            local y = d.PlayerData.GetMaxFruitCapacity()
+            if not V then
+                d.SellManager.SetStatus(string.format("Saving for Daily Deal %d/%d", G, y), "#FFD966")
+                return false, "waiting_daily_deal"
+            end
+            local j, i = d.SellManager.UseDailyDealAll()
+            if j then return true, i end
+            Z = math.max(math.ceil(d.SellManager.DailyDealRetryAt - os.clock()), 0)
+        end
+        if Y.sell_when_backpack_full and not V then return false, "waiting_full" end
+        local j = y.Networking and (y.Networking.NPCS and y.Networking.NPCS.SellAll)
+        if not j or type(j.Fire) ~= "function" then return false, nil end
+        local i = "Selling fruits normally..."
+        if Y.auto_use_daily_deal and Z > 0 then
+            i = string.format("Selling normally | Daily Deal in %s",
+                d.SellManager.FormatDailyDealTime(Z))
+        end
+        d.SellManager.SetStatus(i, "#66CCFF")
+        return true, j:Fire()
+    end,
+    SellAll = function()
+        if not Y.auto_sell_sellallinventory then
+            d.SellManager.SetStatus("")
+            return false
+        end
+        if d.SellManager.Busy then return false end
+        d.SellManager.Busy = true
+        local G, V, y = pcall(d.SellManager.SellAllInternal)
+        d.SellManager.Busy = false
+        if not G then
+            d.SellManager.SetStatus("Seller error", "#FF6666")
+            warn("[SellManager]", V)
+            return false, nil
+        end
+        return V, y
+    end
+}
+d.FruitFilters = {
+    GetFruitIds = function(G)
+        if type(G) ~= "table" then return nil, nil end
+        return G.plantId, G.fruitId
+    end,
+    IsFruitReady = function(G)
+        if typeof(G) ~= "Instance" then return false end
+        local V = tonumber(G:GetAttribute("Age"))
+        local y = tonumber(G:GetAttribute("MaxAge"))
+        return V ~= nil and (y ~= nil and (y > 0 and V >= y))
+    end,
+    GetFruitWeight = function(G)
+        if not G then return 0, 0 end
+        local V = y.FruitVisualizerController:CalculateFruitWeight(G)
+        if type(V) ~= "number" then V = y.FruitVisualizerController:CalculatePlantWeight(G) end
+        if type(V) ~= "number" then return 0, 0 end
+        local Z = math.round(V * 100) / 100
+        return Z, V
+    end,
+    GetAllFruits = function()
+        local G = {}
+        for V, y in ipairs(d.Farm.GetPlants()) do
+            local Z = y:GetAttribute("PlantId")
+            local j = y:FindFirstChild("Fruits")
+            local i = tonumber(y:GetAttribute("Age") or 0)
+            local c = tonumber(y:GetAttribute("MaxAge") or 1)
+            if i < c then continue end
+            if j then
+                for V, j in ipairs(j:GetChildren()) do
+                    local i = j:GetAttribute("CorePartName") or j:GetAttribute("SeedName") or y:GetAttribute("SeedName")
+                    local c = j:GetAttribute("FruitId")
+                    local T = d.FruitFilters.GetFruitWeight(j)
+                    local u = J.SeedRarity[i] or "Common"
+                    local q = j:GetAttribute("Mutation") or ""
+                    table.insert(G, { ob = j, ob_plant = y, name = i, plantId = Z, fruitId = c, w = T, r = u, m = q })
+                end
             else
-                Dropdown.Value = Dropdown.Values[Index]
+                local V = y:GetAttribute("SeedName") or ""
+                local j = d.FruitFilters.GetFruitWeight(y)
+                local i = J.SeedRarity[V] or "Common"
+                local c = y:GetAttribute("Mutation") or ""
+                table.insert(G, { ob = y, ob_plant = y, name = V, plantId = Z, fruitId = "", w = j, r = i, m = c })
             end
-
-            if not Info.Multi then
+        end
+        table.sort(G,
+            function(G, V)
+                local y = J.RarityRank[G.r] or 0
+                local Z = J.RarityRank[V.r] or 0
+                if y ~= Z then return y > Z end
+                local j = type(G.m) == "string" and G.m ~= ""
+                local i = type(V.m) == "string" and V.m ~= ""
+                if j ~= i then return j end
+                return G.w > V.w
+            end)
+        return G
+    end,
+    GetFruitsUsingName = function(G)
+        local V = {}
+        if type(G) ~= "string" or G == "" then return V end
+        for y, Z in ipairs(d.FruitFilters.GetAllFruits()) do if Z.name == G then table.insert(V, Z) end end
+        return V
+    end,
+    GetReadyFruits = function(G)
+        local V = {}
+        local y
+        if type(G) == "string" and G ~= "" then
+            y = d.FruitFilters.GetFruitsUsingName(G)
+        else
+            y = d.FruitFilters
+                .GetAllFruits()
+        end
+        for G, y in ipairs(y) do if d.FruitFilters.IsFruitReady(y.ob) then table.insert(V, y) end end
+        return V
+    end
+}
+d.ShovelTool = {
+    GetTool = function()
+        local G = d.Player.GetTool_Holding()
+        if G and G:IsA("Tool") then
+            local V = G:GetAttribute("Shovel")
+            if type(V) == "string" and V ~= "" then return G end
+        end
+        local V = y.LocalPlayer and y.LocalPlayer:FindFirstChild("Backpack")
+        if not V then return nil end
+        for G, V in ipairs(V:GetChildren()) do
+            if not V:IsA("Tool") then continue end
+            local y = V:GetAttribute("Shovel")
+            if type(y) == "string" and y ~= "" then return V end
+        end
+        return nil
+    end,
+    Equip = function()
+        local G = d.ShovelTool.GetTool()
+        if not G then return nil, false end
+        if d.Player.IsToolHeld(G) then return G, false end
+        if not d.Player.EquipTool(G) then return nil, false end
+        task.wait(.15)
+        if not d.Player.IsToolHeld(G) then return nil, false end
+        return G, true
+    end,
+    Use = function(G, V, Z)
+        if type(G) ~= "string" or G == "" then return false end
+        if type(V) ~= "string" then return false end
+        if not Z or not Z:IsA("Tool") then return false end
+        if not y.Character or Z.Parent ~= y.Character then return false end
+        local j = Z:GetAttribute("Shovel")
+        if type(j) ~= "string" or j == "" then return false end
+        local i = y.Networking and (y.Networking.Shovel and y.Networking.Shovel.UseShovel)
+        if not i or type(i.Fire) ~= "function" then return false end
+        local c = pcall(function() i:Fire(G, V, j, Z) end)
+        return c
+    end,
+    Cleanup = function(G)
+        if not G then return end
+        d.Player.UnequipTools()
+    end
+}
+J.ShovelStatusText = ""
+d.ShovelFruits = {
+    MaxPerLoop = 60,
+    RequestDelay = .1,
+    EquippedBySystem = false,
+    TotalRemoved = 0,
+    LastLoopRemoved = 0,
+    SetStatus = function(
+        G, V)
+        G = tostring(G or "Waiting")
+        V = tostring(V or "#FFFFFF")
+        J.ShovelStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\226\154\160\239\184\143 [Fruit Shovel]</font> <font color=\'%s\'>%s</font></stroke>",
+            V, G)
+    end,
+    ClearStatus = function() J.ShovelStatusText = "" end,
+    SetWaitingStatus = function()
+        d.ShovelFruits.SetStatus(
+            string.format("Waiting | Removed: %d", d.ShovelFruits.TotalRemoved), "#CFCFCF")
+    end,
+    GetMutationNames = function()
+        local G = {}
+        local V = {}
+        local Z = y.SharedModules
+        local j = Z and Z:FindFirstChild("MutationData")
+        if j then
+            for y, Z in ipairs(j:GetChildren()) do
+                if Z:IsA("ModuleScript") then
+                    local y = Z.Name
+                    if y ~= "Gold" and (y ~= "Rainbow" and not V[y]) then
+                        V[y] = true
+                        table.insert(G, y)
+                    end
+                end
+            end
+        end
+        if #G == 0 then G = { "Bloodlit", "Chained", "Electric", "Frozen", "Starstruck" } end
+        table.sort(G)
+        return G
+    end,
+    GetVariantNames = function() return { "Normal", "Gold", "Rainbow" } end,
+    GetFruitTypeDropdown = function()
+        local G = {}
+        for V, y in ipairs(J.AllSeedsDataTable) do
+            if type(y) ~= "table" then continue end
+            local Z = y.name
+            local j = y.single == true
+            if type(Z) ~= "string" or Z == "" or j then continue end
+            local i = tostring(y.rarity or "Common")
+            local c = d.Data.GetRarityColor(i)
+            table.insert(G,
+                {
+                    Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", Z, c, i),
+                    Value =
+                        Z
+                })
+        end
+        return G
+    end,
+    GetAllFruitTypeSelection = function()
+        local G = {}
+        for V, y in ipairs(J.AllSeedsDataTable) do
+            if type(y) ~= "table" then continue end
+            local Z = y.name
+            local j = y.single == true
+            if type(Z) == "string" and (Z ~= "" and not j) then G[Z] = true end
+        end
+        return G
+    end,
+    SplitMutations = function(G)
+        local V = {}
+        local y = {}
+        if type(G) ~= "string" or G == "" then return V, y end
+        for G in G:gmatch("[^%+%,]+") do
+            G = G:match("^%s*(.-)%s*$")
+            if G and (G ~= "" and not y[G]) then
+                y[G] = true
+                table.insert(V, G)
+            end
+        end
+        return V, y
+    end,
+    GetVariantFromMutations = function(G)
+        if type(G) ~= "table" then return "Normal" end
+        if G.Rainbow then return "Rainbow" end
+        if G.Gold then return "Gold" end
+        return "Normal"
+    end,
+    HasSelectedMutation = function(G, V)
+        if type(G) ~= "table" or type(V) ~= "table" then return false end
+        for y in pairs(G) do if G[y] and V[y] then return true end end
+        return false
+    end,
+    PassesMutationFilters = function(G)
+        G = type(G) == "table" and G or {}
+        local V = Y.shovel_mutation_whitelist
+        local y = Y.shovel_mutation_blacklist
+        if type(y) == "table" and (next(y) ~= nil and d.ShovelFruits.HasSelectedMutation(y, G)) then return false end
+        if type(V) == "table" and next(V) ~= nil then return d.ShovelFruits.HasSelectedMutation(V, G) end
+        return true
+    end,
+    GetShovelTool = function()
+        local G = d.Player.GetTool_Holding()
+        if G and G:IsA("Tool") then
+            local V = G:GetAttribute("Shovel")
+            if type(V) == "string" and V ~= "" then return G end
+        end
+        local V = y.LocalPlayer
+        local Z = V and V:FindFirstChild("Backpack")
+        if not Z then return nil end
+        for G, V in ipairs(Z:GetChildren()) do
+            if not V:IsA("Tool") then continue end
+            local y = V:GetAttribute("Shovel")
+            if type(y) == "string" and y ~= "" then return V end
+        end
+        return nil
+    end,
+    IsValidFruitTarget = function(G)
+        if not G or not G.Parent then return false end
+        local V = G.Parent
+        if V.Name ~= "Fruits" then return false end
+        local y = V.Parent
+        if not y then return false end
+        local Z = d.Farm.GetOwnPlot()
+        if not Z then return false end
+        local j = Z:FindFirstChild("Plants")
+        if not j then return false end
+        if y.Parent ~= j then return false end
+        return true
+    end,
+    ShouldShovelFruit = function(G)
+        if type(G) ~= "table" then return false end
+        local V = G.ob
+        if not d.ShovelFruits.IsValidFruitTarget(V) then return false end
+        local y = G.name
+        if type(y) ~= "string" or y == "" then return false end
+        local Z = Y.shovel_fruit_types
+        if type(Z) ~= "table" or not Z[y] then return false end
+        local j = tonumber(G.w) or 0
+        local i = tonumber(Y.shovel_min_weight) or 0
+        local c = tonumber(Y.shovel_max_weight) or 1000000000
+        if j < i or j > c then return false end
+        local J = V:GetAttribute("Mutation")
+        if type(J) ~= "string" then J = G.m end
+        local T, u = d.ShovelFruits.SplitMutations(J)
+        local q = d.ShovelFruits.GetVariantFromMutations(u)
+        local g = Y.shovel_variants
+        if type(g) ~= "table" or not g[q] then return false end
+        if not d.ShovelFruits.PassesMutationFilters(u) then return false end
+        return true
+    end,
+    GetMatchingFruits = function()
+        local G = {}
+        local V = d.FruitFilters.GetAllFruits()
+        if type(V) ~= "table" then return G end
+        for V, y in ipairs(V) do if d.ShovelFruits.ShouldShovelFruit(y) then table.insert(G, y) end end
+        table.sort(G, function(G, V) return ((tonumber(G.w) or 0)) < ((tonumber(V.w) or 0)) end)
+        return G
+    end,
+    ShovelFruit = function(G, V)
+        if type(G) ~= "table" then return false end
+        if not V or not V.Parent or not V:IsA("Tool") then return false end
+        local Z = y.Character
+        if not Z or V.Parent ~= Z then return false end
+        local j = G.ob
+        if not d.ShovelFruits.IsValidFruitTarget(j) then return false end
+        local i = j.Parent
+        local c = i and i.Parent
+        if not c then return false end
+        local J = c.Name
+        local T = j.Name
+        if type(J) ~= "string" or J == "" or type(T) ~= "string" or T == "" then return false end
+        local u = V:GetAttribute("Shovel")
+        if type(u) ~= "string" or u == "" then return false end
+        local q = y.Networking and (y.Networking.Shovel and y.Networking.Shovel.UseShovel)
+        if not q or type(q.Fire) ~= "function" then return false end
+        local g = pcall(function() q:Fire(J, T, u, V) end)
+        return g
+    end,
+    CleanupTool = function()
+        if not d.ShovelFruits.EquippedBySystem then return end
+        d.ShovelFruits.EquippedBySystem = false
+        d.Player.UnequipTools()
+    end,
+    Run = function()
+        d.ShovelFruits.LastLoopRemoved = 0
+        if not Y.auto_shovel_fruits then
+            d.ShovelFruits.ClearStatus()
+            return 0
+        end
+        local G = Y.shovel_fruit_types
+        if type(G) ~= "table" or next(G) == nil then
+            d.ShovelFruits.SetStatus("Paused: select fruit types", "#FFCC66")
+            return 0
+        end
+        local V = Y.shovel_variants
+        if type(V) ~= "table" or next(V) == nil then
+            d.ShovelFruits.SetStatus("Paused: select a variant", "#FFCC66")
+            return 0
+        end
+        d.ShovelFruits.SetStatus("Scanning garden...", "#66CCFF")
+        local y = d.ShovelFruits.GetMatchingFruits()
+        if type(y) ~= "table" or #y == 0 then
+            d.ShovelFruits.SetWaitingStatus()
+            return 0
+        end
+        d.ShovelFruits.SetStatus(string.format("Found %d matching fruit%s", #y, #y == 1 and "" or "s"), "#66CCFF")
+        local Z = d.ShovelFruits.GetShovelTool()
+        if not Z then
+            d.ShovelFruits.SetStatus("Paused: shovel not found", "#FF6B6B")
+            return 0
+        end
+        local j = d.Player.IsToolHeld(Z)
+        if not j then
+            d.ShovelFruits.SetStatus("Equipping shovel...", "#FFD966")
+            local G = d.Player.EquipTool(Z)
+            if not G then
+                d.ShovelFruits.SetStatus("Failed to equip shovel", "#FF6B6B")
+                return 0
+            end
+            d.ShovelFruits.EquippedBySystem = true
+            task.wait(.15)
+        end
+        if not d.Player.IsToolHeld(Z) then
+            d.ShovelFruits.CleanupTool()
+            d.ShovelFruits.SetStatus("Shovel was unequipped", "#FF6B6B")
+            return 0
+        end
+        local i = 0
+        for G, V in ipairs(y) do
+            if not Y.auto_shovel_fruits then break end
+            if i >= d.ShovelFruits.MaxPerLoop then break end
+            if not d.ShovelFruits.ShouldShovelFruit(V) then continue end
+            if not d.Player.IsToolHeld(Z) then
+                d.ShovelFruits.SetStatus("Stopped: shovel unequipped", "#FF6B6B")
                 break
             end
+            local j = tostring(V.name or "Fruit")
+            local c = tonumber(V.w) or 0
+            d.ShovelFruits.SetStatus(string.format("Removing %s %.2fkg (%d/%d)", j, c, G, #y), "#FFAA44")
+            local J = d.ShovelFruits.ShovelFruit(V, Z)
+            if J then
+                i += 1
+                d.ShovelFruits.TotalRemoved += 1
+                d.ShovelFruits.LastLoopRemoved = i
+                d.ShovelFruits.SetStatus(
+                    string.format("Removed %s %.2fkg | Total: %d", j, c, d.ShovelFruits.TotalRemoved),
+                    "#7CFC00")
+                task.wait(d.ShovelFruits.RequestDelay)
+            end
+        end
+        d.ShovelFruits.CleanupTool()
+        if i > 0 then
+            d.ShovelFruits.SetStatus(
+                string.format("Removed %d | Total: %d | Waiting", i, d.ShovelFruits.TotalRemoved), "#7CFC00")
+        elseif Y.auto_shovel_fruits then
+            d.ShovelFruits.SetWaitingStatus()
+        end
+        return i
+    end,
+    LoopShovelFruits = function()
+        if not Y.auto_shovel_fruits then
+            d.ShovelFruits.ClearStatus()
+            return 0
+        end
+        local G, V = pcall(function() return d.ShovelFruits.Run() end)
+        if not G then
+            d.ShovelFruits.CleanupTool()
+            d.ShovelFruits.SetStatus("Error: shovel loop failed", "#FF4444")
+            warn("[ShovelFruits] Loop error:", V)
+            return 0
+        end
+        return tonumber(V) or 0
+    end
+}
+J.PlantShovelStatusText = ""
+d.PlantShovel = {
+    MaxPerLoop = 50,
+    RequestDelay = .9,
+    SetStatus = function(G, V)
+        G = tostring(G or "Waiting")
+        V = tostring(V or "#FFFFFF")
+        J.PlantShovelStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FF5555\'>\226\154\160\239\184\143 [Plant Shovel]</font> <font color=\'%s\'>%s</font></stroke>",
+            V, G)
+    end,
+    ClearStatus = function() J.PlantShovelStatusText = "" end,
+    GetPlantTypeDropdown = function()
+        local G = {}
+        local V = d.Farm.GetPlantedSeedCounts()
+        for y, Z in ipairs(J.AllSeedsDataTable) do
+            if type(Z) ~= "table" then continue end
+            local j = Z.name
+            if type(j) ~= "string" or j == "" then continue end
+            if Z.single == true then continue end
+            local i = tonumber(V[j]) or 0
+            local c = i > 0 and "#FFD700" or "#FF5555"
+            local J = tostring(Z.rarity or "")
+            local T = d.Data.GetRarityColor(J)
+            table.insert(G,
+                {
+                    Text = string.format(
+                        "<font color=\"%s\">x%d</font> <font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", c,
+                        i, j, T, J),
+                    Value =
+                        j
+                })
+        end
+        table.sort(G,
+            function(G, y)
+                local Z = tonumber(V[G.Value]) or 0
+                local j = tonumber(V[y.Value]) or 0
+                if Z ~= j then return Z > j end
+                return tostring(G.Value) < tostring(y.Value)
+            end)
+        return G
+    end,
+    GetAllPlantTypeSelection = function()
+        local G = {}
+        for V, y in ipairs(J.AllSeedsDataTable) do
+            if type(y) ~= "table" then continue end
+            local Z = y.name
+            if type(Z) ~= "string" or Z == "" then continue end
+            if y.single == true then continue end
+            G[Z] = true
+        end
+        return G
+    end,
+    IsValidPlant = function(G)
+        if typeof(G) ~= "Instance" or not G.Parent then return false, nil end
+        local V = d.Farm.GetOwnPlot()
+        if not V then return false, nil end
+        local y = V:FindFirstChild("Plants")
+        if not y or G.Parent ~= y then return false, nil end
+        local Z = G:GetAttribute("SeedName")
+        if type(Z) ~= "string" or Z == "" then return false, nil end
+        if d.SeedData.IsSingleHarvest(Z) then return false, Z end
+        return true, Z
+    end,
+    IsFullyGrown = function(G)
+        if not G then return false end
+        local V = tonumber(G:GetAttribute("Age"))
+        local y = tonumber(G:GetAttribute("MaxAge"))
+        if not V or not y or y <= 0 then return false end
+        return V >= y
+    end,
+    GetPlantData = function(G)
+        local V, y = d.PlantShovel.IsValidPlant(G)
+        if not V then return nil end
+        local Z = tonumber(G:GetAttribute("Height")) or 0
+        if not Z then return nil end
+        local j = G:GetAttribute("Mutation")
+        if type(j) ~= "string" then j = "" end
+        return { ob = G, name = y, height = Z, mutation = j, grown = d.PlantShovel.IsFullyGrown(G) }
+    end,
+    IsVariantBlacklisted = function(G)
+        local V = Y.shovel_plant_variant_blacklist
+        if type(V) ~= "table" or next(V) == nil then return false end
+        if type(G) ~= "string" or G == "" then return false end
+        return V[G]
+    end,
+    PassesVariant = function(G)
+        local V = Y.shovel_plant_variants
+        if type(V) ~= "table" or next(V) == nil then return true end
+        if type(G) ~= "string" or G == "" then return false end
+        return V[G]
+    end,
+    PassesFilters = function(G)
+        if type(G) ~= "table" then return false end
+        local V = G.ob
+        if not V or not V.Parent then return false end
+        local y = Y.shovel_plant_types
+        if type(y) ~= "table" or not y[G.name] then return false end
+        local Z = tonumber(Y.shovel_plant_min_height) or 0
+        local j = tonumber(Y.shovel_plant_max_height) or 200
+        local i = tonumber(G.height)
+        if not i then return false end
+        if i < Z or i > j then return false end
+        if not Y.shovel_growing_plants and not G.grown then return false end
+        if not d.PlantShovel.PassesVariant(G.mutation) then return false end
+        if d.PlantShovel.IsVariantBlacklisted(G.mutation) then return false end
+        return true
+    end,
+    GetPlantsToShovel = function()
+        local G = {}
+        local V = {}
+        local y = Y.shovel_plant_types
+        if type(y) ~= "table" then return G, V end
+        for Z, j in ipairs(d.Farm.GetPlants()) do
+            local i, c = d.PlantShovel.IsValidPlant(j)
+            if not i or not y[c] then continue end
+            V[c] = ((V[c] or 0)) + 1
+            local J = d.PlantShovel.GetPlantData(j)
+            if J and d.PlantShovel.PassesFilters(J) then table.insert(G, J) end
+        end
+        return G, V
+    end,
+    ShovelPlant = function(G, V)
+        local y = type(G) == "table" and G.ob
+        if not y or not y.Parent then return false end
+        local Z = d.PlantShovel.IsValidPlant(y)
+        if not Z or not d.Player.IsToolHeld(V) then return false end
+        return d.ShovelTool.Use(y.Name, "", V)
+    end,
+    Run = function()
+        if not Y.auto_shovel_plants then
+            d.PlantShovel.ClearStatus()
+            return 0
+        end
+        local G = Y.shovel_plant_types
+        if type(G) ~= "table" or next(G) == nil then
+            d.PlantShovel.SetStatus("Paused: select plant types", "#FFCC66")
+            return 0
+        end
+        local V, y = d.PlantShovel.GetPlantsToShovel()
+        local Z = math.max(math.floor(tonumber(Y.shovel_plants_keep) or 0), 0)
+        if #V == 0 then
+            d.PlantShovel.SetStatus("Nothing to shovel", "#CFCFCF")
+            return 0
+        end
+        local j
+        local i = false
+        local c = 0
+        for G, V in ipairs(V) do
+            if not Y.auto_shovel_plants then break end
+            if c >= d.PlantShovel.MaxPerLoop then break end
+            local J = V.name
+            local T = y[J] or 0
+            if T <= Z then continue end
+            if not j then
+                j, i = d.ShovelTool.Equip()
+                if not j then
+                    d.PlantShovel.SetStatus("Paused: shovel not found", "#FF6B6B")
+                    return c
+                end
+            end
+            if not d.Player.IsToolHeld(j) then
+                j, i = d.ShovelTool.Equip()
+                if not j then break end
+            end
+            d.PlantShovel.SetStatus(string.format("Shovelling %s %d/%d", J, T, Z), "#FF5555")
+            if d.PlantShovel.ShovelPlant(V, j) then
+                y[J] = T - 1
+                c += 1
+                task.wait(d.PlantShovel.RequestDelay)
+            end
+        end
+        d.ShovelTool.Cleanup(i)
+        if c == 0 then d.PlantShovel.SetStatus("Nothing above keep limit", "#CFCFCF") end
+        return c
+    end,
+    LoopPlantShovel = function()
+        if not Y.auto_shovel_plants then
+            d.PlantShovel.ClearStatus()
+            return 0
+        end
+        local G, V = pcall(function() return d.PlantShovel.Run() end)
+        if not G then
+            d.Player.UnequipTools()
+            d.PlantShovel.SetStatus("Error: plant shovel loop failed", "#FF4444")
+            warn("[PlantShovel] Loop error:", V)
+            return 0
+        end
+        return tonumber(V) or 0
+    end
+}
+J.TrowelRunning = false
+J.TrowelStatusText = ""
+d.Trowel = {
+    MaxPerLoop = 25,
+    RequestDelay = .35,
+    SetStatus = function(G, V)
+        G = tostring(G or "")
+        if G == "" then
+            J.TrowelStatusText = ""
+            return
+        end
+        J.TrowelStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\147\141 [Trowel]</font> <font color=\'%s\'>%s</font></stroke>",
+            V or "#FFFFFF", G)
+    end,
+    ClearStatus = function() J.TrowelStatusText = "" end,
+    GetAllSelection = function()
+        local G = {}
+        for V, y in ipairs(J.AllSeedsDataTable) do if type(y) == "table" and type(y.name) == "string" then G[y.name] = true end end
+        return G
+    end,
+    GetTool = function()
+        for G, V in ipairs(d.Backpack.GetBackpackAllItems()) do
+            if V:IsA("Tool") and V:GetAttribute("Trowel") ~= nil then
+                return
+                    V
+            end
+        end
+        return nil
+    end,
+    EquipTool = function()
+        local G = d.Trowel.GetTool()
+        if not G then return nil, false end
+        if d.Player.IsToolHeld(G) then return G, false end
+        d.Player.UnequipTools()
+        if not d.Player.EquipTool(G) then return nil, false end
+        task.wait(.2)
+        if not d.Player.IsToolHeld(G) then return nil, false end
+        return G, true
+    end,
+    GetSavedPositionText = function()
+        local G = Y.trowel_saved_position
+        if type(G) ~= "table" then return "\240\159\147\141 Saved Position: Not set" end
+        local V = tostring(G.area or "")
+        local y = tonumber(G.x)
+        local Z = tonumber(G.z)
+        if V == "" or not y or not Z then return "\240\159\147\141 Saved Position: Not set" end
+        return string.format("\240\159\147\141 Saved Position: %s | X %.2f | Z %.2f", V, y, Z)
+    end,
+    SavePlayerPosition = function()
+        local G = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
+        if not G then return false, "Character not found" end
+        local V, Z = d.Farm.GetPlantAreaAtPosition(G.Position)
+        if not V or typeof(Z) ~= "Vector3" then return false, "Stand inside your farm" end
+        Y.trowel_saved_position = { area = V.Name, x = Z and Z.X, z = Z and Z.Z }
+        u.Save.SaveDataSync()
+        return true, V.Name
+    end,
+    GetTargetPosition = function()
+        if Y.trowel_use_fixed_spot then
+            local G = d.Farm.GetPermanentPlantPosition(0)
+            if typeof(G) ~= "Vector3" then return nil, "Farm middle not found" end
+            return G
+        end
+        local G = Y.trowel_saved_position
+        if type(G) ~= "table" then return nil, "Copy your position inside the farm" end
+        local V = d.Farm.GetPlantArea(G.area)
+        local y = tonumber(G.x)
+        local Z = tonumber(G.z)
+        if not V or not y or not Z then return nil, "Copy your position inside the farm" end
+        if math.abs(y) > V.Size.X / 2 or math.abs(Z) > V.Size.Z / 2 then
+            return nil,
+                "Saved position is outside your farm"
+        end
+        return V.CFrame:PointToWorldSpace(Vector3.new(y, V.Size.Y / 2, Z))
+    end,
+    GetPlants = function(G)
+        local V = {}
+        local y = Y.trowel_plant_types
+        local Z = type(y) == "table" and next(y) ~= nil
+        for j, i in ipairs(d.Farm.GetPlants()) do
+            if not i:IsA("Model") then continue end
+            local c = i:GetAttribute("SeedName")
+            if type(c) ~= "string" or c == "" or Z and not y[c] then continue end
+            local J = (i:GetPivot()).Position
+            local T = Vector3.new(J.X, 0, J.Z)
+            local d = Vector3.new(G.X, 0, G.Z)
+            if ((T - d)).Magnitude >= 1.25 then table.insert(V, { ob = i, name = c }) end
+        end
+        return V
+    end,
+    MovePlant = function(G, V)
+        if not G or not G.Parent then return false end
+        local Z = y.Networking and (y.Networking.Trowel and y.Networking.Trowel.MovePlant)
+        if not Z or type(Z.Fire) ~= "function" then return false end
+        local j = G.PrimaryPart and G.PrimaryPart.CFrame or G:GetPivot()
+        local i, c, J = j:ToEulerAnglesYXZ()
+        return pcall(function() Z:Fire(G.Name, V, math.deg(c)) end)
+    end,
+    Start = function()
+        if J.TrowelRunning then return end
+        J.TrowelRunning = true
+        d.Trowel.SetStatus("Starting...", "#66CCFF")
+    end,
+    Stop = function(G)
+        J.TrowelRunning = false
+        d.Player.UnequipTools()
+        d.Trowel.ClearStatus()
+        if type(G) == "string" and G ~= "" then J.Notify(G, 3) end
+    end,
+    Run = function()
+        if not J.TrowelRunning then
+            d.Trowel.ClearStatus()
+            return 0
+        end
+        local G, V = d.Trowel.GetTargetPosition()
+        if not G then
+            d.Trowel.Stop(V)
+            return 0
+        end
+        local y = d.Trowel.GetPlants(G)
+        if #y == 0 then
+            d.Trowel.Stop("All selected plants moved")
+            return 0
+        end
+        local Z, j = d.Trowel.EquipTool()
+        if not Z then
+            d.Trowel.Stop("Trowel not found")
+            return 0
+        end
+        local i = 0
+        for V, j in ipairs(y) do
+            if not J.TrowelRunning or i >= d.Trowel.MaxPerLoop then break end
+            if not d.Player.IsToolHeld(Z) then
+                d.Trowel.Stop("Trowel unequipped or ran out")
+                break
+            end
+            d.Trowel.SetStatus(string.format("Moving %s %d/%d", j.name, V, #y), "#FFD966")
+            if d.Trowel.MovePlant(j.ob, G) then
+                i += 1
+                task.wait(d.Trowel.RequestDelay)
+            end
+        end
+        if j then d.Player.UnequipTools() end
+        if J.TrowelRunning then d.Trowel.SetStatus(string.format("Moved %d/%d | Continuing", i, #y), "#7CFC00") end
+        return i
+    end,
+    Loop = function()
+        local G, V = pcall(d.Trowel.Run)
+        if not G then
+            d.Trowel.Stop("Trowel system error")
+            warn("[Trowel]", V)
+            return 0
+        end
+        return tonumber(V) or 0
+    end
+}
+d.FruitCollect = {
+    FruitBucket = {},
+    FruitBucketIndex = 1,
+    IsMaxFruitInventory = function()
+        local G = d.PlayerData.GetFruitCount()
+        local V = d.PlayerData.GetMaxFruitCapacity()
+        if G >= V then return true end
+        return false
+    end,
+    IsFarFromGarden = function()
+        if not d.Farm.IsNearFarm(100) then return true end
+        return false
+    end,
+    GetTextCurrentInventoryFruitStats = function()
+        local G = d.PlayerData.GetFruitCount() or 0
+        local V = d.PlayerData.GetMaxFruitCapacity() or 1
+        local y = math.clamp(G / V, 0, 1)
+        local Z
+        if y < .5 then
+            Z = (Color3.new(0, 1, 0)):Lerp(Color3.new(1, 1, 0), y * 2)
+        else
+            Z = (Color3.new(1, 1, 0)):Lerp(
+                Color3.new(1, .2, 0), ((y - .5)) * 2)
+        end
+        local j = string.format("#%02X%02X%02X", math.floor(Z.R * 255), math.floor(Z.G * 255), math.floor(Z.B * 255))
+        local i = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\140\177 [Fruit Collector]</font> <font color=\'%s\'>Fruits (%d/%d)</font></stroke>",
+            j, G, V)
+        return i
+    end,
+    CollectFruit = function(G, V)
+        if type(G) ~= "string" or G == "" then return false end
+        V = type(V) == "string" and V or ""
+        local Z = y.CollectFruitNet
+        if not Z or type(Z.Fire) ~= "function" then return false end
+        local j = pcall(function() Z:Fire(G, V) end)
+        if not j then
+            d.FruitCollect.ResetBucket()
+            return false
+        end
+        return true
+    end,
+    ResetBucket = function()
+        d.FruitCollect.FruitBucket = {}
+        d.FruitCollect.FruitBucketIndex = 1
+    end,
+    GetReadyFruitsFromSync = function()
+        local G = y.GardenSyncController
+        if type(G) ~= "table" or type(G.GetGarden) ~= "function" then return nil end
+        local V, Z = pcall(function() return G:GetGarden(J.player_userid) end)
+        if not V or type(Z) ~= "table" or next(Z) == nil then return nil end
+        local j = {}
+        for G, V in pairs(Z) do
+            if type(V) ~= "table" then continue end
+            local y = V.PlantName
+            if type(y) ~= "string" or y == "" then continue end
+            local Z = tostring(G or "")
+            if Z == "" then continue end
+            local i = V.Fruits
+            if type(i) == "table" and next(i) ~= nil then
+                for G, V in pairs(i) do
+                    if type(V) ~= "table" then continue end
+                    local i = tonumber(V.Age) or 0
+                    local c = tonumber(V.MaxAge) or 0
+                    if c > 0 and i >= c then table.insert(j, { name = y, plantId = Z, fruitId = tostring(G or "") }) end
+                end
+            elseif d.SeedData.IsSingleHarvest(y) then
+                local G = tonumber(V.Age) or 0
+                local i = tonumber(V.MaxAge) or 0
+                if i > 0 and G >= i then table.insert(j, { name = y, plantId = Z, fruitId = "" }) end
+            end
+        end
+        return j
+    end,
+    CollectLoopSimple = function()
+        if not Y.auto_collect_fruit_enabled then return end
+        if d.FruitCollect.IsMaxFruitInventory() then return end
+        local G = false
+        if next(Y.collect_fruit_list) then G = true end
+        if d.FruitCollect.FruitBucketIndex > #d.FruitCollect.FruitBucket then
+            d.FruitCollect.FruitBucket = d.FruitFilters.GetReadyFruits() or {}
+            d.FruitCollect.FruitBucketIndex = 1
+        end
+        local V = 0
+        if #d.FruitCollect.FruitBucket > 0 then
+            if d.FruitCollect.IsFarFromGarden() and Y.collection_teleport then
+                local G = d.Farm.GetSpawnPoint()
+                if G then d.Teleport.TeleportTo(G, true) else warn("center not found") end
+            end
+        end
+        if not y.CollectFruitNet or type(y.CollectFruitNet.Fire) ~= "function" then return false end
+        for y = 1, 500, 1 do
+            local Z = d.FruitCollect.FruitBucket[d.FruitCollect.FruitBucketIndex]
+            if not Z then
+                d.FruitCollect.ResetBucket()
+                break
+            end
+            if V >= 500 then break end
+            d.FruitCollect.FruitBucketIndex += 1
+            if not Y.auto_collect_fruit_enabled then return end
+            if d.FruitCollect.IsMaxFruitInventory() then return end
+            local j = Z.name
+            if G then if not Y.collect_fruit_list[j] then continue end end
+            local i = Z.plantId
+            local c = Z.fruitId
+            if d.FruitCollect.CollectFruit(i, c) then
+                V += 1
+                task.wait()
+            end
+        end
+        return V
+    end
+}
+J.PetFarmStatusText = ""
+d.PetFarmReturn = {
+    MaxDistance = 35,
+    NextCheckAt = 0,
+    SetStatus = function(G, V)
+        J.PetFarmStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\144\190 [Pet Farm]</font> <font color=\'%s\'>%s</font></stroke>",
+            V or "#FFFFFF", tostring(G or ""))
+    end,
+    GetTimer = function()
+        return math.max(
+            math.floor(tonumber(Y.pet_return_farm_timer) or 60), 3)
+    end,
+    ResetTimer = function()
+        d.PetFarmReturn.NextCheckAt = os
+            .clock() + d.PetFarmReturn.GetTimer()
+    end,
+    Loop = function()
+        if not Y.pet_return_farm then
+            J.PetFarmStatusText = ""
+            return
+        end
+        if d.PetFarmReturn.NextCheckAt <= 0 then d.PetFarmReturn.ResetTimer() end
+        local G = math.max(math.ceil(d.PetFarmReturn.NextCheckAt - os.clock()), 0)
+        if G > 0 then
+            d.PetFarmReturn.SetStatus(string.format("Teleporting in %ds", G), "#FFD966")
+            return
+        end
+        if d.Teleport.IsLocked(J.TeleportLockNames.PetFarmReturn) then return end
+        if not d.PlayerData.GetIsInOwnGarden() then
+            d.PetFarmReturn.SetStatus("Teleporting to farm...", "#66CCFF")
+            if not d.Farm.TeleportToCenter(J.TeleportLockNames.PetFarmReturn) then
+                d.PetFarmReturn.SetStatus(
+                    "Farm centre not found", "#FF5555")
+            end
+        end
+        d.PetFarmReturn.ResetTimer()
+    end
+}
+d.PetFarmReturn.ResetTimer()
+task.spawn(function()
+    while true do
+        task.wait(.05)
+        if not Y.turbo_sell then
+            task.wait(3)
+            continue
+        end
+        task.spawn(function() d.SellManager.SellAll() end)
+    end
+end)
+task.spawn(function()
+    while true do
+        task.wait(.1)
+        local G, V = pcall(function()
+            d.FruitCollect.CollectLoopSimple()
+            d.SellManager.SellAll()
+        end)
+        if not G then
+            d.FruitCollect.ResetBucket()
+            warn("[FruitCollect] Loop error:", V)
+            task.wait(1)
         end
     end
-
-    if typeof(Dropdown.Tooltip) == "string" or typeof(Dropdown.DisabledTooltip) == "string" then
-        Dropdown.TooltipTable = Library:AddTooltip(Dropdown.Tooltip, Dropdown.DisabledTooltip, Display)
-        Dropdown.TooltipTable.Disabled = Dropdown.Disabled
-    end
-
-    UpdateCloseButtonStyle()
-    Dropdown.Menu = MenuState
-    Dropdown:UpdateColors()
-    Dropdown:Display()
-    Dropdown:BuildDropdownList(false)
-    ApplyPopupLayout()
-    Groupbox:Resize()
-
-    Dropdown.Holder = Holder
-    table.insert(Groupbox.Elements, Dropdown)
-
-    Options[Idx] = Dropdown
-    return Dropdown
-end
-
- 
-
-    
-    function Funcs:AddDropdown(Idx, Info)
-        Info = Library:Validate(Info, Templates.Dropdown)
-    
-        local Groupbox = self
-        local Container = Groupbox.Container
-    
-        if Info.SpecialType == "Player" then
-            Info.Values = GetPlayers(Info.ExcludeLocalPlayer)
-            Info.AllowNull = true
-        elseif Info.SpecialType == "Team" then
-            Info.Values = GetTeams()
-            Info.AllowNull = true
+end)
+J.SprinklerPlaceStatusText = ""
+d.SprinklerPlacer = {
+    MaxPerLoop = 10,
+    MinSpacing = 1.5,
+    CentreSideOffset = 10,
+    MaxPositionAttempts = 80,
+    EquippedBySystem = false,
+    SetStatus = function(
+        G, V)
+        J.SprinklerPlaceStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\146\166 [Sprinkler]</font> <font color=\'%s\'>%s</font></stroke>",
+            tostring(V or "#FFFFFF"), tostring(G or "Waiting"))
+    end,
+    ClearStatus = function() J.SprinklerPlaceStatusText = "" end,
+    GetDelay = function()
+        return
+            math.max(tonumber(Y.sprinkler_place_delay) or .6, .2)
+    end,
+    GetNames = function()
+        local G = {}
+        local V = {}
+        for y, Z in ipairs(J.AllGearShopTable) do
+            local j = type(Z) == "table" and Z.name or nil
+            if type(j) ~= "string" or j == "" or not string.find(j, "Sprinkler", 1, true) or V[j] then continue end
+            V[j] = true
+            table.insert(G, j)
         end
-    
-        local Dropdown = {
-            Text = typeof(Info.Text) == "string" and Info.Text or nil,
-            Value = Info.Multi and {} or nil,
-            Values = Info.Values,
-            DisabledValues = Info.DisabledValues,
-            Multi = Info.Multi,
-    
-            SpecialType = Info.SpecialType,
-            ExcludeLocalPlayer = Info.ExcludeLocalPlayer,
-    
-            Tooltip = Info.Tooltip,
-            DisabledTooltip = Info.DisabledTooltip,
-            TooltipTable = nil,
-    
-            Callback = Info.Callback,
-            Changed = Info.Changed,
-    
-            Disabled = Info.Disabled,
-            Visible = Info.Visible,
-    
-            Type = "Dropdown",
-        }
-    
-        local Holder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, Dropdown.Text and 46 or 28),
-            Visible = Dropdown.Visible,
-            Parent = Container,
-        })
-    
-        local Label = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 14),
-            Text = Dropdown.Text,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Visible = not not Info.Text,
-            Parent = Holder,
-        })
-    
-        local Display = New("TextButton", {
-            Active = not Dropdown.Disabled,
-            AnchorPoint = Vector2.new(0, 1),
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Position = UDim2.fromScale(0, 1),
-            Size = UDim2.new(1, 0, 0, 28),
-            Text = "---",
-            TextSize = 12,
-            TextTruncate = Enum.TextTruncate.AtEnd,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = Holder,
-        })
-    
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius),
-            Parent = Display,
-        })
-    
-        New("UIPadding", {
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 4),
-            Parent = Display,
-        })
-    
-        local ArrowImage = New("ImageLabel", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            Image = ArrowIcon and ArrowIcon.Url or "",
-            ImageColor3 = "FontColor",
-            ImageRectOffset = ArrowIcon and ArrowIcon.ImageRectOffset or Vector2.zero,
-            ImageRectSize = ArrowIcon and ArrowIcon.ImageRectSize or Vector2.zero,
-            ImageTransparency = 0.5,
-            Position = UDim2.new(1, -8, 0.5, 0),
-            Size = UDim2.fromOffset(16, 16),
-            Parent = Display,
-        })
-    
-        local ClickBlocker = New("TextButton", {
-            Active = true,
-            AutoButtonColor = false,
-            BackgroundColor3 = "Dark",
-            BackgroundTransparency = 0.5, -- 50% dim
-            BorderSizePixel = 0,
-            Modal = true,
-            Size = UDim2.fromScale(1, 1),
-            Text = "",
-            Visible = false,
-            ZIndex = 119,
-            Parent = Library.ScreenGui,
-        })
-    
-        local Popup = New("Frame", {
-            Active = true,
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Position = UDim2.fromScale(0.5, 0.5),
-            Size = UDim2.fromScale(0.56, 0.76),
-            Visible = false,
-            ZIndex = 120,
-            Parent = Library.ScreenGui,
-        })
-    
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius + 4),
-            Parent = Popup,
-        })
-    
-        New("UIStroke", {
-            ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-            Thickness = 1.2,
-            Transparency = 0.15,
-            Color = Library.Scheme.OutlineColor:Lerp(Library.Scheme.AccentColor, 0.28),
-            Parent = Popup,
-        })
-    
-        local PopupHeaderBg = New("Frame", {
-            BackgroundColor3 = "BackgroundColor",
-            BorderSizePixel = 0,
-            ZIndex = 120,
-            Parent = Popup,
-        })
-    
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius + 4),
-            Parent = PopupHeaderBg,
-        })
-    
-        local PopupHeaderDivider = New("Frame", {
-            BackgroundColor3 = "OutlineColor",
-            BorderSizePixel = 0,
-            ZIndex = 121,
-            Parent = Popup,
-        })
-    
-        local PopupBody = New("Frame", {
-            BackgroundColor3 = "BackgroundColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            ZIndex = 121,
-            Parent = Popup,
-        })
-    
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius + 2),
-            Parent = PopupBody,
-        })
-    
-        local Header = New("Frame", {
-            Active = true,
-            BackgroundTransparency = 1,
-            ZIndex = 122,
-            Parent = Popup,
-        })
-    
-        local Title = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Text = Dropdown.Text or "Select",
-            TextXAlignment = Enum.TextXAlignment.Left,
-            ZIndex = 123,
-            Parent = Header,
-        })
-    
-        local CloseButton = New("TextButton", {
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Text = Info.Multi and "Done" or "Close",
-            ZIndex = 123,
-            Parent = Header,
-        })
-    
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-            Parent = CloseButton,
-        })
-    
-        local CloseButtonStroke = New("UIStroke", {
-            ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-            Thickness = 1,
-            Transparency = 0.25,
-            Parent = CloseButton,
-        })
-    
-        local SearchInput = New("TextBox", {
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            PlaceholderText = "Search items...",
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Visible = Info.Searchable == true,
-            ZIndex = 123,
-            Parent = PopupBody,
-        })
-    
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-            Parent = SearchInput,
-        })
-    
-        New("UIPadding", {
-            PaddingLeft = UDim.new(0, 10),
-            PaddingRight = UDim.new(0, 8),
-            Parent = SearchInput,
-        })
-    
-        local List = New("ScrollingFrame", {
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-            CanvasSize = UDim2.fromOffset(0, 0),
-            ScrollBarImageColor3 = "OutlineColor",
-            ScrollBarThickness = 4,
-            TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-            ZIndex = 123,
-            Parent = PopupBody,
-        })
-    
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-            Parent = List,
-        })
-    
-        local ListLayout = New("UIListLayout", {
-            Parent = List,
-        })
-    
-        local ResizeHandle = New("TextButton", {
-            AnchorPoint = Vector2.new(1, 1),
-            AutoButtonColor = false,
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Position = UDim2.fromScale(1, 1),
-            Size = UDim2.fromOffset(18, 18),
-            Text = "",
-            ZIndex = 124,
-            Parent = Popup,
-        })
-    
-        New("UICorner", {
-            CornerRadius = UDim.new(0, 4),
-            Parent = ResizeHandle,
-        })
-    
-        local Buttons = {}
-        local MenuState = { Active = false, Menu = Popup }
-        local PopupScale = { W = 0.56, H = 0.76 }
-        local CurrentRowHeight = 40
-        local CurrentOptionTextSize = 14
-    
-        local function IsSelected(Value)
-            if Info.Multi then
-                return Dropdown.Value[Value] == true
-            end
-            return Dropdown.Value == Value
-        end
-    
-        local function UpdateCloseButtonStyle()
-            if Info.Multi then
-                CloseButton.Text = "Done"
-                CloseButton.BackgroundColor3 = Library.Scheme.AccentColor:Lerp(Library.Scheme.MainColor, 0.2)
-                CloseButtonStroke.Color = Library.Scheme.AccentColor:Lerp(Library.Scheme.White, 0.2)
-                CloseButtonStroke.Transparency = 0.2
-            else
-                CloseButton.Text = "Close"
-                CloseButton.BackgroundColor3 = Library.Scheme.MainColor
-                CloseButtonStroke.Color = Library.Scheme.OutlineColor
-                CloseButtonStroke.Transparency = 0.35
-            end
-        end
-    
-        local function GetPopupMetrics()
-            local viewport = Library.ScreenGui and Library.ScreenGui.AbsoluteSize or Vector2.new(1280, 720)
-            local isPortrait = viewport.Y > viewport.X
-    
-            local minWScale = isPortrait and 0.78 or 0.42
-            local maxWScale = isPortrait and 0.96 or 0.82
-            local minHScale = isPortrait and 0.48 or 0.52
-            local maxHScale = 0.90
-    
-            PopupScale.W = math.clamp(PopupScale.W, minWScale, maxWScale)
-            PopupScale.H = math.clamp(PopupScale.H, minHScale, maxHScale)
-    
-            local width = viewport.X * PopupScale.W
-            local height = viewport.Y * PopupScale.H
-    
-            local padX = width * 0.036
-            local padY = height * 0.03
-            local headerH = height * 0.08
-            local searchH = height * 0.085
-            local gap = height * 0.018
-    
-            local titleText = math.clamp(math.floor(height * 0.038), 13, 22)
-            local inputText = math.clamp(math.floor(height * 0.031), 12, 18)
-    
-            -- ~10% smaller rows/buttons than previous
-            local optionText = math.clamp(math.floor(height * 0.027), 12, 17)
-            local rowH = math.clamp(height * 0.078, 30, 52)
-    
-            return {
-                width = width,
-                height = height,
-                padX = padX,
-                padY = padY,
-                headerH = headerH,
-                searchH = searchH,
-                gap = gap,
-                titleText = titleText,
-                inputText = inputText,
-                optionText = optionText,
-                rowH = rowH,
-            }
-        end
-    
-        local function ApplyPopupLayout()
-            local M = GetPopupMetrics()
-            local closeH = math.floor(M.headerH * 0.72)
-            local closeW = math.max(78, math.floor(closeH * 2.05))
-            local bodyTop, innerPadX, innerPadY, listTop
-    
-            Popup.Size = UDim2.fromScale(PopupScale.W, PopupScale.H)
-    
-            Header.Position = UDim2.fromOffset(M.padX, M.padY)
-            Header.Size = UDim2.new(1, -M.padX * 2, 0, M.headerH)
-    
-            Title.Position = UDim2.fromOffset(0, 0)
-            Title.Size = UDim2.new(1, -(closeW + 12), 1, 0)
-            Title.TextSize = M.titleText
-    
-            CloseButton.Size = UDim2.fromOffset(closeW, closeH)
-            CloseButton.Position = UDim2.new(1, -closeW, 0.5, -math.floor(closeH / 2))
-            CloseButton.TextSize = math.max(12, M.inputText - 1)
-    
-            PopupHeaderBg.Position = UDim2.fromOffset(0, 0)
-            PopupHeaderBg.Size = UDim2.new(1, 0, 0, M.padY + M.headerH + M.gap * 0.65)
-    
-            PopupHeaderDivider.Position = UDim2.fromOffset(0, math.floor(M.padY + M.headerH + M.gap * 0.65))
-            PopupHeaderDivider.Size = UDim2.new(1, 0, 0, 1)
-    
-            bodyTop = math.floor(M.padY + M.headerH + M.gap + 2)
-            PopupBody.Position = UDim2.fromOffset(M.padX, bodyTop)
-            PopupBody.Size = UDim2.new(1, -M.padX * 2, 1, -(bodyTop + M.padY))
-    
-            innerPadX = math.max(10, math.floor(M.padX * 0.7))
-            innerPadY = math.max(10, math.floor(M.padY * 0.65))
-    
-            if SearchInput.Visible then
-                SearchInput.Position = UDim2.fromOffset(innerPadX, innerPadY)
-                SearchInput.Size = UDim2.new(1, -(innerPadX * 2), 0, M.searchH)
-                SearchInput.TextSize = M.inputText
-    
-                listTop = innerPadY + M.searchH + M.gap
-                List.Position = UDim2.fromOffset(innerPadX, listTop)
-                List.Size = UDim2.new(1, -(innerPadX * 2), 1, -(listTop + innerPadY))
-            else
-                List.Position = UDim2.fromOffset(innerPadX, innerPadY)
-                List.Size = UDim2.new(1, -(innerPadX * 2), 1, -(innerPadY * 2))
-            end
-    
-            CurrentRowHeight = M.rowH
-            CurrentOptionTextSize = M.optionText
-            ListLayout.Padding = UDim.new(0, math.max(4, math.floor(M.gap * 0.45)))
-    
-            for _, Entry in pairs(Buttons) do
-                Entry.Button.Size = UDim2.new(1, -8, 0, CurrentRowHeight)
-                Entry.Button.TextSize = CurrentOptionTextSize
-            end
-        end
-    
-        local function UpdateEntry(Entry)
-            local selected = IsSelected(Entry.Value)
-    
-            Entry.Button.BackgroundColor3 = Library.Scheme.MainColor:Lerp(Library.Scheme.AccentColor, 0.15)
-            Entry.Button.BackgroundTransparency = selected and 0.5 or 1 
-            Entry.Button.TextTransparency = Entry.Disabled and 0.8 or (selected and 0.04 or 0.45)
-            Entry.Button.Text = tostring(Entry.Value)
-        end
-    
-        local function RefreshButtons()
-            for _, Entry in pairs(Buttons) do
-                UpdateEntry(Entry)
-            end
-        end
-    
-        local function ClosePopup()
-            if not MenuState.Active then
-                return
-            end
-    
-            MenuState.Active = false
-            ClickBlocker.Visible = false
-            Popup.Visible = false
-    
-            if UserInputService:GetFocusedTextBox() == SearchInput then
-                pcall(function()
-                    SearchInput:ReleaseFocus()
-                end)
-            end
-    
-            Dropdown:UpdateColors()
-        end
-    
-        local function BuildOrderedValues(Query: string, PrioritizeSelected: boolean)
-            local Selected = {}
-            local Unselected = {}
-    
-            for _, Value in pairs(Dropdown.Values or {}) do
-                if Query ~= "" and not tostring(Value):lower():match(Query) then
-                    continue
-                end
-    
-                if PrioritizeSelected and IsSelected(Value) then
-                    table.insert(Selected, Value)
-                else
-                    table.insert(Unselected, Value)
-                end
-            end
-    
-            if not PrioritizeSelected then
-                return Unselected
-            end
-    
-            for i = 1, #Unselected do
-                table.insert(Selected, Unselected[i])
-            end
-    
-            return Selected
-        end
-    
-        local function ApplySelection(Value)
-            local wasSelected = IsSelected(Value)
-            local nextSelected = not wasSelected
-    
-            if Dropdown:GetActiveValues() == 1 and not nextSelected and not Info.AllowNull then
-                return
-            end
-    
-            if Info.Multi then
-                Dropdown.Value[Value] = nextSelected and true or nil
-            else
-                Dropdown.Value = nextSelected and Value or nil
-            end
-    
-            Dropdown:Display()
-            RefreshButtons()
-    
-            Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-            Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
-            Library:UpdateDependencyBoxes()
-    
-            if not Info.Multi then
-                ClosePopup()
-            end
-        end
-    
-        function Dropdown:BuildDropdownList(PrioritizeSelected)
-            local query = SearchInput.Visible and (SearchInput.Text or ""):lower() or ""
-            local orderedValues = BuildOrderedValues(query, PrioritizeSelected == true)
-            local disabledLookup = {}
-    
-            for _, Value in pairs(Dropdown.DisabledValues or {}) do
-                disabledLookup[Value] = true
-            end
-    
-            for Button, _ in pairs(Buttons) do
-                Button:Destroy()
-            end
-            table.clear(Buttons)
-    
-            for i = 1, #orderedValues do
-                local Value = orderedValues[i]
-                local IsDisabled = disabledLookup[Value] == true
-    
-                local Button = New("TextButton", {
-                    BackgroundColor3 = "MainColor",
-                    BackgroundTransparency = 1,
-                    BorderColor3 = "OutlineColor",
-                    BorderSizePixel = 0,
-                    LayoutOrder = i,
-                    Size = UDim2.new(1, -8, 0, CurrentRowHeight),
-                    Text = "",
-                    TextSize = CurrentOptionTextSize,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 123,
-                    Parent = List,
+        table.sort(G)
+        return G
+    end,
+    IsValidName = function(G)
+        if type(G) ~= "string" or G == "" then return false end
+        for V, y in ipairs(d.SprinklerPlacer.GetNames()) do if y == G then return true end end
+        return false
+    end,
+    GetDropdown = function()
+        local G = {}
+        for V, y in ipairs(d.SprinklerPlacer.GetNames()) do
+            local Z = d.GearData.GetGeatItemDetails(y) or {}
+            local j = tostring(Z.rarity or "Unknown")
+            local i = d.Data.GetRarityColor(j)
+            table.insert(G,
+                {
+                    Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", y, i, j),
+                    Value =
+                        y
                 })
-    
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-                    Parent = Button,
-                })
-    
-                New("UIPadding", {
-                    PaddingLeft = UDim.new(0, 12),
-                    PaddingRight = UDim.new(0, 10),
-                    Parent = Button,
-                })
-    
-                local Entry = {
-                    Button = Button,
-                    Value = Value,
-                    Disabled = IsDisabled,
-                }
-    
-                if not IsDisabled then
-                    Button.MouseButton1Click:Connect(function()
-                        if Dropdown.Disabled then
-                            return
-                        end
-                        ApplySelection(Value)
-                    end)
-                end
-    
-                UpdateEntry(Entry)
-                Buttons[Button] = Entry
+        end
+        return G
+    end,
+    GetAllSelection = function()
+        local G = {}
+        for V, y in ipairs(d.SprinklerPlacer.GetNames()) do G[y] = true end
+        return G
+    end,
+    GetOverrideTarget = function(G)
+        local V = Y.sprinkler_place_overrides
+        if type(V) ~= "table" then return nil end
+        local y = tonumber(V[G])
+        if not y then return nil end
+        return math.max(math.floor(y), 0)
+    end,
+    SetOverrideTarget = function(G, V)
+        if not d.SprinklerPlacer.IsValidName(G) then return false end
+        V = math.floor(tonumber(V) or 0)
+        if V <= 0 then return false end
+        if type(Y.sprinkler_place_overrides) ~= "table" then Y.sprinkler_place_overrides = {} end
+        Y.sprinkler_place_overrides[G] = V
+        return true
+    end,
+    RemoveOverrideTarget = function(G)
+        if type(Y.sprinkler_place_overrides) ~= "table" then
+            Y.sprinkler_place_overrides = {}
+            return false
+        end
+        if Y.sprinkler_place_overrides[G] == nil then return false end
+        Y.sprinkler_place_overrides[G] = nil
+        return true
+    end,
+    GetTargetAmount = function(G)
+        local V = d.SprinklerPlacer.GetOverrideTarget(G)
+        if V ~= nil then return V end
+        return math.max(math.floor(tonumber(Y.sprinkler_place_default_target) or 1), 0)
+    end,
+    GetSprinklersFolder = function()
+        local G = d.Farm.GetOwnPlot()
+        if not G then return nil end
+        return G:FindFirstChild("Sprinklers")
+    end,
+    GetPlacedCounts = function()
+        local G = {}
+        local V = 0
+        local y = d.SprinklerPlacer.GetSprinklersFolder()
+        if not y then return G, V end
+        for y, Z in ipairs(y:GetChildren()) do
+            local j = Z:GetAttribute("SprinklerName")
+            if type(j) ~= "string" or j == "" then continue end
+            G[j] = ((G[j] or 0)) + 1
+            V += 1
+        end
+        return G, V
+    end,
+    GetOccupiedPositions = function()
+        local G = {}
+        local V = d.SprinklerPlacer.GetSprinklersFolder()
+        if not V then return G end
+        for V, y in ipairs(V:GetChildren()) do
+            local Z
+            if y:IsA("Model") then Z = (y:GetPivot()).Position elseif y:IsA("BasePart") then Z = y.Position end
+            if typeof(Z) == "Vector3" then table.insert(G, Z) end
+        end
+        return G
+    end,
+    IsPositionOpen = function(G, V)
+        if typeof(G) ~= "Vector3" then return false end
+        for V, y in ipairs(V or {}) do
+            if typeof(y) ~= "Vector3" then continue end
+            local Z = Vector3.new(G.X - y.X, 0, G.Z - y.Z)
+            if Z.Magnitude < d.SprinklerPlacer.MinSpacing then return false end
+        end
+        return true
+    end,
+    GetTool = function(G)
+        if type(G) ~= "string" or G == "" then return nil end
+        for V, y in ipairs(d.Backpack.GetBackpackAllItems()) do
+            if not y:IsA("Tool") then continue end
+            local Z = y:GetAttribute("Sprinkler")
+            if Z == G then return y end
+            if y.Name == G and Z ~= nil then return y end
+        end
+        return nil
+    end,
+    EquipTool = function(G)
+        if not G or not G:IsA("Tool") then return false end
+        if d.Player.IsToolHeld(G) then return true end
+        d.Player.UnequipTools()
+        if not d.Player.EquipTool(G) then return false end
+        d.SprinklerPlacer.EquippedBySystem = true
+        task.wait(.15)
+        return d.Player.IsToolHeld(G)
+    end,
+    CleanupTool = function()
+        if not d.SprinklerPlacer.EquippedBySystem then return end
+        d.SprinklerPlacer.EquippedBySystem = false
+        d.Player.UnequipTools()
+    end,
+    SaveCurrentPosition = function()
+        local G = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
+        if not G then return false, "Character not found" end
+        local V, Z = d.Farm.GetPlantAreaAtPosition(G.Position)
+        if not V or typeof(Z) ~= "Vector3" then return false, "Stand inside your farm" end
+        Y.sprinkler_place_saved_position = { area = V.Name, x = Z.X, z = Z.Z }
+        u.Save.SaveDataSync()
+        return true, "Sprinkler position saved"
+    end,
+    GetSavedPositionText = function()
+        local G = Y.sprinkler_place_saved_position
+        local V = type(G) == "table" and tostring(G.area or "") or ""
+        local y = type(G) == "table" and tonumber(G.x) or nil
+        local Z = type(G) == "table" and tonumber(G.z) or nil
+        if V == "" or not y or not Z then return "\240\159\147\141 Saved Position: Not set" end
+        return string.format("\240\159\147\141 Saved Position: %s | X %.2f | Z %.2f", V, y, Z)
+    end,
+    GetTargetPlant = function()
+        local G = tostring(Y.sprinkler_place_target_plant or "")
+        if G == "" then return nil end
+        local V = d.Farm.GetPermanentCenterPosition()
+        local y
+        local Z = math.huge
+        for j, i in ipairs(d.Farm.GetPlants()) do
+            if i:GetAttribute("SeedName") ~= G then continue end
+            local c
+            if i:IsA("Model") then c = (i:GetPivot()).Position elseif i:IsA("BasePart") then c = i.Position end
+            if typeof(c) ~= "Vector3" then continue end
+            local J = V and ((c - V)).Magnitude or 0
+            if J < Z then
+                Z = J
+                y = i
             end
-    
-            List.CanvasPosition = Vector2.zero
-            ApplyPopupLayout()
-            Dropdown:Display()
         end
-    
-        function Dropdown:BuildDropdownListNew()
-            Dropdown:BuildDropdownList(true)
+        return y
+    end,
+    GetBasePosition = function(G)
+        local V = tostring(Y.sprinkler_place_mode or "Farm Middle")
+        G = math.max(math.floor(tonumber(G) or 0), 0)
+        if V == "Farm Middle" then
+            local V = d.Farm.GetPermanentCenterCFrame()
+            if not V then return nil, "Farm centre not found" end
+            local y = { -d.SprinklerPlacer.CentreSideOffset, d.SprinklerPlacer.CentreSideOffset, 0, -d.SprinklerPlacer
+            .CentreSideOffset / 2, d.SprinklerPlacer.CentreSideOffset / 2 }
+            local Z = y[(G % #y) + 1]
+            return V:PointToWorldSpace(Vector3.new(Z, 0, 0))
         end
-    
-        function Dropdown:RecalculateListSize(_)
+        if V == "Plant Target" then
+            local G = d.SprinklerPlacer.GetTargetPlant()
+            if not G then return nil, "Selected target plant not found" end
+            if G:IsA("Model") then return (G:GetPivot()).Position end
+            if G:IsA("BasePart") then return G.Position end
+            return nil, "Selected target plant not found"
         end
-    
-        function Dropdown:UpdateColors()
-            if Library.Unloaded then
-                return
+        if V == "Saved Position" then
+            local G = Y.sprinkler_place_saved_position
+            local V = type(G) == "table" and d.Farm.GetPlantArea(G.area) or nil
+            local y = type(G) == "table" and tonumber(G.x) or nil
+            local Z = type(G) == "table" and tonumber(G.z) or nil
+            if not V or not y or not Z then return nil, "Copy a sprinkler position" end
+            if math.abs(y) > V.Size.X / 2 or math.abs(Z) > V.Size.Z / 2 then
+                return nil,
+                    "Saved position is outside your farm"
             end
-    
-            Label.TextTransparency = Dropdown.Disabled and 0.8 or 0
-            Display.TextTransparency = Dropdown.Disabled and 0.8 or 0
-            ArrowImage.ImageTransparency = Dropdown.Disabled and 0.8 or (MenuState.Active and 0 or 0.5)
-            ArrowImage.Rotation = MenuState.Active and 180 or 0
+            return V.CFrame:PointToWorldSpace(Vector3.new(y, V.Size.Y / 2, Z))
         end
-    
-        function Dropdown:Display()
-            if Library.Unloaded then
-                return
+        return nil, "Invalid placement mode"
+    end,
+    FindOpenPositionAround = function(G, V)
+        local y, Z, j = d.Farm.ProjectPositionToPlantArea(G, 1)
+        if not Z or not j then return nil end
+        for G = 0, d.SprinklerPlacer.MaxPositionAttempts, 1 do
+            local y = j.X
+            local i = j.Z
+            if G > 0 then
+                local V = math.rad(G * 137.5)
+                local Z = 1.75 * math.sqrt(G)
+                y += math.cos(V) * Z
+                i += math.sin(V) * Z
             end
-    
-            local Str = ""
-    
-            if Info.Multi then
-                for _, Value in pairs(Dropdown.Values) do
-                    if Dropdown.Value[Value] then
-                        Str = Str .. (Info.FormatDisplayValue and tostring(Info.FormatDisplayValue(Value)) or tostring(Value)) .. ", "
-                    end
-                end
-                Str = Str:sub(1, #Str - 2)
+            local c = math.max(Z.Size.X / 2 - 1, 0)
+            local J = math.max(Z.Size.Z / 2 - 1, 0)
+            if math.abs(y) > c or math.abs(i) > J then continue end
+            local T = Z.CFrame:PointToWorldSpace(Vector3.new(y, Z.Size.Y / 2, i))
+            if d.SprinklerPlacer.IsPositionOpen(T, V) then return T end
+        end
+        return nil
+    end,
+    GetPlacementPosition = function(G, V)
+        local y, Z = d.SprinklerPlacer.GetBasePosition(V)
+        if not y then return nil, Z end
+        local j = d.SprinklerPlacer.FindOpenPositionAround(y, G)
+        if not j then return nil, "No open sprinkler position found" end
+        return j
+    end,
+    GetCandidates = function()
+        local G = {}
+        local V = Y.sprinkler_place_selected
+        local y, Z = d.SprinklerPlacer.GetPlacedCounts()
+        local j = 0
+        local i = 0
+        if type(V) ~= "table" then return G, y, Z, j, i end
+        for V, Z in pairs(V) do
+            if Z ~= true or not d.SprinklerPlacer.IsValidName(V) then continue end
+            j += 1
+            local c = d.SprinklerPlacer.GetTargetAmount(V)
+            local J = math.max(math.floor(tonumber(y[V]) or 0), 0)
+            local T = math.max(c - J, 0)
+            if T <= 0 then continue end
+            i += 1
+            if d.SprinklerPlacer.GetTool(V) then table.insert(G, { name = V, placed = J, target = c, remaining = T }) end
+        end
+        return G, y, Z, j, i
+    end,
+    PrepareTeleport = function(G, V)
+        if not Y.sprinkler_place_teleport then return true end
+        if typeof(G) ~= "Vector3" then return false end
+        local Z = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
+        if not Z then return false end
+        if ((Z.Position - G)).Magnitude <= 25 then return true end
+        local j = d.Teleport.TeleportToCFrame(CFrame.new(G + Vector3.new(0, 3, 0)), V)
+        if j then task.wait(.15) end
+        return j
+    end,
+    Place = function(G, V, Z, j)
+        if type(G) ~= "string" or G == "" then return false end
+        if typeof(V) ~= "Vector3" or not Z or not Z:IsA("Tool") then return false end
+        if not d.Player.IsToolHeld(Z) then return false end
+        j = tonumber(j)
+        if not j or j <= 0 then return false end
+        local i = y.Networking and (y.Networking.Place and y.Networking.Place.PlaceSprinkler)
+        if not i or type(i.Fire) ~= "function" then return false end
+        local c = d.SprinklerPlacer.GetPlacedCounts()
+        local J = c[G] or 0
+        local T = pcall(function() i:Fire(V, G, Z, j) end)
+        if not T then return false end
+        local u = os.clock() + 1.5
+        repeat
+            local V = d.SprinklerPlacer.GetPlacedCounts()
+            local y = V[G] or 0
+            if y > J then return true end
+            if not Z.Parent then return true end
+            task.wait(.05)
+        until os.clock() >= u
+        return false
+    end,
+    Run = function()
+        if not Y.auto_sprinkler_place then
+            d.SprinklerPlacer.ClearStatus()
+            return 0
+        end
+        local G, V, y, Z, j = d.SprinklerPlacer.GetCandidates()
+        if Z <= 0 then
+            d.SprinklerPlacer.SetStatus("Paused: select sprinklers", "#FFCC66")
+            return 0
+        end
+        if #G <= 0 then
+            if j <= 0 then
+                d.SprinklerPlacer.SetStatus("All selected targets reached", "#7CFC00")
             else
-                Str = Dropdown.Value and tostring(Dropdown.Value) or ""
-                if Str ~= "" and Info.FormatDisplayValue then
-                    Str = tostring(Info.FormatDisplayValue(Str))
-                end
+                d.SprinklerPlacer
+                    .SetStatus("Selected sprinkler tools not found", "#FFCC66")
             end
-    
-            Display.Text = (Str == "" and "---" or Str)
+            return 0
         end
-    
-        function Dropdown:OnChanged(Func)
-            Dropdown.Changed = Func
+        local i = d.SprinklerPlacer.GetOccupiedPositions()
+        local c, T = d.SprinklerPlacer.GetPlacementPosition(i, y)
+        if not c then
+            d.SprinklerPlacer.SetStatus(T or "Placement position unavailable", "#FF5555")
+            return 0
         end
-    
-        function Dropdown:GetActiveValues()
-            if Info.Multi then
-                local Table = {}
-                for Value, _ in pairs(Dropdown.Value) do
-                    table.insert(Table, Value)
-                end
-                return Table
-            end
-            return Dropdown.Value and 1 or 0
+        local u = d.PlayerData.GetPlotId()
+        if not u or u <= 0 then
+            d.SprinklerPlacer.SetStatus("Plot ID not found", "#FF5555")
+            return 0
         end
-    
-        function Dropdown:SetValue(Value, suppressCallback)
-            if Info.Multi then
-                local Table = {}
-    
-                for Val, Active in pairs(Value or {}) do
-                    if Active and table.find(Dropdown.Values, Val) then
-                        Table[Val] = true
-                    end
-                end
-    
-                Dropdown.Value = Table
-            else
-                if table.find(Dropdown.Values, Value) then
-                    Dropdown.Value = Value
-                elseif not Value then
-                    Dropdown.Value = nil
-                end
-            end
-    
-            Dropdown:Display()
-            RefreshButtons()
-    
-            if not Dropdown.Disabled then
-                Library:UpdateDependencyBoxes()
-                if not suppressCallback then
-                    Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-                    Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
-                end
+        local q = J.TeleportLockNames.SprinklerPlacer
+        local g = false
+        if Y.sprinkler_place_teleport then
+            g = d.Teleport.LockTeleport(q, 10, false)
+            if not g then
+                d.SprinklerPlacer.SetStatus("Waiting: teleport busy", "#FFCC66")
+                return 0
             end
         end
-    
-        function Dropdown:SetValues(Values)
-            Dropdown.Values = Values
-            Dropdown:BuildDropdownList(MenuState.Active)
-        end
-    
-        function Dropdown:AddValues(Values)
-            if typeof(Values) == "table" then
-                for _, val in pairs(Values) do
-                    table.insert(Dropdown.Values, val)
-                end
-            elseif typeof(Values) == "string" then
-                table.insert(Dropdown.Values, Values)
-            else
-                return
+        local E = 0
+        local a = 0
+        while Y.auto_sprinkler_place and (#G > 0 and a < d.SprinklerPlacer.MaxPerLoop) do
+            local Z = d.Farm._Random:NextInteger(1, #G)
+            local j = G[Z]
+            local c = d.SprinklerPlacer.GetTool(j.name)
+            if not c or j.remaining <= 0 then
+                table.remove(G, Z)
+                continue
             end
-    
-            Dropdown:BuildDropdownList(MenuState.Active)
-        end
-    
-        function Dropdown:SetDisabledValues(DisabledValues)
-            Dropdown.DisabledValues = DisabledValues
-            Dropdown:BuildDropdownList(MenuState.Active)
-        end
-    
-        function Dropdown:AddDisabledValues(DisabledValues)
-            if typeof(DisabledValues) == "table" then
-                for _, val in pairs(DisabledValues) do
-                    table.insert(Dropdown.DisabledValues, val)
-                end
-            elseif typeof(DisabledValues) == "string" then
-                table.insert(Dropdown.DisabledValues, DisabledValues)
-            else
-                return
+            local J, T = d.SprinklerPlacer.GetPlacementPosition(i, y + E)
+            if not J then
+                d.SprinklerPlacer.SetStatus(T or "Placement position unavailable", "#FF5555")
+                break
             end
-    
-            Dropdown:BuildDropdownList(MenuState.Active)
-        end
-    
-        function Dropdown:SetDisabled(Disabled: boolean)
-            Dropdown.Disabled = Disabled
-    
-            if Dropdown.TooltipTable then
-                Dropdown.TooltipTable.Disabled = Dropdown.Disabled
-            end
-    
-            ClosePopup()
-            Display.Active = not Dropdown.Disabled
-            Dropdown:UpdateColors()
-        end
-    
-        function Dropdown:SetVisible(Visible: boolean)
-            Dropdown.Visible = Visible
-            Holder.Visible = Dropdown.Visible
-            Groupbox:Resize()
-        end
-    
-        function Dropdown:SetText(Text: string)
-            Dropdown.Text = Text
-            Holder.Size = UDim2.new(1, 0, 0, (Text and 46 or 28) * Library.DPIScale)
-    
-            Label.Text = Text and Text or ""
-            Label.Visible = not not Text
-            Title.Text = Text or "Select"
-        end
-    
-        function MenuState:Open()
-            if MenuState.Active or Dropdown.Disabled then
-                return
-            end
-    
-            MenuState.Active = true
-            ClickBlocker.Visible = true
-            Popup.Visible = true
-            Title.Text = Dropdown.Text or "Select"
-            UpdateCloseButtonStyle()
-    
-            if SearchInput.Visible then
-                SearchInput.Text = ""
-            end
-    
-            Dropdown:BuildDropdownList(true)
-            Dropdown:UpdateColors()
-        end
-    
-        function MenuState:Close()
-            ClosePopup()
-        end
-    
-        function MenuState:Toggle()
-            if MenuState.Active then
-                ClosePopup()
-            else
-                MenuState:Open()
-            end
-        end
-    
-        Display.MouseButton1Click:Connect(function()
-            if Dropdown.Disabled then
-                return
-            end
-            MenuState:Toggle()
-        end)
-    
-        CloseButton.MouseButton1Click:Connect(ClosePopup)
-    
-        if SearchInput.Visible then
-            SearchInput:GetPropertyChangedSignal("Text"):Connect(function()
-                Dropdown:BuildDropdownList(true)
-            end)
-        end
-    
-        if Library.ScreenGui then
-            Library:GiveSignal(Library.ScreenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-                ApplyPopupLayout()
-            end))
-        end
-    
-        pcall(function()
-            Library:MakeDraggable(Popup, Header, false, true)
-        end)
-    
-        pcall(function()
-            Library:MakeResizable(Popup, ResizeHandle, function()
-                local viewport = Library.ScreenGui and Library.ScreenGui.AbsoluteSize or Vector2.new(1280, 720)
-                if viewport.X > 0 and viewport.Y > 0 then
-                    PopupScale.W = Popup.AbsoluteSize.X / viewport.X
-                    PopupScale.H = Popup.AbsoluteSize.Y / viewport.Y
-                end
-                ApplyPopupLayout()
-            end)
-        end)
-    
-        local Defaults = {}
-        if typeof(Info.Default) == "string" then
-            local Index = table.find(Dropdown.Values, Info.Default)
-            if Index then
-                table.insert(Defaults, Index)
-            end
-        elseif typeof(Info.Default) == "table" then
-            for _, Value in next, Info.Default do
-                local Index = table.find(Dropdown.Values, Value)
-                if Index then
-                    table.insert(Defaults, Index)
-                end
-            end
-        elseif Dropdown.Values[Info.Default] ~= nil then
-            table.insert(Defaults, Info.Default)
-        end
-    
-        if next(Defaults) then
-            for i = 1, #Defaults do
-                local Index = Defaults[i]
-                if Info.Multi then
-                    Dropdown.Value[Dropdown.Values[Index]] = true
-                else
-                    Dropdown.Value = Dropdown.Values[Index]
-                end
-    
-                if not Info.Multi then
+            if Y.sprinkler_place_teleport then
+                d.Teleport.LockTeleport(q, 10, false)
+                if not d.SprinklerPlacer.PrepareTeleport(J, q) then
+                    d.SprinklerPlacer.SetStatus("Could not reach placement position", "#FF5555")
                     break
                 end
             end
-        end
-    
-        if typeof(Dropdown.Tooltip) == "string" or typeof(Dropdown.DisabledTooltip) == "string" then
-            Dropdown.TooltipTable = Library:AddTooltip(Dropdown.Tooltip, Dropdown.DisabledTooltip, Display)
-            Dropdown.TooltipTable.Disabled = Dropdown.Disabled
-        end
-    
-        UpdateCloseButtonStyle()
-        Dropdown.Menu = MenuState
-        Dropdown:UpdateColors()
-        Dropdown:Display()
-        Dropdown:BuildDropdownList(false)
-        ApplyPopupLayout()
-        Groupbox:Resize()
-    
-        Dropdown.Holder = Holder
-        table.insert(Groupbox.Elements, Dropdown)
-    
-        Options[Idx] = Dropdown
-        return Dropdown
-    end
-    
-
- 
-   
-
-    function Funcs:AddViewport(Idx, Info)
-        Info = Library:Validate(Info, Templates.Viewport)
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Dragging, Pinching = false, false
-        local LastMousePos, LastPinchDist = nil, 0
-
-        local Viewport = {
-            Object = if Info.Clone then Info.Object:Clone() else Info.Object,
-            Camera = if not Info.Camera then Instance.new("Camera") else Info.Camera,
-            Interactive = Info.Interactive,
-            AutoFocus = Info.AutoFocus,
-            Visible = Info.Visible,
-            Type = "Viewport",
-        }
-
-        assert(
-            typeof(Viewport.Object) == "Instance" and (Viewport.Object:IsA("BasePart") or Viewport.Object:IsA("Model")),
-            "Instance must be a BasePart or Model."
-        )
-
-        assert(
-            typeof(Viewport.Camera) == "Instance" and Viewport.Camera:IsA("Camera"),
-            "Camera must be a valid Camera instance."
-        )
-
-        local function GetModelSize(model)
-            if model:IsA("BasePart") then
-                return model.Size
+            if not d.SprinklerPlacer.EquipTool(c) then
+                table.remove(G, Z)
+                continue
             end
-
-            return select(2, model:GetBoundingBox())
-        end
-
-        local function FocusCamera()
-            local ModelSize = GetModelSize(Viewport.Object)
-            local MaxExtent = math.max(ModelSize.X, ModelSize.Y, ModelSize.Z)
-            local CameraDistance = MaxExtent * 2
-            local ModelPosition = Viewport.Object:GetPivot().Position
-
-            Viewport.Camera.CFrame =
-                CFrame.new(ModelPosition + Vector3.new(0, MaxExtent / 2, CameraDistance), ModelPosition)
-        end
-
-        local Holder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, Info.Height),
-            Visible = Viewport.Visible,
-            Parent = Container,
-        })
-
-        local Box = New("Frame", {
-            AnchorPoint = Vector2.new(0, 1),
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Position = UDim2.fromScale(0, 1),
-            Size = UDim2.fromScale(1, 1),
-            Parent = Holder,
-        })
-
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 3),
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 8),
-            PaddingTop = UDim.new(0, 4),
-            Parent = Box,
-        })
-
-        local ViewportFrame = New("ViewportFrame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Parent = Box,
-            CurrentCamera = Viewport.Camera,
-            Active = Viewport.Interactive,
-        })
-
-        ViewportFrame.MouseEnter:Connect(function()
-            if not Viewport.Interactive then
-                return
-            end
-
-            for _, Side in pairs(Groupbox.Tab.Sides) do
-                Side.ScrollingEnabled = false
-            end
-        end)
-
-        ViewportFrame.MouseLeave:Connect(function()
-            if not Viewport.Interactive then
-                return
-            end
-
-            for _, Side in pairs(Groupbox.Tab.Sides) do
-                Side.ScrollingEnabled = true
-            end
-        end)
-
-        ViewportFrame.InputBegan:Connect(function(input)
-            if not Viewport.Interactive then
-                return
-            end
-
-            if input.UserInputType == Enum.UserInputType.MouseButton2 then
-                Dragging = true
-                LastMousePos = input.Position
-            elseif input.UserInputType == Enum.UserInputType.Touch and not Pinching then
-                Dragging = true
-                LastMousePos = input.Position
-            end
-        end)
-
-        Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
-            if not Viewport.Interactive then
-                return
-            end
-
-            if input.UserInputType == Enum.UserInputType.MouseButton2 then
-                Dragging = false
-            elseif input.UserInputType == Enum.UserInputType.Touch then
-                Dragging = false
-            end
-        end))
-
-        Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
-            if not Viewport.Interactive or not Dragging or Pinching then
-                return
-            end
-
-            if
-                input.UserInputType == Enum.UserInputType.MouseMovement
-                or input.UserInputType == Enum.UserInputType.Touch
-            then
-                local MouseDelta = input.Position - LastMousePos
-                LastMousePos = input.Position
-
-                local Position = Viewport.Object:GetPivot().Position
-                local Camera = Viewport.Camera
-
-                local RotationY = CFrame.fromAxisAngle(Vector3.new(0, 1, 0), -MouseDelta.X * 0.01)
-                Camera.CFrame = CFrame.new(Position) * RotationY * CFrame.new(-Position) * Camera.CFrame
-
-                local RotationX = CFrame.fromAxisAngle(Camera.CFrame.RightVector, -MouseDelta.Y * 0.01)
-                local PitchedCFrame = CFrame.new(Position) * RotationX * CFrame.new(-Position) * Camera.CFrame
-
-                if PitchedCFrame.UpVector.Y > 0.1 then
-                    Camera.CFrame = PitchedCFrame
-                end
-            end
-        end))
-
-        ViewportFrame.InputChanged:Connect(function(input)
-            if not Viewport.Interactive then
-                return
-            end
-
-            if input.UserInputType == Enum.UserInputType.MouseWheel then
-                local ZoomAmount = input.Position.Z * 2
-                Viewport.Camera.CFrame += Viewport.Camera.CFrame.LookVector * ZoomAmount
-            end
-        end)
-
-        Library:GiveSignal(UserInputService.TouchPinch:Connect(function(touchPositions, scale, velocity, state)
-            if not Viewport.Interactive or not Library:MouseIsOverFrame(ViewportFrame, touchPositions[1]) then
-                return
-            end
-
-            if state == Enum.UserInputState.Begin then
-                Pinching = true
-                Dragging = false
-                LastPinchDist = (touchPositions[1] - touchPositions[2]).Magnitude
-            elseif state == Enum.UserInputState.Change then
-                local currentDist = (touchPositions[1] - touchPositions[2]).Magnitude
-                local delta = (currentDist - LastPinchDist) * 0.1
-                LastPinchDist = currentDist
-                Viewport.Camera.CFrame += Viewport.Camera.CFrame.LookVector * delta
-            elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
-                Pinching = false
-            end
-        end))
-
-        Viewport.Object.Parent = ViewportFrame
-        if Viewport.AutoFocus then
-            FocusCamera()
-        end
-
-        function Viewport:SetObject(Object: Instance, Clone: boolean?)
-            assert(Object, "Object cannot be nil.")
-
-            if Clone then
-                Object = Object:Clone()
-            end
-
-            if Viewport.Object then
-                Viewport.Object:Destroy()
-            end
-
-            Viewport.Object = Object
-            Viewport.Object.Parent = ViewportFrame
-
-            Groupbox:Resize()
-        end
-
-        function Viewport:SetHeight(Height: number)
-            assert(Height > 0, "Height must be greater than 0.")
-
-            Holder.Size = UDim2.new(1, 0, 0, Height)
-            Groupbox:Resize()
-        end
-
-        function Viewport:Focus()
-            if not Viewport.Object then
-                return
-            end
-
-            FocusCamera()
-        end
-
-        function Viewport:SetCamera(Camera: Instance)
-            assert(
-                Camera and typeof(Camera) == "Instance" and Camera:IsA("Camera"),
-                "Camera must be a valid Camera instance."
-            )
-
-            Viewport.Camera = Camera
-            ViewportFrame.CurrentCamera = Camera
-        end
-
-        function Viewport:SetInteractive(Interactive: boolean)
-            Viewport.Interactive = Interactive
-            ViewportFrame.Active = Interactive
-        end
-
-        function Viewport:SetVisible(Visible: boolean)
-            Viewport.Visible = Visible
-
-            Holder.Visible = Viewport.Visible
-            Groupbox:Resize()
-        end
-
-        Groupbox:Resize()
-
-        Viewport.Holder = Holder
-        table.insert(Groupbox.Elements, Viewport)
-
-        Options[Idx] = Viewport
-
-        return Viewport
-    end
-
-    function Funcs:AddImage(Idx, Info)
-        Info = Library:Validate(Info, Templates.Image)
-
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local Image = {
-            Image = Info.Image,
-            Color = Info.Color,
-            RectOffset = Info.RectOffset,
-            RectSize = Info.RectSize,
-            Height = Info.Height,
-            ScaleType = Info.ScaleType,
-            Transparency = Info.Transparency,
-
-            Visible = Info.Visible,
-            Type = "Image",
-        }
-
-        local Holder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, Info.Height),
-            Visible = Image.Visible,
-            Parent = Container,
-        })
-
-        local Box = New("Frame", {
-            AnchorPoint = Vector2.new(0, 1),
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Position = UDim2.fromScale(0, 1),
-            Size = UDim2.fromScale(1, 1),
-            Parent = Holder,
-        })
-
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 3),
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 8),
-            PaddingTop = UDim.new(0, 4),
-            Parent = Box,
-        })
-
-        local ImageProperties = {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Image = Image.Image,
-            ImageTransparency = Image.Transparency,
-            ImageColor3 = Image.Color,
-            ImageRectOffset = Image.RectOffset,
-            ImageRectSize = Image.RectSize,
-            ScaleType = Image.ScaleType,
-            Parent = Box,
-        }
-
-        if
-            not (
-                ImageProperties.Image:match("rbxasset")
-                or ImageProperties.Image:match("roblox%.com/asset/%?id=")
-                or ImageProperties.Image:match("rbxthumb://type=AvatarHeadShot")
-            )
-        then
-            local Icon = Library:GetIcon(ImageProperties.Image)
-            assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
-
-            ImageProperties.Image = Icon.Url
-            ImageProperties.ImageRectOffset = Icon.ImageRectOffset
-            ImageProperties.ImageRectSize = Icon.ImageRectSize
-        end
-
-        local ImageLabel = New("ImageLabel", ImageProperties)
-
-        function Image:SetHeight(Height: number)
-            assert(Height > 0, "Height must be greater than 0.")
-
-            Image.Height = Height
-            Holder.Size = UDim2.new(1, 0, 0, Height)
-            Groupbox:Resize()
-        end
-
-        function Image:SetImage(NewImage: string)
-            assert(typeof(NewImage) == "string", "Image must be a string.")
-
-            if
-                not (
-                    NewImage:match("rbxasset")
-                    or NewImage:match("roblox%.com/asset/%?id=")
-                    or NewImage:match("rbxthumb://type=AvatarHeadShot")
-                )
-            then
-                local Icon = Library:GetIcon(NewImage)
-                assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
-
-                NewImage = Icon.Url
-                Image.RectOffset = Icon.ImageRectOffset
-                Image.RectSize = Icon.ImageRectSize
-            end
-
-            ImageLabel.Image = NewImage
-            Image.Image = NewImage
-        end
-
-        function Image:SetColor(Color: Color3)
-            assert(typeof(Color) == "Color3", "Color must be a Color3 value.")
-
-            ImageLabel.ImageColor3 = Color
-            Image.Color = Color
-        end
-
-        function Image:SetRectOffset(RectOffset: Vector2)
-            assert(typeof(RectOffset) == "Vector2", "RectOffset must be a Vector2 value.")
-
-            ImageLabel.ImageRectOffset = RectOffset
-            Image.RectOffset = RectOffset
-        end
-
-        function Image:SetRectSize(RectSize: Vector2)
-            assert(typeof(RectSize) == "Vector2", "RectSize must be a Vector2 value.")
-
-            ImageLabel.ImageRectSize = RectSize
-            Image.RectSize = RectSize
-        end
-
-        function Image:SetScaleType(ScaleType: Enum.ScaleType)
-            assert(
-                typeof(ScaleType) == "EnumItem" and ScaleType:IsA("ScaleType"),
-                "ScaleType must be a valid Enum.ScaleType."
-            )
-
-            ImageLabel.ScaleType = ScaleType
-            Image.ScaleType = ScaleType
-        end
-
-        function Image:SetTransparency(Transparency: number)
-            assert(typeof(Transparency) == "number", "Transparency must be a number between 0 and 1.")
-            assert(Transparency >= 0 and Transparency <= 1, "Transparency must be between 0 and 1.")
-
-            ImageLabel.ImageTransparency = Transparency
-            Image.Transparency = Transparency
-        end
-
-        function Image:SetVisible(Visible: boolean)
-            Image.Visible = Visible
-
-            Holder.Visible = Image.Visible
-            Groupbox:Resize()
-        end
-
-        Groupbox:Resize()
-
-        Image.Holder = Holder
-        table.insert(Groupbox.Elements, Image)
-
-        Options[Idx] = Image
-
-        return Image
-    end
-
-    function Funcs:AddDependencyBox()
-        local Groupbox = self
-        local Container = Groupbox.Container
-
-        local DepboxContainer
-        local DepboxList
-
-        do
-            DepboxContainer = New("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 1),
-                Visible = false,
-                Parent = Container,
-            })
-
-            DepboxList = New("UIListLayout", {
-                Padding = UDim.new(0, 8),
-                Parent = DepboxContainer,
-            })
-        end
-
-        local Depbox = {
-            Visible = false,
-            Dependencies = {},
-
-            Holder = DepboxContainer,
-            Container = DepboxContainer,
-
-            Elements = {},
-            DependencyBoxes = {},
-        }
-
-        function Depbox:Resize()
-            DepboxContainer.Size = UDim2.new(1, 0, 0, DepboxList.AbsoluteContentSize.Y * Library.DPIScale)
-            Groupbox:Resize()
-        end
-
-        function Depbox:Update(CancelSearch)
-            for _, Dependency in pairs(Depbox.Dependencies) do
-                local Element = Dependency[1]
-                local Value = Dependency[2]
-
-                if Element.Type == "Toggle" and Element.Value ~= Value then
-                    DepboxContainer.Visible = false
-                    Depbox.Visible = false
-                    return
-                elseif Element.Type == "Dropdown" then
-                    if typeof(Element.Value) == "table" then
-                        if not Element.Value[Value] then
-                            DepboxContainer.Visible = false
-                            Depbox.Visible = false
-                            return
-                        end
-                    else
-                        if Element.Value ~= Value then
-                            DepboxContainer.Visible = false
-                            Depbox.Visible = false
-                            return
-                        end
-                    end
-                end
-            end
-
-            Depbox.Visible = true
-            DepboxContainer.Visible = true
-            if not Library.Searching then
-                Depbox:Resize()
-            elseif not CancelSearch then
-                Library:UpdateSearch(Library.SearchText)
-            end
-        end
-
-        function Depbox:SetupDependencies(Dependencies)
-            for _, Dependency in pairs(Dependencies) do
-                assert(typeof(Dependency) == "table", "Dependency should be a table.")
-                assert(Dependency[1] ~= nil, "Dependency is missing element.")
-                assert(Dependency[2] ~= nil, "Dependency is missing expected value.")
-            end
-
-            Depbox.Dependencies = Dependencies
-            Depbox:Update()
-        end
-
-        DepboxContainer:GetPropertyChangedSignal("Visible"):Connect(function()
-            Depbox:Resize()
-        end)
-
-        setmetatable(Depbox, BaseGroupbox)
-
-        table.insert(Groupbox.DependencyBoxes, Depbox)
-        table.insert(Library.DependencyBoxes, Depbox)
-
-        return Depbox
-    end
-
-    function Funcs:AddDependencyGroupbox()
-        local Groupbox = self
-        local Tab = Groupbox.Tab
-        local BoxHolder = Groupbox.BoxHolder
-
-        local Background = Library:MakeOutline(BoxHolder, Library.CornerRadius)
-        Background.Size = UDim2.fromScale(1, 0)
-        Background.Visible = false
-        Library:UpdateDPI(Background, {
-            Size = false,
-        })
-
-        local DepGroupboxContainer
-        local DepGroupboxList
-
-        do
-            DepGroupboxContainer = New("Frame", {
-                BackgroundColor3 = "BackgroundColor",
-                Position = UDim2.fromOffset(2, 2),
-                Size = UDim2.new(1, -4, 1, -4),
-                Parent = Background,
-            })
-            New("UICorner", {
-                CornerRadius = UDim.new(0, Library.CornerRadius - 1),
-                Parent = DepGroupboxContainer,
-            })
-
-            DepGroupboxList = New("UIListLayout", {
-                Padding = UDim.new(0, 8),
-                Parent = DepGroupboxContainer,
-            })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 7),
-                PaddingLeft = UDim.new(0, 7),
-                PaddingRight = UDim.new(0, 7),
-                PaddingTop = UDim.new(0, 7),
-                Parent = DepGroupboxContainer,
-            })
-        end
-
-        local DepGroupbox = {
-            Visible = false,
-            Dependencies = {},
-
-            BoxHolder = BoxHolder,
-            Holder = Background,
-            Container = DepGroupboxContainer,
-
-            Tab = Tab,
-            Elements = {},
-            DependencyBoxes = {},
-        }
-
-        function DepGroupbox:Resize()
-            Background.Size = UDim2.new(1, 0, 0, DepGroupboxList.AbsoluteContentSize.Y + 18 * Library.DPIScale)
-        end
-
-        function DepGroupbox:Update(CancelSearch)
-            for _, Dependency in pairs(DepGroupbox.Dependencies) do
-                local Element = Dependency[1]
-                local Value = Dependency[2]
-
-                if Element.Type == "Toggle" and Element.Value ~= Value then
-                    Background.Visible = false
-                    DepGroupbox.Visible = false
-                    return
-                elseif Element.Type == "Dropdown" then
-                    if typeof(Element.Value) == "table" then
-                        if not Element.Value[Value] then
-                            Background.Visible = false
-                            DepGroupbox.Visible = false
-                            return
-                        end
-                    else
-                        if Element.Value ~= Value then
-                            Background.Visible = false
-                            DepGroupbox.Visible = false
-                            return
-                        end
-                    end
-                end
-            end
-
-            DepGroupbox.Visible = true
-            if not Library.Searching then
-                Background.Visible = true
-                DepGroupbox:Resize()
-            elseif not CancelSearch then
-                Library:UpdateSearch(Library.SearchText)
-            end
-        end
-
-        function DepGroupbox:SetupDependencies(Dependencies)
-            for _, Dependency in pairs(Dependencies) do
-                assert(typeof(Dependency) == "table", "Dependency should be a table.")
-                assert(Dependency[1] ~= nil, "Dependency is missing element.")
-                assert(Dependency[2] ~= nil, "Dependency is missing expected value.")
-            end
-
-            DepGroupbox.Dependencies = Dependencies
-            DepGroupbox:Update()
-        end
-
-        setmetatable(DepGroupbox, BaseGroupbox)
-
-        table.insert(Tab.DependencyGroupboxes, DepGroupbox)
-        table.insert(Library.DependencyBoxes, DepGroupbox)
-
-        return DepGroupbox
-    end
-
-    BaseGroupbox.__index = Funcs
-    BaseGroupbox.__namecall = function(_, Key, ...)
-        return Funcs[Key](...)
-    end
-end
-
-function Library:SetFont(FontFace)
-    if typeof(FontFace) == "EnumItem" then
-        FontFace = Font.fromEnum(FontFace)
-    end
-
-    Library.Scheme.Font = FontFace
-    Library:UpdateColorsUsingRegistry()
-end
-
-function Library:SetNotifySide(Side: string)
-    Library.NotifySide = Side
-
-    if Side:lower() == "left" then
-        NotificationArea.AnchorPoint = Vector2.new(0, 0)
-        NotificationArea.Position = UDim2.fromOffset(6, 6)
-        NotificationList.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    else
-        NotificationArea.AnchorPoint = Vector2.new(1, 0)
-        NotificationArea.Position = UDim2.new(1, -6, 0, 6)
-        NotificationList.HorizontalAlignment = Enum.HorizontalAlignment.Right
-    end
-end
-
-function Library:Notify(...)
-    local Data = {}
-    local Info = select(1, ...)
-
-    if typeof(Info) == "table" then
-        Data.Title = tostring(Info.Title)
-        Data.Description = tostring(Info.Description)
-        Data.Time = Info.Time or 5
-        Data.SoundId = Info.SoundId
-        Data.Steps = Info.Steps
-        Data.Persist = Info.Persist
-    else
-        Data.Description = tostring(Info)
-        Data.Time = select(2, ...) or 5
-        Data.SoundId = select(3, ...)
-    end
-    Data.Destroyed = false
-
-    local DeletedInstance = false
-    local DeleteConnection = nil
-    if typeof(Data.Time) == "Instance" then
-        DeleteConnection = Data.Time.Destroying:Connect(function()
-            DeletedInstance = true
-
-            DeleteConnection:Disconnect()
-            DeleteConnection = nil
-        end)
-    end
-
-    local FakeBackground = New("Frame", {
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        Size = UDim2.fromScale(1, 0),
-        Visible = false,
-        Parent = NotificationArea,
-
-        DPIExclude = {
-            Size = true,
-        },
-    })
-
-    local Background = Library:MakeOutline(FakeBackground, Library.CornerRadius, 5)
-    Background.AutomaticSize = Enum.AutomaticSize.Y
-    Background.Position = Library.NotifySide:lower() == "left" and UDim2.new(-1, -6, 0, -2) or UDim2.new(1, 6, 0, -2)
-    Background.Size = UDim2.fromScale(1, 0)
-    Library:UpdateDPI(Background, {
-        Position = false,
-        Size = false,
-    })
-
-    local Holder = New("Frame", {
-        BackgroundColor3 = "MainColor",
-        Position = UDim2.fromOffset(2, 2),
-        Size = UDim2.new(1, -4, 1, -4),
-        Parent = Background,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius - 1),
-        Parent = Holder,
-    })
-    New("UIListLayout", {
-        Padding = UDim.new(0, 4),
-        Parent = Holder,
-    })
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 8),
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
-        PaddingTop = UDim.new(0, 8),
-        Parent = Holder,
-    })
-
-    local Title
-    local Desc
-    local TitleX = 0
-    local DescX = 0
-
-    local TimerFill
-
-    if Data.Title then
-        Title = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Text = Data.Title,
-            TextSize = 15,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
-            Parent = Holder,
-
-            DPIExclude = {
-                Size = true,
-            },
-        })
-    end
-
-    if Data.Description then
-        Desc = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Text = Data.Description,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
-            Parent = Holder,
-
-            DPIExclude = {
-                Size = true,
-            },
-        })
-    end
-
-    function Data:Resize()
-        if Title then
-            local X, Y = Library:GetTextBounds(
-                Title.Text,
-                Title.FontFace,
-                Title.TextSize,
-                NotificationArea.AbsoluteSize.X - (24 * Library.DPIScale)
-            )
-            Title.Size = UDim2.fromOffset(math.ceil(X), Y)
-            TitleX = X
-        end
-
-        if Desc then
-            local X, Y = Library:GetTextBounds(
-                Desc.Text,
-                Desc.FontFace,
-                Desc.TextSize,
-                NotificationArea.AbsoluteSize.X - (24 * Library.DPIScale)
-            )
-            Desc.Size = UDim2.fromOffset(math.ceil(X), Y)
-            DescX = X
-        end
-
-        FakeBackground.Size = UDim2.fromOffset((TitleX > DescX and TitleX or DescX) + (24 * Library.DPIScale), 0)
-    end
-
-    function Data:ChangeTitle(NewText)
-        if Title then
-            Data.Title = tostring(NewText)
-            Title.Text = Data.Title
-            Data:Resize()
-        end
-    end
-
-    function Data:ChangeDescription(NewText)
-        if Desc then
-            Data.Description = tostring(NewText)
-            Desc.Text = Data.Description
-            Data:Resize()
-        end
-    end
-
-    function Data:ChangeStep(NewStep)
-        if TimerFill and Data.Steps then
-            NewStep = math.clamp(NewStep or 0, 0, Data.Steps)
-            TimerFill.Size = UDim2.fromScale(NewStep / Data.Steps, 1)
-        end
-    end
-
-    function Data:Destroy()
-        Data.Destroyed = true
-        if DeleteConnection then
-            DeleteConnection:Disconnect()
-        end
-
-        TweenService
-            :Create(Background, Library.NotifyTweenInfo, {
-                Position = Library.NotifySide:lower() == "left" and UDim2.new(-1, -6, 0, -2) or UDim2.new(1, 6, 0, -2),
-            })
-            :Play()
-        task.delay(Library.NotifyTweenInfo.Time, function()
-            Library.Notifications[FakeBackground] = nil
-            FakeBackground:Destroy()
-        end)
-    end
-
-    Data:Resize()
-
-    local TimerHolder = New("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 7),
-        Visible = (Data.Persist ~= true and typeof(Data.Time) ~= "Instance") or typeof(Data.Steps) == "number",
-        Parent = Holder,
-    })
-    local TimerBar = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        Position = UDim2.fromOffset(0, 3),
-        Size = UDim2.new(1, 0, 0, 2),
-        Parent = TimerHolder,
-    })
-    TimerFill = New("Frame", {
-        BackgroundColor3 = "AccentColor",
-        Size = UDim2.fromScale(1, 1),
-        Parent = TimerBar,
-    })
-
-    if typeof(Data.Time) == "Instance" then
-        TimerFill.Size = UDim2.fromScale(0, 1)
-    end
-    if Data.SoundId then
-        local SoundId = Data.SoundId
-        if typeof(SoundId) == "number" then
-            SoundId = `rbxassetid://{SoundId}`
-        end
-
-        New("Sound", {
-            SoundId = SoundId,
-            Volume = 3,
-            PlayOnRemove = true,
-            Parent = SoundService,
-        }):Destroy()
-    end
-
-    Library.Notifications[FakeBackground] = Data
-
-    FakeBackground.Visible = true
-    TweenService:Create(Background, Library.NotifyTweenInfo, {
-        Position = UDim2.fromOffset(-2, -2),
-    }):Play()
-
-    task.delay(Library.NotifyTweenInfo.Time, function()
-        if Data.Persist then
-            return
-        elseif typeof(Data.Time) == "Instance" then
-            repeat
-                task.wait()
-            until DeletedInstance or Data.Destroyed
-        else
-            TweenService
-                :Create(TimerFill, TweenInfo.new(Data.Time, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {
-                    Size = UDim2.fromScale(0, 1),
-                })
-                :Play()
-            task.wait(Data.Time)
-        end
-
-        if not Data.Destroyed then
-            Data:Destroy()
-        end
-    end)
-
-    return Data
-end
-
-function Library:CreateWindow(WindowInfo)
-    WindowInfo = Library:Validate(WindowInfo, Templates.Window)
-    local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
-    if RunService:IsStudio() and ViewportSize.X <= 5 and ViewportSize.Y <= 5 then
-        repeat
-            ViewportSize = workspace.CurrentCamera.ViewportSize
-            task.wait()
-        until ViewportSize.X > 5 and ViewportSize.Y > 5
-    end
-
-    local MaxX = ViewportSize.X - 64
-    local MaxY = ViewportSize.Y - 64
-
-    Library.MinSize = Vector2.new(math.min(Library.MinSize.X, MaxX), math.min(Library.MinSize.Y, MaxY))
-    WindowInfo.Size = UDim2.fromOffset(
-        math.clamp(WindowInfo.Size.X.Offset, Library.MinSize.X, MaxX),
-        math.clamp(WindowInfo.Size.Y.Offset, Library.MinSize.Y, MaxY)
-    )
-    if typeof(WindowInfo.Font) == "EnumItem" then
-        WindowInfo.Font = Font.fromEnum(WindowInfo.Font)
-    end
-
-    Library.CornerRadius = WindowInfo.CornerRadius
-   -- Library:SetNotifySide(WindowInfo.NotifySide)
-    
-    local notifySideOk, notifySideErr = pcall(function()
-        Library:SetNotifySide(WindowInfo.NotifySide)
-    end)
-    
-    if not notifySideOk then
-        warn("[EXO UI] SetNotifySide failed:", notifySideErr)
-    end
-    
-    Library.ShowCustomCursor = WindowInfo.ShowCustomCursor
-    Library.Scheme.Font = WindowInfo.Font
-    Library.ToggleKeybind = WindowInfo.ToggleKeybind
-
-    local IsDefaultSearchbarSize = WindowInfo.SearchbarSize == UDim2.fromScale(1, 1)
-    local MainFrame
-    local SearchBox
-    local CurrentTabInfo
-    local CurrentTabLabel
-    local CurrentTabDescription
-    local ResizeButton
-    local Tabs
-    local Container
-    do
-        Library.KeybindFrame, Library.KeybindContainer = Library:AddDraggableMenu("Keybinds")
-        Library.KeybindFrame.AnchorPoint = Vector2.new(0, 0.5)
-        Library.KeybindFrame.Position = UDim2.new(0, 6, 0.5, 0)
-        Library.KeybindFrame.Visible = false
-        Library:UpdateDPI(Library.KeybindFrame, {
-            Position = false,
-            Size = false,
-        })
-
-        MainFrame = New("Frame", { 
-            BackgroundColor3 = function()
-                return Library:GetBetterColor(Library.Scheme.BackgroundColor, -1)
-            end,
-            Name = "Main",
-            Position = WindowInfo.Position,
-            Size = WindowInfo.Size,
-            Visible = false,
-            Active = true, -- added
-            Parent = ScreenGui,
-
-            DPIExclude = {
-                Position = true,
-            },
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(0, WindowInfo.CornerRadius - 1),
-            Parent = MainFrame,
-        })
-        do
-            local Lines = {
-                {
-                    Position = UDim2.fromOffset(0, 48),
-                    Size = UDim2.new(1, 0, 0, 1),
-                },
-                {
-                    Position = UDim2.fromScale(0.3, 0),
-                    Size = UDim2.new(0, 1, 1, -21),
-                },
-                {
-                    AnchorPoint = Vector2.new(0, 1),
-                    Position = UDim2.new(0, 0, 1, -20),
-                    Size = UDim2.new(1, 0, 0, 1),
-                },
-            }
-            for _, Info in pairs(Lines) do
-                Library:MakeLine(MainFrame, Info)
-            end
-            Library:MakeOutline(MainFrame, WindowInfo.CornerRadius, 0)
-        end
-
-        if WindowInfo.BackgroundImage then
-            New("ImageLabel", {
-                Image = WindowInfo.BackgroundImage,
-                Position = UDim2.fromScale(0, 0),
-                Size = UDim2.fromScale(1, 1),
-                ScaleType = Enum.ScaleType.Stretch,
-                ZIndex = 999,
-                BackgroundTransparency = 1,
-                ImageTransparency = 0.75,
-                Parent = MainFrame,
-            })
-        end
-
-        if WindowInfo.Center then
-            MainFrame.Position = UDim2.new(0.5, -MainFrame.Size.X.Offset / 2, 0.5, -MainFrame.Size.Y.Offset / 2)
-        end
-
-        --// Top Bar \\-
-        local TopBar = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 48),
-            Parent = MainFrame,
-        })
-        Library:MakeDraggable(MainFrame, TopBar, false, true)
-
-        --// Title
-        local TitleHolder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(0.3, 1),
-            Parent = TopBar,
-        })
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Padding = UDim.new(0, 6),
-            Parent = TitleHolder,
-        })
-
-        if WindowInfo.Icon then
-            New("ImageLabel", {
-                Image = if tonumber(WindowInfo.Icon) then `rbxassetid://{WindowInfo.Icon}` else WindowInfo.Icon,
-                Size = WindowInfo.IconSize,
-                Parent = TitleHolder,
-            })
-        end
-
-        local X = Library:GetTextBounds(
-            WindowInfo.Title,
-            Library.Scheme.Font,
-            20,
-            TitleHolder.AbsoluteSize.X - (WindowInfo.Icon and WindowInfo.IconSize.X.Offset + 6 or 0) - 12
-        )
-        New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, X, 1, 0),
-            Text = WindowInfo.Title,
-            TextSize = 20,
-            Parent = TitleHolder,
-        })
-
-        --// Top Right Bar
-        local RightWrapper = New("Frame", {
-            BackgroundTransparency = 1,
-            AnchorPoint = Vector2.new(0, 0.5),
-            Position = UDim2.new(0.3, 8, 0.5, 0),
-            Size = UDim2.new(0.7, -57, 1, -16),
-            Parent = TopBar,
-        })
-
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Padding = UDim.new(0, 8),
-            Parent = RightWrapper,
-        })
-
-        CurrentTabInfo = New("Frame", {
-            Size = UDim2.fromScale(WindowInfo.DisableSearch and 1 or 0.5, 1),
-            Visible = false,
-            BackgroundTransparency = 1,
-            Parent = RightWrapper,
-        })
-
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Vertical,
-            HorizontalAlignment = Enum.HorizontalAlignment.Left,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Parent = CurrentTabInfo,
-        })
-
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 8),
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 8),
-            PaddingTop = UDim.new(0, 8),
-            Parent = CurrentTabInfo,
-        })
-
-        CurrentTabLabel = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            Text = "",
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = CurrentTabInfo,
-        })
-
-        CurrentTabDescription = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            Text = "",
-            TextWrapped = true,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextTransparency = 0.5,
-            Parent = CurrentTabInfo,
-        })
-
-        SearchBox = New("TextBox", {
-            BackgroundColor3 = "MainColor",
-            PlaceholderText = "Search",
-            Size = WindowInfo.SearchbarSize,
-            TextScaled = true,
-            Visible = not (WindowInfo.DisableSearch or false),
-            Parent = RightWrapper,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-            Parent = SearchBox,
-        })
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 8),
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 8),
-            PaddingTop = UDim.new(0, 8),
-            Parent = SearchBox,
-        })
-        New("UIStroke", {
-            Color = "OutlineColor",
-            Parent = SearchBox,
-        })
-
-        local SearchIcon = Library:GetIcon("search")
-        if SearchIcon then
-            New("ImageLabel", {
-                Image = SearchIcon.Url,
-                ImageColor3 = "FontColor",
-                ImageRectOffset = SearchIcon.ImageRectOffset,
-                ImageRectSize = SearchIcon.ImageRectSize,
-                ImageTransparency = 0.5,
-                Size = UDim2.fromScale(1, 1),
-                SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                Parent = SearchBox,
-            })
-        end
-
-        local MoveIcon = Library:GetIcon("move")
-        if MoveIcon then
-            New("ImageLabel", {
-                AnchorPoint = Vector2.new(1, 0.5),
-                Image = MoveIcon.Url,
-                ImageColor3 = "OutlineColor",
-                ImageRectOffset = MoveIcon.ImageRectOffset,
-                ImageRectSize = MoveIcon.ImageRectSize,
-                Position = UDim2.new(1, -10, 0.5, 0),
-                Size = UDim2.fromOffset(28, 28),
-                SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                Parent = TopBar,
-            })
-        end
-
-        --// Bottom Bar \\--
-        local BottomBar = New("Frame", {
-            AnchorPoint = Vector2.new(0, 1),
-            BackgroundColor3 = function()
-                return Library:GetBetterColor(Library.Scheme.BackgroundColor, 4)
-            end,
-            Position = UDim2.fromScale(0, 1),
-            Size = UDim2.new(1, 0, 0, 20),
-            Parent = MainFrame,
-        })
-        do
-            local Cover = Library:MakeCover(BottomBar, "Top")
-            Library:AddToRegistry(Cover, {
-                BackgroundColor3 = function()
-                    return Library:GetBetterColor(Library.Scheme.BackgroundColor, 4)
-                end,
-            })
-        end
-        New("UICorner", {
-            CornerRadius = UDim.new(0, WindowInfo.CornerRadius - 1),
-            Parent = BottomBar,
-        })
-
-        --// Footer
-        New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Text = WindowInfo.Footer,
-            TextSize = 14,
-            TextTransparency = 0.5,
-            Parent = BottomBar,
-        })
-
-        --// Resize Button
-        if WindowInfo.Resizable then
-            ResizeButton = New("TextButton", {
-                AnchorPoint = Vector2.new(1, 0),
-                BackgroundTransparency = 1,
-                Position = UDim2.fromScale(1, 0),
-                Size = UDim2.fromScale(1, 1),
-                SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                Text = "",
-                Parent = BottomBar,
-            })
-
-            Library:MakeResizable(MainFrame, ResizeButton, function()
-                for _, Tab in pairs(Library.Tabs) do
-                    Tab:Resize(true)
-                end
-            end)
-        end
-
-        New("ImageLabel", {
-            Image = ResizeIcon and ResizeIcon.Url or "",
-            ImageColor3 = "FontColor",
-            ImageRectOffset = ResizeIcon and ResizeIcon.ImageRectOffset or Vector2.zero,
-            ImageRectSize = ResizeIcon and ResizeIcon.ImageRectSize or Vector2.zero,
-            ImageTransparency = 0.5,
-            Position = UDim2.fromOffset(2, 2),
-            Size = UDim2.new(1, -4, 1, -4),
-            Parent = ResizeButton,
-        })
-
-        --// Tabs \\--
-        Tabs = New("ScrollingFrame", {
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            BackgroundColor3 = "BackgroundColor",
-            CanvasSize = UDim2.fromScale(0, 0),
-            Position = UDim2.fromOffset(0, 49),
-            ScrollBarThickness = 0,
-            Size = UDim2.new(0.3, 0, 1, -70),
-            Parent = MainFrame,
-        })
-
-        New("UIListLayout", {
-            Parent = Tabs,
-        })
-
-        --// Container \\--
-        Container = New("Frame", {
-            AnchorPoint = Vector2.new(1, 0),
-            BackgroundColor3 = function()
-                return Library:GetBetterColor(Library.Scheme.BackgroundColor, 1)
-            end,
-            Name = "Container",
-            Position = UDim2.new(1, 0, 0, 49),
-            Size = UDim2.new(0.7, -1, 1, -70),
-            Parent = MainFrame,
-        })
-
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 0),
-            PaddingLeft = UDim.new(0, 6),
-            PaddingRight = UDim.new(0, 6),
-            PaddingTop = UDim.new(0, 0),
-            Parent = Container,
-        })
-    end
-
-    --// Window Table \\--
-    local Window = {}
-
-    function Window:AddTab(...)
-        local Name = nil
-        local Icon = nil
-        local Description = nil
-
-        if select("#", ...) == 1 and typeof(...) == "table" then
-            local Info = select(1, ...)
-            Name = Info.Name or "Tab"
-            Icon = Info.Icon
-            Description = Info.Description
-        else
-            Name = select(1, ...)
-            Icon = select(2, ...)
-            Description = select(3, ...)
-        end
-
-        local TabButton: TextButton
-        local TabLabel
-        local TabIcon
-
-        local TabContainer
-        local TabLeft
-        local TabRight
-		
-        local WarningBox
-        local WarningBoxScrollingFrame
-        local WarningTitle
-        local WarningText
-        local WarningStroke
-
-        Icon = Library:GetIcon(Icon)
-        do
-            TabButton = New("TextButton", {
-                BackgroundColor3 = "MainColor",
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 40),
-                Text = "",
-                Parent = Tabs,
-            })
-
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 11),
-                PaddingLeft = UDim.new(0, 12),
-                PaddingRight = UDim.new(0, 12),
-                PaddingTop = UDim.new(0, 11),
-                Parent = TabButton,
-            })
-
-            TabLabel = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Position = UDim2.fromOffset(30, 0),
-                Size = UDim2.new(1, -30, 1, 0),
-                Text = Name,
-                TextSize = 16,
-                TextTransparency = 0.5,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = TabButton,
-            })
-
-            if Icon then
-                TabIcon = New("ImageLabel", {
-                    Image = Icon.Url,
-                    ImageColor3 = "AccentColor",
-                    ImageRectOffset = Icon.ImageRectOffset,
-                    ImageRectSize = Icon.ImageRectSize,
-                    ImageTransparency = 0.5,
-                    Size = UDim2.fromScale(1, 1),
-                    SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                    Parent = TabButton,
-                })
-            end
-
-            --// Tab Container \\--
-            TabContainer = New("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 1),
-                Visible = false,
-                Parent = Container,
-            })
-
-            TabLeft = New("ScrollingFrame", {
-                AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
-                CanvasSize = UDim2.fromScale(0, 0),
-                ScrollBarThickness = 0,
-                Parent = TabContainer,
-            })
-            New("UIListLayout", {
-                Padding = UDim.new(0, 6),
-                Parent = TabLeft,
-            })
-            do
-                New("Frame", {
-                    BackgroundTransparency = 1,
-                    LayoutOrder = -1,
-                    Parent = TabLeft,
-                })
-                New("Frame", {
-                    BackgroundTransparency = 1,
-                    LayoutOrder = 1,
-                    Parent = TabLeft,
-                })
-
-                TabLeft.Size = UDim2.new(0, math.floor(TabContainer.AbsoluteSize.X / 2) - 3, 1, 0)
-                Library:UpdateDPI(TabLeft, { Size = TabLeft.Size })
-            end
-
-            TabRight = New("ScrollingFrame", {
-                AnchorPoint = Vector2.new(1, 0),
-                AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
-                CanvasSize = UDim2.fromScale(0, 0),
-                Position = UDim2.fromScale(1, 0),
-                ScrollBarThickness = 0,
-                Parent = TabContainer,
-            })
-            New("UIListLayout", {
-                Padding = UDim.new(0, 6),
-                Parent = TabRight,
-            })
-            do
-                New("Frame", {
-                    BackgroundTransparency = 1,
-                    LayoutOrder = -1,
-                    Parent = TabRight,
-                })
-                New("Frame", {
-                    BackgroundTransparency = 1,
-                    LayoutOrder = 1,
-                    Parent = TabRight,
-                })
-
-                TabRight.Size = UDim2.new(0, math.floor(TabContainer.AbsoluteSize.X / 2) - 3, 1, 0)
-                Library:UpdateDPI(TabRight, { Size = TabRight.Size })
-            end
-
-            --// Warning Box \\--
-            WarningBox = New("Frame", {
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundColor3 = Color3.fromRGB(127, 0, 0),
-                BorderColor3 = Color3.fromRGB(255, 50, 50),
-                BorderMode = Enum.BorderMode.Inset,
-                BorderSizePixel = 1,
-                Position = UDim2.fromOffset(0, 6),
-                Size = UDim2.fromScale(1, 0),
-                Visible = false,
-                Parent = TabContainer,
-            })
-
-            WarningBoxScrollingFrame = New("ScrollingFrame", {
-                BackgroundTransparency = 1,
-                BorderSizePixel = 0,
-                AnchorPoint = Vector2.new(0.5, 0.5),
-                Position = UDim2.new(0.5, 0, 0.5, -3),
-                Size = UDim2.new(1, 0, 1, -3),
-                CanvasSize = UDim2.new(0, 0, 0, 0),
-                ScrollBarThickness = 3,
-                Parent = WarningBox,
-            })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 4),
-                PaddingLeft = UDim.new(0, 6),
-                PaddingRight = UDim.new(0, 6),
-                PaddingTop = UDim.new(0, 4),
-                Parent = WarningBoxScrollingFrame,
-            })
-
-            WarningTitle = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, -4, 0, 14),
-                Text = "",
-                TextColor3 = Color3.fromRGB(255, 50, 50),
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = WarningBoxScrollingFrame,
-            })
-            WarningStroke = New("UIStroke", {
-                ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
-                Color = Color3.fromRGB(169, 0, 0),
-                LineJoinMode = Enum.LineJoinMode.Miter,
-                Parent = WarningTitle,
-            })
-
-            WarningText = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Position = UDim2.fromOffset(0, 16),
-                Size = UDim2.new(1, -4, 0, 0),
-                Text = "",
-                TextSize = 14,
-                TextWrapped = true,
-                Parent = WarningBoxScrollingFrame,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                TextYAlignment = Enum.TextYAlignment.Top,
-            })
-            New("UIStroke", {
-                ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
-                Color = "Dark",
-                LineJoinMode = Enum.LineJoinMode.Miter,
-                Parent = WarningText,
-            })
-        end
-
-        --// Tab Table \\--
-        local Tab = {
-        TabLabel = TabLabel, -- <--- ADD THIS LINE HERE!
-            Groupboxes = {},
-            Tabboxes = {}, 
-            DependencyGroupboxes = {},
-            Sides = {
-                TabLeft,
-                TabRight,
-            },
-            WarningBox = {
-                IsNormal = false,
-                LockSize = false,
-                Visible = false,
-                Title = "WARNING",
-                Text = ""
-            }
-        }
-
-        function Tab:UpdateWarningBox(Info)
-            if typeof(Info.IsNormal) == "boolean"   then Tab.WarningBox.IsNormal    = Info.IsNormal end
-            if typeof(Info.LockSize) == "boolean"   then Tab.WarningBox.LockSize    = Info.LockSize end
-            if typeof(Info.Visible) == "boolean"    then Tab.WarningBox.Visible     = Info.Visible end
-            if typeof(Info.Title) == "string"       then Tab.WarningBox.Title       = Info.Title end
-            if typeof(Info.Text) == "string"        then Tab.WarningBox.Text        = Info.Text end
-
-            WarningBox.Visible = Tab.WarningBox.Visible
-            WarningTitle.Text = Tab.WarningBox.Title
-            WarningText.Text = Tab.WarningBox.Text
-            Tab:Resize(true)
-
-            WarningBox.BackgroundColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.BackgroundColor or Color3.fromRGB(127, 0, 0)
-            WarningBox.BorderColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(255, 50, 50)
-            WarningTitle.TextColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.FontColor or Color3.fromRGB(255, 50, 50)
-            WarningStroke.Color = Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(169, 0, 0)
-
-            if not Library.Registry[WarningBox] then
-                Library:AddToRegistry(WarningBox, {})
-            end
-            if not Library.Registry[WarningTitle] then
-                Library:AddToRegistry(WarningTitle, {})
-            end
-            if not Library.Registry[WarningStroke] then
-                Library:AddToRegistry(WarningStroke, {})
-            end
-
-            Library.Registry[WarningBox].BackgroundColor3 = function()
-                return Tab.WarningBox.IsNormal == true and Library.Scheme.BackgroundColor or Color3.fromRGB(127, 0, 0)
-            end
-
-            Library.Registry[WarningBox].BorderColor3 = function()
-                return Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(255, 50, 50)
-            end
-
-            Library.Registry[WarningTitle].TextColor3 = function()
-                return Tab.WarningBox.IsNormal == true and Library.Scheme.FontColor or Color3.fromRGB(255, 50, 50)
-            end
-
-            Library.Registry[WarningStroke].Color = function()
-                return Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(169, 0, 0)
-            end
-        end
-
-        function Tab:Resize(ResizeWarningBox: boolean?)
-            if ResizeWarningBox then
-                local MaximumSize = math.floor(TabContainer.AbsoluteSize.Y / 3.25)
-                local _, YText = Library:GetTextBounds(
-                    WarningText.Text,
-                    Library.Scheme.Font,
-                    WarningText.TextSize,
-                    WarningText.AbsoluteSize.X
-                )
-
-                local YBox = 24 + YText
-                if Tab.WarningBox.LockSize == true and YBox >= MaximumSize then
-                    WarningBoxScrollingFrame.CanvasSize = UDim2.fromOffset(0, YBox)
-                    YBox = MaximumSize
+            a += 1
+            d.SprinklerPlacer.SetStatus(string.format("Placing %s %d/%d", j.name, j.placed + 1, j.target), "#66CCFF")
+            local g = d.SprinklerPlacer.Place(j.name, J, c, u)
+            if g then
+                table.insert(i, J)
+                j.placed += 1
+                j.remaining -= 1
+                V[j.name] = j.placed
+                E += 1
+                task.wait(d.SprinklerPlacer.GetDelay())
+            else
+                if Y.sprinkler_place_teleport then
+                    d.SprinklerPlacer.SetStatus("Sprinkler placement failed", "#FF5555")
                 else
-                    WarningBoxScrollingFrame.CanvasSize = UDim2.fromOffset(0, 0)
+                    d.SprinklerPlacer.SetStatus("Placement failed: try Auto Teleport", "#FFCC66")
                 end
-
-                WarningText.Size = UDim2.new(1, -4, 0, YText)
-                Library:UpdateDPI(WarningText, { Size = WarningText.Size })
-
-                WarningBox.Size = UDim2.new(1, 0, 0, YBox)
-                Library:UpdateDPI(WarningBox, { Size = WarningBox.Size })
+                break
             end
-
-            local Offset = WarningBox.Visible and WarningBox.AbsoluteSize.Y + 6 or 0
-            for _, Side in pairs(Tab.Sides) do
-                Side.Position = UDim2.new(Side.Position.X.Scale, 0, 0, Offset)
-                Side.Size = UDim2.new(0, math.floor(TabContainer.AbsoluteSize.X / 2) - 3, 1, -Offset)
-                Library:UpdateDPI(Side, {
-                    Position = Side.Position,
-                    Size = Side.Size,
+            if j.remaining <= 0 then table.remove(G, Z) end
+        end
+        d.SprinklerPlacer.CleanupTool()
+        if g then d.Teleport.UnlockTeleport(q) end
+        if not Y.auto_sprinkler_place then
+            d.SprinklerPlacer.ClearStatus()
+        elseif E > 0 then
+            d.SprinklerPlacer.SetStatus(
+                string.format("Placed %d sprinkler%s | Waiting", E, E == 1 and "" or "s"), "#7CFC00")
+        end
+        return E
+    end,
+    Loop = function()
+        if not Y.auto_sprinkler_place then
+            d.SprinklerPlacer.ClearStatus()
+            return 0
+        end
+        if not J.GetCheckIfPro() then return 0 end
+        local G, V = pcall(d.SprinklerPlacer.Run)
+        if not G then
+            d.SprinklerPlacer.CleanupTool()
+            d.Teleport.UnlockTeleport(J.TeleportLockNames.SprinklerPlacer)
+            d.SprinklerPlacer.SetStatus("Error: sprinkler placer failed", "#FF4444")
+            warn("[SprinklerPlacer] Loop error:", V)
+            return 0
+        end
+        return tonumber(V) or 0
+    end
+}
+J.WaterPlantStatusText = ""
+d.WaterPlants = {
+    NextUseAt = 0,
+    LastCanName = "",
+    LastTargetName = "",
+    EquippedBySystem = false,
+    SetStatus = function(G,
+                         V)
+        J.WaterPlantStatusText =
+            string.format(
+                "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\146\167 [Water Plants]</font> <font color=\'%s\'>%s</font></stroke>",
+                tostring(V or "#FFFFFF"), tostring(G or "Waiting"))
+    end,
+    ClearStatus = function() J.WaterPlantStatusText = "" end,
+    GetCanDropdown = function()
+        local G = {}
+        if type(y.WateringcanData) ~= "table" then return G end
+        for V, y in ipairs(y.WateringcanData) do
+            local Z = type(y) == "table" and y.Name or nil
+            if type(Z) ~= "string" or Z == "" then continue end
+            table.insert(G,
+                {
+                    Text = string.format(
+                        "<font color=\"#FFFFFF\">%s</font> <font color=\"#66CCFF\">%d studs</font> <font color=\"#FFD966\">\226\143\179%ds</font> <font color=\"#7CFC00\">Multi x%d</font>",
+                        Z, math.floor(tonumber(y.SplashRadius) or 0), math.floor(tonumber(y.EffectTime) or 0),
+                        math.floor(tonumber(y.GrowthSpeedMultiplier) or 0)),
+                    Value = Z
                 })
+        end
+        return G
+    end,
+    GetTool = function()
+        if type(y.WateringcanData) ~= "table" then return nil, nil end
+        local G = Y.water_plant_selected_cans
+        local V = type(G) ~= "table" or next(G) == nil
+        local Z = d.Backpack.GetBackpackAllItems()
+        for y, j in ipairs(y.WateringcanData) do
+            local i = type(j) == "table" and j.Name or nil
+            if type(i) ~= "string" or i == "" then continue end
+            if not V and G[i] ~= true then continue end
+            for G, V in ipairs(Z) do if V:IsA("Tool") and V:GetAttribute("WateringCan") == i then return V, j end end
+        end
+        return nil, nil
+    end,
+    GetPlantTarget = function(G, V)
+        for y, Z in ipairs(d.Farm.GetPlants()) do
+            if not Z or not Z.Parent then continue end
+            local j = Z:GetAttribute("SeedName")
+            if type(j) ~= "string" or j == "" then continue end
+            if type(G) == "string" and (G ~= "" and j ~= G) then continue end
+            if V then
+                local G = tonumber(Z:GetAttribute("Age"))
+                local V = tonumber(Z:GetAttribute("MaxAge"))
+                if not G or not V or V <= 0 or G >= V then continue end
+            end
+            local i
+            if Z:IsA("Model") then i = (Z:GetPivot()).Position elseif Z:IsA("BasePart") then i = Z.Position end
+            if typeof(i) ~= "Vector3" then continue end
+            local c = d.Farm.ProjectPositionToPlantArea(i, 0)
+            if typeof(c) == "Vector3" then return c, j end
+        end
+        return nil, nil
+    end,
+    GetTargetPosition = function()
+        local G = tostring(Y.water_plant_mode or "Growing Plant")
+        if G == "Growing Plant" then
+            local G, V = d.WaterPlants.GetPlantTarget(nil, true)
+            if typeof(G) ~= "Vector3" then return nil, nil, "No growing plants" end
+            return G, V
+        end
+        if G == "Farm Middle" then
+            local G = d.Farm.GetPermanentPlantPosition(0)
+            if typeof(G) ~= "Vector3" then return nil, nil, "Farm middle not found" end
+            return G, "Farm Middle"
+        end
+        if G == "Plant Target" then
+            local G = tostring(Y.water_plant_target_plant or "")
+            if G == "" then return nil, nil, "Select a target plant" end
+            local V = d.WaterPlants.GetPlantTarget(G, false)
+            if typeof(V) ~= "Vector3" then return nil, nil, G .. " not found" end
+            return V, G
+        end
+        if G == "Custom Position" then
+            local G = Y.water_plant_saved_position
+            local V = type(G) == "table" and d.Farm.GetPlantArea(G.area) or nil
+            local y = type(G) == "table" and tonumber(G.x) or nil
+            local Z = type(G) == "table" and tonumber(G.z) or nil
+            if not V or not y or not Z then return nil, nil, "Copy a custom position" end
+            if math.abs(y) > V.Size.X / 2 or math.abs(Z) > V.Size.Z / 2 then
+                return nil, nil,
+                    "Custom position is outside your farm"
+            end
+            local j = V.CFrame:PointToWorldSpace(Vector3.new(y, V.Size.Y / 2, Z))
+            return j, "Custom Position"
+        end
+        return nil, nil, "Invalid watering mode"
+    end,
+    SaveCurrentPosition = function()
+        local G = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
+        if not G then return false, "Character not found" end
+        local V, Z = d.Farm.GetPlantAreaAtPosition(G.Position)
+        if not V or typeof(Z) ~= "Vector3" then return false, "Stand inside your farm" end
+        Y.water_plant_saved_position = { area = V.Name, x = Z.X, z = Z.Z }
+        u.Save.SaveDataSync()
+        return true, "Watering position saved"
+    end,
+    GetSavedPositionText = function()
+        local G = Y.water_plant_saved_position
+        local V = type(G) == "table" and tostring(G.area or "") or ""
+        local y = type(G) == "table" and tonumber(G.x) or nil
+        local Z = type(G) == "table" and tonumber(G.z) or nil
+        if V == "" or not y or not Z then return "\240\159\147\141 Custom Position: Not set" end
+        return string.format("\240\159\147\141 Custom Position: %s | X %.2f | Z %.2f", V, y, Z)
+    end,
+    EnsureNearTarget = function(G)
+        if typeof(G) ~= "Vector3" then return false, false, "Invalid watering position" end
+        local V = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
+        if not V then return false, false, "Character not found" end
+        if ((V.Position - G)).Magnitude <= 21 then return true, false end
+        local Z = J.TeleportLockNames.WaterPlants
+        if not d.Teleport.LockTeleport(Z, 4, false) then return false, false, "Waiting: teleport busy" end
+        d.WaterPlants.SetStatus("Moving near watering target...", "#66CCFF")
+        local j = Vector3.new(V.Position.X - G.X, 0, V.Position.Z - G.Z)
+        if j.Magnitude <= .1 then j = Vector3.new(0, 0, 1) else j = j.Unit end
+        local i = (G + j * 6) + Vector3.new(0, 3, 0)
+        local c = d.Teleport.TeleportToCFrame(CFrame.lookAt(i, G), Z)
+        if not c then
+            d.Teleport.UnlockTeleport(Z)
+            return false, false, "Could not reach watering target"
+        end
+        task.wait(.15)
+        return true, true
+    end,
+    CleanupTool = function()
+        if d.WaterPlants.EquippedBySystem then
+            d.WaterPlants.EquippedBySystem = false
+            d.Player.UnequipTools()
+        end
+    end,
+    Use = function(G, V, Z)
+        local j = y.Networking and (y.Networking.WateringCan and y.Networking.WateringCan.UseWateringCan)
+        if typeof(G) ~= "Vector3" or type(V) ~= "string" or V == "" then return false end
+        if not Z or not Z:IsA("Tool") or not d.Player.IsToolHeld(Z) then return false end
+        if not j or type(j.Fire) ~= "function" then return false end
+        return pcall(function() j:Fire(G - Vector3.new(0, .3, 0), V, Z) end)
+    end,
+    Run = function()
+        if not Y.auto_water_plants then
+            d.WaterPlants.ClearStatus()
+            return 0
+        end
+        if type(y.WateringcanData) ~= "table" then
+            d.WaterPlants.SetStatus("Watering data unavailable", "#FF5555")
+            return 0
+        end
+        if Y.water_plant_wait_effect then
+            local G = math.max(math.ceil(d.WaterPlants.NextUseAt - os.clock()), 0)
+            if G > 0 then
+                d.WaterPlants.SetStatus(
+                    string.format("%s \226\134\146 %s | Wait %ds", d.WaterPlants.LastCanName,
+                        d.WaterPlants.LastTargetName, G),
+                    "#7CFC00")
+                return 0
             end
         end
-        
-        
-   function Tab:AddGroupbox(Info)
-    Info = type(Info) == "table" and Info or {}
-
-    local function asNumber(v, fallback)
-        v = tonumber(v)
-        return v ~= nil and v or fallback
+        local G, V, Z = d.WaterPlants.GetTargetPosition()
+        if typeof(G) ~= "Vector3" then
+            d.WaterPlants.SetStatus(Z or "Target not found", "#CFCFCF")
+            return 0
+        end
+        local j, i = d.WaterPlants.GetTool()
+        if not j or type(i) ~= "table" then
+            d.WaterPlants.SetStatus("Watering can not found", "#FFCC66")
+            return 0
+        end
+        local c = tostring(i.Name or "")
+        if c == "" then
+            d.WaterPlants.SetStatus("Invalid watering can", "#FF5555")
+            return 0
+        end
+        if not d.Player.IsToolHeld(j) then
+            d.Player.UnequipTools()
+            if not d.Player.EquipTool(j) then
+                d.WaterPlants.SetStatus("Could not equip watering can", "#FF5555")
+                return 0
+            end
+            d.WaterPlants.EquippedBySystem = true
+            task.wait(.15)
+        end
+        if not d.Player.IsToolHeld(j) then
+            d.WaterPlants.CleanupTool()
+            d.WaterPlants.SetStatus("Watering can was unequipped", "#FF5555")
+            return 0
+        end
+        local T, u, q = d.WaterPlants.EnsureNearTarget(G)
+        if not T then
+            d.WaterPlants.CleanupTool()
+            d.WaterPlants.SetStatus(q or "Could not reach target", "#FFCC66")
+            return 0
+        end
+        d.WaterPlants.SetStatus("Watering " .. (tostring(V or "target") .. "..."), "#66CCFF")
+        local g = d.WaterPlants.Use(G, c, j)
+        task.wait(.15)
+        d.WaterPlants.CleanupTool()
+        if u then d.Teleport.UnlockTeleport(J.TeleportLockNames.WaterPlants) end
+        if not g then
+            d.WaterPlants.SetStatus("Watering failed", "#FF5555")
+            return 0
+        end
+        local E = math.max(math.floor(tonumber(i.EffectTime) or 1), 1)
+        d.WaterPlants.LastCanName = c
+        d.WaterPlants.LastTargetName = tostring(V or "Target")
+        if Y.water_plant_wait_effect then
+            d.WaterPlants.NextUseAt = os.clock() + E
+            d.WaterPlants.SetStatus(string.format("%s \226\134\146 %s | Wait %ds", c, d.WaterPlants.LastTargetName, E),
+                "#7CFC00")
+        else
+            d.WaterPlants.NextUseAt = 0
+            d.WaterPlants.SetStatus(string.format("%s \226\134\146 %s | Stacking", c, d.WaterPlants.LastTargetName),
+                "#7CFC00")
+        end
+        return 1
+    end,
+    Loop = function()
+        if not Y.auto_water_plants then
+            d.WaterPlants.ClearStatus()
+            return 0
+        end
+        local G, V = pcall(d.WaterPlants.Run)
+        if not G then
+            d.WaterPlants.CleanupTool()
+            d.Teleport.UnlockTeleport(J.TeleportLockNames.WaterPlants)
+            d.WaterPlants.SetStatus("Error: watering loop failed", "#FF4444")
+            warn("[WaterPlants] Loop error:", V)
+            return 0
+        end
+        return tonumber(V) or 0
     end
-
-    local side = (Info.Side == 2) and 2 or 1
-    local boxName = tostring(Info.Name or "Groupbox")
-    local description = Info.Description ~= nil and tostring(Info.Description) or nil
-    if description == "" then
-        description = nil
+}
+c.PositionGrid = {
+    Create = function(G)
+        G = math.max(tonumber(G) or 1, .1)
+        return { CellSize = G, Buckets = {} }
+    end,
+    Add = function(G, V)
+        if type(G) ~= "table" or type(G.Buckets) ~= "table" or typeof(V) ~= "Vector3" then return false end
+        local y = math.max(tonumber(G.CellSize) or 1, .1)
+        local Z = math.floor(V.X / y)
+        local j = math.floor(V.Z / y)
+        local i = G.Buckets[Z]
+        if not i then
+            i = {}
+            G.Buckets[Z] = i
+        end
+        local c = i[j]
+        if not c then
+            c = {}
+            i[j] = c
+        end
+        table.insert(c, V)
+        return true
+    end,
+    IsOpen = function(G, V, y)
+        if type(G) ~= "table" or type(G.Buckets) ~= "table" or typeof(V) ~= "Vector3" then return false end
+        local Z = math.max(tonumber(G.CellSize) or 1, .1)
+        y = math.max(tonumber(y) or Z, 0)
+        local j = y * y
+        local i = math.max(math.ceil(y / Z), 1)
+        local c = math.floor(V.X / Z)
+        local J = math.floor(V.Z / Z)
+        for y = c - i, c + i, 1 do
+            local Z = G.Buckets[y]
+            if not Z then continue end
+            for G = J - i, J + i, 1 do
+                local y = Z[G]
+                if not y then continue end
+                for G, y in ipairs(y) do
+                    local Z = V.X - y.X
+                    local i = V.Z - y.Z
+                    local c = Z * Z + i * i
+                    if c < j then return false end
+                end
+            end
+        end
+        return true
     end
-
-    Tab.Groupboxes = Tab.Groupboxes or {}
-
-    local parentColumn = (side == 1 and TabLeft) or TabRight or TabLeft
-    if not parentColumn then
-        warn(("[Library] AddGroupbox('%s') skipped: missing TabLeft/TabRight"):format(boxName))
+}
+J.SeedPlaceStatusText = ""
+d.Seeder = {
+    MaxPerLoop = 30,
+    MinPlantSpacing = 1.3,
+    SpreadStep = 1.35,
+    MaxPositionAttempts = 220,
+    StackStep = .67,
+    StackIndex = 0,
+    HardGardenLimit = 800,
+    MaxFailedPlacements = 9,
+    PrintCurrentStackLocation = function(
+        G)
+        local V = tostring(Y.seed_place_mode or "Random")
+        local y
+        local Z
+        local j
+        if V == "Farm Middle" then
+            local G, V, i = d.Farm.GetPermanentPlantPosition(.5)
+            y = V
+            Z = i and i.X
+            j = i and i.Z
+        elseif V == "Saved Position" then
+            local G = Y.seed_place_saved_position
+            y = type(G) == "table" and d.Farm.GetPlantArea(G.area) or nil
+            Z = type(G) == "table" and tonumber(G.x) or nil
+            j = type(G) == "table" and tonumber(G.z) or nil
+        end
+        if not y or not Z or not j then return 0, 0 end
+        local i = d.Seeder.GetStackedPosition(y, Z, j, 0)
+        if typeof(i) ~= "Vector3" then return 0, 0 end
+        local c = 0
+        local J = 0
+        for V, y in ipairs(d.Farm.GetPlants()) do
+            local Z = d.Seeder.GetPlantPosition(y)
+            if typeof(Z) ~= "Vector3" then continue end
+            if G and typeof(G) == "Vector3" then
+                local V = Z.X - G.X
+                local y = Z.Z - G.Z
+                if V * V + y * y > 4 then continue end
+            end
+            local j = Z.Y - i.Y
+            c = math.max(c, j)
+            J = math.min(J, j)
+        end
+        c = math.round(c)
+        J = math.round(J)
+        print("[Stack Test] Lowest:", J, "| Highest:", c)
+        return J, c
+    end,
+    GetDetectedStackIndex = function(G)
+        local V, y = d.Seeder.PrintCurrentStackLocation(G)
+        local Z = Y.seed_place_stack_mode_underground and math.abs(V) or math.abs(y)
+        local j = math.max(tonumber(d.Seeder.StackStep) or .67, .01)
+        return math.max(math.round(Z / j) + 1, 1)
+    end,
+    GetGardenLimit = function()
+        local G = math.floor(tonumber(Y.seed_place_max_garden_plants) or d.Seeder.HardGardenLimit)
+        return math.clamp(G, 0, d.Seeder.HardGardenLimit)
+    end,
+    GetStackedPosition = function(G, V, y, Z)
+        if not G or not G:IsA("BasePart") then return nil end
+        V = tonumber(V)
+        y = tonumber(y)
+        Z = math.max(math.floor(tonumber(Z) or 0), 0)
+        if not V or not y then return nil end
+        local j = Z * d.Seeder.StackStep
+        local i = j
+        if Y.seed_place_stack_mode and Y.seed_place_stack_mode_underground then i = -j end
+        return G.CFrame:PointToWorldSpace(Vector3.new(V, i, y))
+    end,
+    GetSavedPositionText = function()
+        local G = Y.seed_place_saved_position
+        if type(G) ~= "table" then return "\240\159\147\141 Saved Position: Not set" end
+        local V = tostring(G.area or "")
+        local y = tonumber(G.x)
+        local Z = tonumber(G.z)
+        if V == "" or not y or not Z then return "\240\159\147\141 Saved Position: Not set" end
+        return string.format("\240\159\147\141 Saved Position: %s | X %.2f | Z %.2f", V, y, Z)
+    end,
+    GetPlantPosition = function(G)
+        if not G or not G.Parent then return nil end
+        if G:IsA("Model") then return (G:GetPivot()).Position end
+        if G:IsA("BasePart") then return G.Position end
         return nil
-    end
-
-    local cornerRadius = math.max(0, asNumber(WindowInfo and WindowInfo.CornerRadius, 8))
-    local headerHeight = 40 -- smaller header
-    local outerInset = 6
-    local contentPadTop = 8
-    local contentPadBottom = 12 -- extra bottom room so controls never touch edge
-
-    local BoxHolder = New("Frame", {
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        Size = UDim2.fromScale(1, 0),
-        Parent = parentColumn,
-    })
-    New("UIListLayout", {
-        Padding = UDim.new(0, 6),
-        Parent = BoxHolder,
-    })
-
-    local Background = Library:MakeOutline(BoxHolder, cornerRadius)
-    Background.Size = UDim2.fromScale(1, 0)
-    if Library and Library.UpdateDPI then
-        Library:UpdateDPI(Background, { Size = false })
-    end
-
-    local GroupboxHolder = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        Position = UDim2.fromOffset(2, 2),
-        Size = UDim2.new(1, -4, 1, -4),
-        Parent = Background,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, math.max(cornerRadius - 1, 0)),
-        Parent = GroupboxHolder,
-    })
-
-    Library:MakeLine(GroupboxHolder, {
-        Position = UDim2.fromOffset(0, headerHeight),
-        Size = UDim2.new(1, 0, 0, 1),
-    })
-
-    local HeaderFrame = New("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, headerHeight),
-        Parent = GroupboxHolder,
-    })
-
-    local BoxIcon
-    if Info.IconName ~= nil and Library and Library.GetIcon then
-        local ok, result = pcall(function()
-            return Library:GetIcon(Info.IconName)
+    end,
+    GetOccupiedPositions = function()
+        local G = c.PositionGrid.Create(d.Seeder.MinPlantSpacing)
+        for V, y in ipairs(d.Farm.GetPlants()) do
+            local Z = d.Seeder.GetPlantPosition(y)
+            if typeof(Z) == "Vector3" then c.PositionGrid.Add(G, Z) end
+        end
+        return G
+    end,
+    IsPositionOpen = function(G, V) return c.PositionGrid.IsOpen(V, G, d.Seeder.MinPlantSpacing) end,
+    GetAreaPosition = function(
+        G, V, y)
+        if not G or not G:IsA("BasePart") then return nil end
+        V = tonumber(V)
+        y = tonumber(y)
+        if not V or not y then return nil end
+        return G.CFrame:PointToWorldSpace(Vector3.new(V, G.Size.Y / 2, y))
+    end,
+    IsInsidePlantArea = function(G, V, y, Z)
+        if not G or not G:IsA("BasePart") then return false end
+        Z = math.max(tonumber(Z) or .5, 0)
+        local j = math.max(G.Size.X / 2 - Z, 0)
+        local i = math.max(G.Size.Z / 2 - Z, 0)
+        return math.abs(V) <= j and math.abs(y) <= i
+    end,
+    FindOpenPositionAround = function(G, V, y, Z)
+        if not G or not G:IsA("BasePart") then return nil end
+        V = tonumber(V)
+        y = tonumber(y)
+        if not V or not y then return nil end
+        for j = 0, d.Seeder.MaxPositionAttempts, 1 do
+            local i = V
+            local c = y
+            if j > 0 then
+                local G = math.rad(j * 137.5)
+                local V = d.Seeder.SpreadStep * math.sqrt(j)
+                i += math.cos(G) * V
+                c += math.sin(G) * V
+            end
+            if not d.Seeder.IsInsidePlantArea(G, i, c, .5) then continue end
+            local J = d.Seeder.GetAreaPosition(G, i, c)
+            if J and d.Seeder.IsPositionOpen(J, Z) then return J end
+        end
+        return nil
+    end,
+    GetRandomOpenPosition = function(G)
+        for V = 1, d.Seeder.MaxPositionAttempts, 1 do
+            local y = d.Farm.GetRandomLocationForSeed(.75)
+            if y and d.Seeder.IsPositionOpen(y, G) then return y end
+        end
+        return nil
+    end,
+    BuildWallPositions = function()
+        local G = {}
+        local V = d.Seeder.SpreadStep
+        for y, Z in ipairs(d.Farm.GetPlantAreas()) do
+            local j = .75
+            local i = math.max(Z.Size.X / 2 - j, 0)
+            local c = math.max(Z.Size.Z / 2 - j, 0)
+            local J = i * 2
+            local T = c * 2
+            local u = math.max(math.floor(J / V), 1)
+            local q = math.max(math.floor(T / V), 1)
+            for V = 0, u, 1 do
+                for y = 0, q, 1 do
+                    local j = -i + J * ((V / u))
+                    local g = -c + T * ((y / q))
+                    local E = math.min(V, u - V, y, q - y)
+                    local a = d.Seeder.GetAreaPosition(Z, j, g)
+                    if a then table.insert(G, { position = a, depth = E, random = d.Farm._Random:NextNumber() }) end
+                end
+            end
+        end
+        table.sort(G, function(G, V)
+            if G.depth ~= V.depth then return G.depth < V.depth end
+            return G.random < V.random
         end)
-        if ok then
-            BoxIcon = result
+        return G
+    end,
+    GetWallPosition = function(G, V)
+        if type(V) ~= "table" then return nil end
+        for y, Z in ipairs(V) do
+            local j = Z.position
+            if d.Seeder.IsPositionOpen(j, G) then
+                table.remove(V, y)
+                return j
+            end
+        end
+        return nil
+    end,
+    SetStatus = function(G, V)
+        J.SeedPlaceStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\140\177 [Seed Placer]</font> <font color=\'%s\'>%s</font></stroke>",
+            tostring(V or "#FFFFFF"), tostring(G or "Waiting"))
+    end,
+    ClearStatus = function() J.SeedPlaceStatusText = "" end,
+    GetDelay = function()
+        return
+            math.max(tonumber(Y.seed_place_delay) or .3, .05)
+    end,
+    GetSeedNames = function()
+        local G = {}
+        for V, y in ipairs(J.AllSeedsDataTable) do
+            local Z = type(y) == "table" and y.name
+            if type(Z) == "string" and Z ~= "" then table.insert(G, Z) end
+        end
+        table.sort(G)
+        return G
+    end,
+    GetOverrideTarget = function(G)
+        if type(G) ~= "string" or G == "" then return nil end
+        local V = Y.seed_place_overrides
+        if type(V) ~= "table" then return nil end
+        local y = V[G]
+        if type(y) == "number" then return math.max(math.floor(y), 0) end
+        if type(y) ~= "table" or y.enabled ~= true then return nil end
+        local Z = tonumber(y.target)
+        if not Z then return nil end
+        return math.max(math.floor(Z), 0)
+    end,
+    SetOverrideTarget = function(G, V)
+        if type(G) ~= "string" or G == "" or not J.SeedDataFast[G] then return false end
+        V = math.floor(tonumber(V) or 0)
+        if V <= 0 then return false end
+        if type(Y.seed_place_overrides) ~= "table" then Y.seed_place_overrides = {} end
+        Y.seed_place_overrides[G] = { enabled = true, target = V }
+        return true
+    end,
+    RemoveOverrideTarget = function(G)
+        if type(Y.seed_place_overrides) ~= "table" then
+            Y.seed_place_overrides = {}
+            return false
+        end
+        if Y.seed_place_overrides[G] == nil then return false end
+        Y.seed_place_overrides[G] = nil
+        return true
+    end,
+    GetTargetAmount = function(G)
+        local V = d.Seeder.GetOverrideTarget(G)
+        if V ~= nil then return V end
+        return math.max(math.floor(tonumber(Y.seed_place_default_target) or 10), 0)
+    end,
+    GetAllSeedSelection = function()
+        local G = {}
+        for V, y in ipairs(J.AllSeedsDataTable) do
+            local Z = type(y) == "table" and y.name
+            if type(Z) == "string" and Z ~= "" then G[Z] = true end
+        end
+        return G
+    end,
+    GetSeedTool = function(G)
+        if type(G) ~= "string" or G == "" then return nil, 0 end
+        for V, y in ipairs(d.Backpack.GetBackpackAllItems()) do
+            if y:IsA("Tool") and (y.Name == G and y:GetAttribute("SeedTool")) then
+                return
+                    y, math.max(math.floor(tonumber(y:GetAttribute("Count")) or 0), 0)
+            end
+        end
+        return nil, 0
+    end,
+    SaveCurrentPosition = function()
+        local G = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
+        d.Seeder.StackIndex = 0
+        if not G then return false, "Character not found" end
+        local V, Z = d.Farm.GetPlantAreaAtPosition(G.Position)
+        if not V or typeof(Z) ~= "Vector3" then return false, "Stand inside your farm" end
+        Y.seed_place_saved_position = { area = V.Name, x = Z and Z.X, z = Z and Z.Z }
+        d.Seeder.StackIndex = 0
+        u.Save.SaveDataSync()
+        return true, "Planting position saved"
+    end,
+    GetPlacementPosition = function(G, V, y)
+        local Z = tostring(Y.seed_place_mode or "Random")
+        if Z == "Random" then
+            if Y.seed_place_wall_mode then
+                local y = d.Seeder.GetWallPosition(G, V)
+                if not y then return nil, "No open wall positions found" end
+                return y
+            end
+            local y = d.Seeder.GetRandomOpenPosition(G)
+            if not y then return nil, "No open planting position found" end
+            return y
+        end
+        if Z == "Farm Middle" then
+            local V, Z, j = d.Farm.GetPermanentPlantPosition(.5)
+            if not Z or typeof(j) ~= "Vector3" then return nil, "Farm middle not found" end
+            if Y.seed_place_stack_mode then return d.Seeder.GetStackedPosition(Z, j.X, j.Z, y) end
+            local i = d.Seeder.FindOpenPositionAround(Z, j.X, j.Z, G)
+            if not i then return nil, "No open position near farm middle" end
+            return i
+        end
+        if Z == "Saved Position" then
+            local V = Y.seed_place_saved_position
+            if type(V) ~= "table" then return nil, "Save a planting position" end
+            local Z = d.Farm.GetPlantArea(V.area)
+            local j = tonumber(V.x)
+            local i = tonumber(V.z)
+            if not Z or not j or not i then return nil, "Save a planting position" end
+            if not d.Seeder.IsInsidePlantArea(Z, j, i, 0) then return nil, "Saved position is outside your farm" end
+            if Y.seed_place_stack_mode then return d.Seeder.GetStackedPosition(Z, j, i, y) end
+            local c = d.Seeder.FindOpenPositionAround(Z, j, i, G)
+            if not c then return nil, "No open position near saved location" end
+            return c
+        end
+        return nil, "Invalid placement mode"
+    end,
+    GetCandidates = function()
+        local G = {}
+        local V = Y.allowed_seedsplace
+        local y = d.Farm.GetPlantedSeedCounts()
+        local Z = 0
+        local j = 0
+        if type(V) ~= "table" then return G, y, Z, j end
+        for V, i in pairs(V) do
+            if i ~= true or type(V) ~= "string" or V == "" then continue end
+            Z += 1
+            local c = d.Seeder.GetTargetAmount(V)
+            local J = math.max(math.floor(tonumber(y[V]) or 0), 0)
+            local T = math.max(c - J, 0)
+            if T <= 0 then continue end
+            j += 1
+            local u, q = d.Seeder.GetSeedTool(V)
+            local g = math.min(T, q)
+            if u and g > 0 then
+                table.insert(G,
+                    { name = V, tool = u, planted = J, target = c, available = q, remaining = g })
+            end
+        end
+        return G, y, Z, j
+    end,
+    PlaceSeed = function(G, V, Z)
+        if type(G) ~= "string" or G == "" or typeof(V) ~= "Vector3" then return false end
+        local j = y.Character
+        if not j or not j.Parent then return false end
+        if not Z or not Z:IsA("Tool") or Z.Parent ~= j then Z = j:FindFirstChild(G) end
+        if not Z or not Z:IsA("Tool") then return false end
+        local i = y.Networking and (y.Networking.Plant and y.Networking.Plant.PlantSeed)
+        if not i or type(i.Fire) ~= "function" then return false end
+        local c = math.max(math.floor(tonumber(Z:GetAttribute("Count")) or 0), 0)
+        if c <= 0 then return false end
+        local J = pcall(function() i:Fire(V, G, Z) end)
+        if not J then return false end
+        local T = os.clock() + .4
+        repeat
+            if not Z.Parent then return true, 0 end
+            local G = math.max(math.floor(tonumber(Z:GetAttribute("Count")) or 0), 0)
+            if G < c then return true, G end
+            task.wait()
+        until os.clock() >= T
+        return false, c
+    end,
+    Run = function()
+        local G = d.Seeder.GetGardenLimit()
+        local V = #d.Farm.GetPlants()
+        if V >= d.Seeder.HardGardenLimit then
+            d.Seeder.SetStatus(string.format("Game garden limit reached %d/%d", V, d.Seeder.HardGardenLimit), "#FF5555")
+            return 0
+        end
+        if V >= G then
+            d.Seeder.SetStatus(string.format("Selected garden limit reached %d/%d", V, G), "#FFCC66")
+            return 0
+        end
+        local y, Z, j, i = d.Seeder.GetCandidates()
+        if j <= 0 then
+            d.Seeder.SetStatus("Paused: select seeds", "#FFCC66")
+            return 0
+        end
+        if #y <= 0 then
+            if i <= 0 then
+                d.Seeder.SetStatus("All selected targets reached", "#7CFC00")
+            else
+                d.Seeder.SetStatus(
+                    "Selected seeds not found", "#FFCC66")
+            end
+            return 0
+        end
+        local J = 0
+        local T = false
+        local u = d.Seeder.GetDelay()
+        local q = tostring(Y.seed_place_mode or "Random")
+        local g = q
+        local E = d.Seeder.GetOccupiedPositions()
+        local a
+        if q == "Random" and Y.seed_place_wall_mode then
+            g = "Random Wall"
+            a = d.Seeder.BuildWallPositions()
+        end
+        local H = 0
+        local r = math.max(math.floor(tonumber(d.Seeder.StackIndex) or 0), 0)
+        local e = 0
+        local s = false
+        while Y.auto_seedplace and (#y > 0 and (H < d.Seeder.MaxPerLoop and V < G)) do
+            local j = d.Farm._Random:NextInteger(1, #y)
+            local i = y[j]
+            local g, N = d.Seeder.GetPlacementPosition(E, a, r)
+            if not g then
+                d.Seeder.SetStatus(N or "Planting position unavailable", "#FF5555")
+                break
+            end
+            local W, X = d.Seeder.GetSeedTool(i.name)
+            if not W or X <= 0 or i.remaining <= 0 then
+                table.remove(y, j)
+                continue
+            end
+            if not d.Player.IsToolHeld(W) then
+                if not d.Player.EquipTool(W) then
+                    table.remove(y, j)
+                    continue
+                end
+                T = true
+                task.wait(.1)
+            end
+            if not d.Player.IsToolHeld(W) then
+                table.remove(y, j)
+                continue
+            end
+            if V >= G then
+                d.Seeder.SetStatus(string.format("Garden limit reached %d/%d", V, G), "#FFCC66")
+                break
+            end
+            H += 1
+            local h, l = d.Seeder.PlaceSeed(i.name, g, W)
+            if h then
+                e = 0
+                c.PositionGrid.Add(E, g)
+                V += 1
+                if Y.seed_place_stack_mode and ((q == "Saved Position" or q == "Farm Middle")) then
+                    r += 1
+                    d.Seeder.StackIndex = r
+                end
+                i.planted += 1
+                i.available = tonumber(l) or math.max(i.available - 1, 0)
+                i.remaining -= 1
+                Z[i.name] = i.planted
+                J += 1
+                task.wait(u)
+            else
+                e += 1
+                if Y.seed_place_stack_mode and ((q == "Saved Position" or q == "Farm Middle")) then
+                    local G = d.Seeder.GetDetectedStackIndex(g)
+                    r = math.max(r + 1, G)
+                    d.Seeder.StackIndex = r
+                end
+                d.Seeder.SetStatus(string.format("Placement not confirmed (%d/%d)", e, d.Seeder.MaxFailedPlacements),
+                    "#FFCC66")
+                c.PositionGrid.Add(E, g)
+                if e >= d.Seeder.MaxFailedPlacements then
+                    V = #d.Farm.GetPlants()
+                    s = true
+                    if V >= d.Seeder.HardGardenLimit then
+                        d.Seeder.SetStatus(
+                            string.format("Game garden limit reached %d/%d", V, d.Seeder.HardGardenLimit), "#FF5555")
+                    else
+                        d
+                            .Seeder.SetStatus(
+                            string.format("Server did not confirm placement | Garden %d/%d", V, d.Seeder.HardGardenLimit),
+                            "#FF5555")
+                    end
+                    break
+                end
+                task.wait(.05)
+                continue
+            end
+            if i.remaining <= 0 or i.available <= 0 then table.remove(y, j) end
+        end
+        if T then d.Player.UnequipTools() end
+        V = #d.Farm.GetPlants()
+        if not Y.auto_seedplace then
+            d.Seeder.ClearStatus()
+        elseif V >= d.Seeder.HardGardenLimit then
+            d.Seeder.SetStatus(
+                string.format("Game garden limit reached %d/%d", V, d.Seeder.HardGardenLimit), "#FF5555")
+        elseif V >= G then
+            d
+                .Seeder.SetStatus(string.format("Selected garden limit reached %d/%d", V, G), "#FFCC66")
+        elseif J > 0 and not s then
+            d.Seeder.SetStatus(string.format("Placed %d seed%s | Waiting", J, J == 1 and "" or "s"), "#7CFC00")
+        end
+        return J
+    end,
+    SeedPlaceLoop = function()
+        if not Y.auto_seedplace then
+            d.Seeder.ClearStatus()
+            return 0
+        end
+        local G, V = pcall(d.Seeder.Run)
+        if not G then
+            d.Player.UnequipTools()
+            d.Seeder.SetStatus("Error: seed placer failed", "#FF4444")
+            warn("[Seeder] Loop error:", V)
+            return 0
+        end
+        return tonumber(V) or 0
+    end
+}
+E.SeedShop = {
+    GetCurrentStockSeedStock = function(G)
+        local V = y.SeedShop.Items:FindFirstChild(G)
+        if V then return tonumber(V.Value) or 0 end
+        return 0
+    end,
+    BuySeed = function(G)
+        if Y.seed_avoid[G] then return end
+        y.Networking.SeedShop.PurchaseSeed:Fire(G)
+    end,
+    SeedBuyerLoop = function()
+        if not Y.enabled_seed_shop then return end
+        local G = d.DataReplica.GetData("PurchasedThisRestock")
+        if not G then return end
+        local V = tonumber(d.Money.GetSheckles()) or 0
+        local y = G.Seeds or {}
+        for G, Z in pairs(J.SeedShopDataList) do
+            if Y.seed_avoid[G] then continue end
+            local j = d.SeedData.GetSeedDataX(G)
+            if not j then continue end
+            local i = tonumber(j.price) or 0
+            local c = E.SeedShop.GetCurrentStockSeedStock(G)
+            local J = tonumber(y[G]) or 0
+            local T = math.max(0, c - J)
+            if T <= 0 then continue end
+            if i <= 0 then continue end
+            local u = math.floor(V / i)
+            local q = math.min(T, u)
+            if q <= 0 then continue end
+            for y = 1, q, 1 do
+                E.SeedShop.BuySeed(G)
+                task.wait(.1)
+                V = tonumber(d.Money.GetSheckles()) or 0
+            end
         end
     end
-
-    local leftTextOffset = 12
-    if BoxIcon then
-        local IconCard = New("Frame", {
-           
-            BackgroundColor3 = Color3.fromRGB(30, 30, 30), -- black, not too dark
-    BackgroundTransparency = 0.5,
-            Position = UDim2.fromOffset(8, 8),
-            Size = UDim2.fromOffset(26, 26), -- smaller icon box
-            Parent = HeaderFrame,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(0, 7),
-            Parent = IconCard,
-        })
-
-        New("ImageLabel", {
-            BackgroundTransparency = 1,
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            Position = UDim2.fromScale(0.5, 0.5),
-            Size = UDim2.fromOffset(12, 12), -- smaller icon image
-            Image = BoxIcon.Url,
-            ImageColor3 = "AccentColor",
-            ImageRectOffset = BoxIcon.ImageRectOffset,
-            ImageRectSize = BoxIcon.ImageRectSize,
-            Parent = IconCard,
-        })
-
-        leftTextOffset = 40
-    end
-
-    New("TextLabel", {
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(leftTextOffset, description and 2 or 0),
-        Size = UDim2.new(1, -(leftTextOffset + 38), 0, description and 20 or headerHeight),
-        Text = boxName,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = description and Enum.TextYAlignment.Bottom or Enum.TextYAlignment.Center,
-        Parent = HeaderFrame,
-    })
-
-    if description then
-        New("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(leftTextOffset, 19),
-            Size = UDim2.new(1, -(leftTextOffset + 38), 0, 16),
-            Text = description,
-            TextSize = 12,
-            TextColor3 = Color3.fromRGB(178, 178, 178),
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = HeaderFrame,
-        })
-    end
-
-    local ToggleIcon = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(20, 20),
-        Position = UDim2.new(1, -28, 0, 10),
-        TextColor3 = Color3.fromRGB(205, 205, 205),
-        TextSize = 13,
-        Font = Enum.Font.Code,
-        Parent = HeaderFrame,
-    })
-
-    -- Single content container (no second inner frame)
-    local GroupboxContainer = New("Frame", {
-       
-         BackgroundColor3 = Color3.fromRGB(30, 30, 30), -- black, not too dark
-    BackgroundTransparency = 0.67,
-        Position = UDim2.fromOffset(outerInset, headerHeight + outerInset),
-        Size = UDim2.new(1, -(outerInset * 2), 1, -(headerHeight + outerInset * 2)),
-        Parent = GroupboxHolder,
-        ClipsDescendants = true,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, 10),
-        Parent = GroupboxContainer,
-    })
-
-    local GroupboxList = New("UIListLayout", {
-        Padding = UDim.new(0, 8),
-        Parent = GroupboxContainer,
-    })
-    New("UIPadding", {
-        PaddingTop = UDim.new(0, contentPadTop),
-        PaddingBottom = UDim.new(0, contentPadBottom),
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
-        Parent = GroupboxContainer,
-    })
-
-    local Groupbox = {
-        BoxHolder = BoxHolder,
-        Holder = Background,
-        Container = GroupboxContainer,
-        ToggleIcon = ToggleIcon,
-        Tab = Tab,
-        DependencyBoxes = {},
-        Elements = {},
-    }
-
-    local collapsed = true
-    if Info.StartCollapsed ~= nil then
-        collapsed = Info.StartCollapsed and true or false
-    end
-
-    local TweenService = game:GetService("TweenService")
-    local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-    local activeTween
-
-    local function expandedHeight()
-        local listHeight = (GroupboxList and GroupboxList.AbsoluteContentSize and GroupboxList.AbsoluteContentSize.Y) or 0
-        local contentHeight = listHeight + contentPadTop + contentPadBottom
-        return headerHeight + outerInset + contentHeight + outerInset
-    end
-
-    local function targetHeight()
-        if collapsed then
-            return headerHeight
+}
+E.GearShop = {
+    BuyGear = function(G)
+        if Y.gear_shop_avoid[G] then return end
+        y.Networking.GearShop.PurchaseGear:Fire(G)
+    end,
+    GearShopLoop = function()
+        if not Y.enabled_gear_shop then return end
+        local G = false
+        local V = d.DataReplica.GetData("PurchasedThisRestock")
+        if not V then return end
+        local y = tonumber(d.Money.GetSheckles()) or 0
+        local Z = V.Gear or {}
+        for V, j in pairs(J.AllGearShopData) do
+            if Y.gear_shop_avoid[V] then continue end
+            local i = tonumber(j.price) or 0
+            local c = d.GearData.GetGearStockCurrent(V)
+            local J = tonumber(Z[V]) or 0
+            local T = math.max(0, c - J)
+            if T <= 0 then
+                if G then print("[GearShop] Already bought / no stock left:", V, J .. ("/" .. c)) end
+                continue
+            end
+            if G then print("[GearShop] Have in stock:", V, T, "Price:", i) end
+            if i <= 0 then continue end
+            local u = math.floor(y / i)
+            local q = math.min(T, u)
+            if q <= 0 then
+                if G then print("[GearShop] Not enough money:", V, "Need:", i, "Have:", y) end
+                continue
+            end
+            for Z = 1, q, 1 do
+                if G then print("[GearShop] Attempting to buy:", V, "Price:", i) end
+                E.GearShop.BuyGear(V)
+                task.wait(.1)
+                y = tonumber(d.Money.GetSheckles()) or 0
+            end
         end
-        return expandedHeight()
     end
-
-    local function setArrow()
-        ToggleIcon.Text = collapsed and ">" or "v"
-    end
-
-    function Groupbox:Resize_old()
-        self:Resize(false)
-    end
-
-    function Groupbox:Resize(animated)
-        if not Background or not Background.Parent then
-            return
+}
+J.MailStatusText = ""
+J.MailDraftItems = {}
+J.MailDraftTargetUsername = ""
+J.MailDraftCategory = "Seeds"
+J.MailDraftItemName = ""
+J.MailDraftAmount = 1
+J.MailManualRunning = false
+J.MailActiveOrder = nil
+J.MailManualUiStatusText = "<font color=\'#888888\'>Ready to send</font>"
+J.MailManualStatusLabel = nil
+J.MailStartOrderButton = nil
+J.MailClearOrderButton = nil
+J.MailStopOrderButton = nil
+J.MailSelectedReceipt = ""
+J.MailSelectedRuleId = ""
+J.MailUiRefs = {}
+d.Mail = {
+    Started = false,
+    Busy = false,
+    NextSendAt = 0,
+    EquippedPets = {},
+    RecentlySentPets = {},
+    RuleCooldowns = {},
+    MaxBatchItems = 20,
+    SendDelay = 10.1,
+    RetryDelay = 10,
+    ClaimDelay = .5,
+    MaxFailures = 5,
+    MaxReceipts = 50,
+    SetStatus = function(
+        G, V)
+        J.MailStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\147\172 [Mail]</font> <font color=\'%s\'>%s</font></stroke>",
+            tostring(V or "#FFFFFF"), tostring(G or "Waiting"))
+    end,
+    ClearStatus = function() J.MailStatusText = "" end,
+    SetManualUiStatus = function(
+        G, V, y)
+        J.MailManualUiStatusText = string.format("<font color=\'%s\'>%s %s</font>", tostring(V or "#FFFFFF"),
+            tostring(y or "\240\159\147\172"), tostring(G or "Waiting"))
+    end,
+    SetUiDisabled = function(G, V)
+        if not G then return end
+        V = V == true
+        if type(G.SetDisabled) == "function" then
+            local y = pcall(function() G:SetDisabled(V) end)
+            if y then return end
         end
-
-        local size = UDim2.new(1, 0, 0, math.max(0, math.floor(targetHeight() + 0.5)))
-        if activeTween then
-            activeTween:Cancel()
-            activeTween = nil
+        pcall(function() G.Disabled = V end)
+    end,
+    RefreshManualUi = function()
+        local G = J.MailManualStatusLabel
+        if G and type(G.SetText) == "function" then pcall(function() G:SetText(J.MailManualUiStatusText) end) end
+        d.Mail.SetUiDisabled(J.MailStartOrderButton, J.MailManualRunning)
+        d.Mail.SetUiDisabled(J.MailClearOrderButton, J.MailManualRunning)
+        d.Mail.SetUiDisabled(J.MailStopOrderButton, not J.MailManualRunning)
+    end,
+    GetServerTime = function()
+        local G, V = pcall(function() return y.Workspace:GetServerTimeNow() end)
+        if G and type(V) == "number" then return V end
+        return os.time()
+    end,
+    GetSendWait = function()
+        local G = math.max(d.Mail.NextSendAt - os.clock(), 0)
+        local V = math.max(((tonumber(Y.mail_next_send_at) or 0)) - d.Mail.GetServerTime(), 0)
+        return math.max(G, V)
+    end,
+    GetNote = function(G)
+        if not Y.mail_include_comment then return "" end
+        return (tostring(G or "")):sub(1, 100)
+    end,
+    MakeId = function(G)
+        local V = (((y.HttpService:GenerateGUID(false)):gsub("%-", "")):sub(1, 8)):upper()
+        return tostring(G or "EXO") .. ("-" .. V)
+    end,
+    CleanUsername = function(G)
+        G = tostring(G or "")
+        return (G:gsub("^%s*@?", "")):gsub("%s+$", "")
+    end,
+    IsValidUsername = function(G)
+        G = d.Mail.CleanUsername(G)
+        if #G < 3 or #G > 20 then return false end
+        return G:match("^[%w_]+$") ~= nil
+    end,
+    LookupRecipient = function(G)
+        G = d.Mail.CleanUsername(G)
+        if not d.Mail.IsValidUsername(G) then return nil, "Enter the exact Roblox username" end
+        local V = y.Networking and (y.Networking.Mailbox and y.Networking.Mailbox.LookupPlayer)
+        if not V or type(V.Fire) ~= "function" then return nil, "Mailbox lookup is unavailable" end
+        d.Mail.SetStatus("Checking @" .. (G .. "..."), "#66CCFF")
+        local Z, j, i = pcall(function() return V:Fire(G) end)
+        if not Z or type(j) ~= "number" or j <= 0 then return nil, "User was not found" end
+        if tonumber(j) == tonumber(J.player_userid) then return nil, "You cannot send mail to yourself" end
+        return { userId = j, username = G, displayName = type(i) == "string" and (i ~= "" and i) or G }
+    end,
+    GetInventory = function()
+        local G = d.DataReplica.GetData("Inventory")
+        return type(G) == "table" and G or nil
+    end,
+    GetItemDisplayName = function(G, V)
+        if G == "Pets" then
+            local G = y.PetData and y.PetData[V]
+            if type(G) == "table" and (type(G.DisplayName) == "string" and G.DisplayName ~= "") then
+                return G
+                    .DisplayName
+            end
         end
-
-        if animated then
-            activeTween = TweenService:Create(Background, tweenInfo, { Size = size })
-            activeTween:Play()
+        return tostring(V or "Unknown")
+    end,
+    GetItemDropdown = function(G)
+        if G == "Seeds" then return d.SeedData.GetSeedDataListDropDown() end
+        local V = {}
+        if G ~= "Pets" or type(y.PetData) ~= "table" then return V end
+        for G, y in pairs(y.PetData) do
+            if type(G) ~= "string" or type(y) ~= "table" then continue end
+            local Z = tostring(y.DisplayName or G)
+            local j = tostring(y.Rarity or "Unknown")
+            local i = d.Data.GetRarityColor(j)
+            table.insert(V,
+                {
+                    Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", Z, i, j),
+                    Value =
+                        G
+                })
+        end
+        table.sort(V, function(G, V) return tostring(G.Value) < tostring(V.Value) end)
+        return V
+    end,
+    PassesSelection = function(G, V)
+        if type(G) ~= "table" or next(G) == nil then return true end
+        return G[V] == true
+    end,
+    GetPetVariant = function(G)
+        if type(G) == "table" and G.Type == "Rainbow" then return "Rainbow" end
+        return "Normal"
+    end,
+    GetPetSize = function(G)
+        local V = type(G) == "table" and G.Size
+        if V == "Big" or V == "Huge" then return V end
+        return "Normal"
+    end,
+    CleanupRecentlySentPets = function()
+        local G = os.clock()
+        for V, y in pairs(d.Mail.RecentlySentPets) do if tonumber(y) == nil or G >= y then d.Mail.RecentlySentPets[V] = nil end end
+    end,
+    GetMatchingPets = function(G, V, y, Z)
+        local j = {}
+        local i = d.Mail.GetInventory()
+        local c = i and i.Pets
+        if type(c) ~= "table" then return j end
+        d.Mail.CleanupRecentlySentPets()
+        for i, c in pairs(c) do
+            if type(c) ~= "table" or c.Id == nil then continue end
+            local J = c.Name or c.PetName or c.Species
+            local T = tostring(i)
+            local u = tostring(c.Id)
+            if J ~= G or c.Equipped == true or d.Mail.EquippedPets[T] or d.Mail.EquippedPets[u] or d.Mail.RecentlySentPets[T] or d.Mail.RecentlySentPets[u] or type(Z) == "table" and ((Z[T] or Z[u])) then continue end
+            local q = d.Mail.GetPetVariant(c)
+            local g = d.Mail.GetPetSize(c)
+            if not d.Mail.PassesSelection(V, q) or not d.Mail.PassesSelection(y, g) then continue end
+            table.insert(j, { key = T, id = u, data = c })
+        end
+        table.sort(j, function(G, V) return G.key < V.key end)
+        return j
+    end,
+    GetAvailableCount = function(G, V, y, Z, j)
+        local i = d.Mail.GetInventory()
+        if not i then return 0 end
+        if G == "Seeds" then
+            local G = i.Seeds
+            return type(G) == "table" and math.max(math.floor(tonumber(G[V]) or 0), 0) or 0
+        end
+        if G == "Pets" then return #d.Mail.GetMatchingPets(V, y, Z, j) end
+        return 0
+    end,
+    GetBatchAmount = function(G)
+        G = math.max(math.floor(tonumber(G) or 0), 0)
+        if Y.mail_ignore_batch_limit then return G end
+        return math.min(G, d.Mail.MaxBatchItems)
+    end,
+    BuildBatch = function(G, V, y, Z, j, i)
+        local c = {}
+        y = d.Mail.GetBatchAmount(y)
+        if y <= 0 then return c, 0 end
+        if G == "Seeds" then
+            local Z = d.Mail.GetAvailableCount(G, V)
+            local j = math.min(y, Z)
+            if j > 0 then table.insert(c, { Category = "Seeds", ItemKey = V, Count = j }) end
+            return c, j
+        end
+        if G == "Pets" then
+            local G = d.Mail.GetMatchingPets(V, Z, j, i)
+            local J = math.min(y, #G)
+            for V = 1, J, 1 do table.insert(c, { Category = "Pets", ItemKey = G[V].key, Count = 1 }) end
+            return c, J
+        end
+        return c, 0
+    end,
+    MarkBatchSent = function(G)
+        for G, V in ipairs(G or {}) do
+            if V.Category == "Pets" and type(V.ItemKey) == "string" then
+                d.Mail.RecentlySentPets[V.ItemKey] =
+                    os.clock() + 30
+            end
+        end
+    end,
+    SendBatch = function(G, V, Z, j)
+        if d.Mail.Busy then return false, "Mailbox is busy" end
+        if type(G) ~= "table" or type(G.userId) ~= "number" or type(V) ~= "table" or #V == 0 then
+            return false,
+                "Invalid mail request"
+        end
+        local i = y.Networking and (y.Networking.Mailbox and y.Networking.Mailbox.SendBatch)
+        if not i or type(i.Fire) ~= "function" then return false, "Mailbox sending is unavailable" end
+        d.Mail.Busy = true
+        local c = d.Mail.GetSendWait()
+        while c > 0 do
+            if type(j) == "function" and not j() then
+                d.Mail.Busy = false
+                return false, "Manual order stopped"
+            end
+            if J.MailManualRunning then
+                d.Mail.SetManualUiStatus(
+                    string.format("Waiting %ds before the next mail", math.ceil(c)), "#FFCC66", "\226\143\179")
+            end
+            task.wait(math.min(c, 1))
+            c = d.Mail.GetSendWait()
+        end
+        if type(j) == "function" and not j() then
+            d.Mail.Busy = false
+            return false, "Manual order stopped"
+        end
+        Z = d.Mail.GetNote(Z)
+        local T, q, g = pcall(function() return i:Fire(G.userId, V, Z) end)
+        d.Mail.Busy = false
+        if not T then return false, "Try again" end
+        if q ~= true then return false, type(g) == "string" and (g ~= "" and g) or "Could not send gift" end
+        d.Mail.NextSendAt = os.clock() + d.Mail.SendDelay
+        Y.mail_next_send_at = d.Mail.GetServerTime() + d.Mail.SendDelay
+        d.Mail.MarkBatchSent(V)
+        u.Save.SaveDataSync()
+        return true, type(g) == "string" and (g ~= "" and g) or "Gift sent!"
+    end,
+    WaitForInventoryChange = function(G, V, y, Z, j)
+        local i = os.clock() + 2.5
+        repeat
+            task.wait(.1)
+            local c = d.Mail.GetAvailableCount(G, V, Z, j)
+            if c < y then return true end
+        until os.clock() >= i
+        return false
+    end,
+    GetDraftItemsForUi = function()
+        local G = J.MailActiveOrder
+        if type(G) ~= "table" then G = Y.mail_manual_order end
+        if type(G) == "table" and (type(G.items) == "table" and #G.items > 0) then return G.items, true end
+        return J.MailDraftItems, false
+    end,
+    GetDraftText = function()
+        local G, V = d.Mail.GetDraftItemsForUi()
+        if type(G) ~= "table" or #G == 0 then return "<font color=\'#888888\'>No items added</font>" end
+        local y = {}
+        for G, Z in ipairs(G) do
+            local j = math.max(math.floor(tonumber(Z.amount) or 0), 0)
+            local i = math.clamp(math.floor(tonumber(Z.sent) or 0), 0, j)
+            local c = d.Mail.GetItemDisplayName(Z.category, Z.itemName)
+            if V then
+                table.insert(y,
+                    string.format("%d. %s <font color=\'#7CFC00\'>%d/%d</font> <font color=\'#AAAAAA\'>(%s)</font>", G, c,
+                        i,
+                        j, tostring(Z.category or "Unknown")))
+            else
+                table.insert(y,
+                    string.format("%d. %dx %s <font color=\'#AAAAAA\'>(%s)</font>", G, j, c,
+                        tostring(Z.category or "Unknown")))
+            end
+        end
+        return table.concat(y, "\n")
+    end,
+    RefreshDraftUi = function()
+        local G = J.MailUiRefs
+        local V = type(G) == "table" and G.RefreshDraft or nil
+        if type(V) ~= "function" then return end
+        pcall(V)
+    end,
+    AddDraftItem = function(G, V, y)
+        if J.MailManualRunning then return false, "Stop the current order first" end
+        if G ~= "Seeds" and G ~= "Pets" then return false, "Select an item category" end
+        if type(V) ~= "string" or V == "" then return false, "Select an item" end
+        y = math.floor(tonumber(y) or 0)
+        if y <= 0 then return false, "Amount must be above 0" end
+        for Z, j in ipairs(J.MailDraftItems) do
+            if j.category == G and j.itemName == V then
+                j.amount += y
+                d.Mail.RefreshDraftUi()
+                return true, "Order item updated"
+            end
+        end
+        table.insert(J.MailDraftItems, { category = G, itemName = V, amount = y })
+        d.Mail.RefreshDraftUi()
+        return true, "Item added"
+    end,
+    ClearDraft = function()
+        if J.MailManualRunning then return false end
+        table.clear(J.MailDraftItems)
+        d.Mail.RefreshDraftUi()
+        return true
+    end,
+    CloneDraftItems = function()
+        local G = {}
+        for V, y in ipairs(J.MailDraftItems) do
+            table.insert(G,
+                { category = y.category, itemName = y.itemName, amount = y.amount, sent = 0 })
+        end
+        return G
+    end,
+    BuildReceipt = function(G)
+        local V = { "MAIL RECEIPT " .. tostring(G.id), "Delivered: " .. os.date("%d/%m/%Y %H:%M:%S"), string.format(
+            "To: @%s (%s)", tostring(G.recipient.username), tostring(G.recipient.userId)), "Items:" }
+        for G, y in ipairs(G.items) do
+            table.insert(V,
+                string.format("- %dx %s (%s)", y.amount, d.Mail.GetItemDisplayName(y.category, y.itemName), y.category))
+        end
+        table.insert(V, "Status: Delivered")
+        return table.concat(V, "\n")
+    end,
+    TrimReceipts = function()
+        if type(Y.mail_receipts) ~= "table" then Y.mail_receipts = {} end
+        for G = #Y.mail_receipts, 1, -1 do if type(Y.mail_receipts[G]) ~= "string" then table.remove(Y.mail_receipts, G) end end
+        while #Y.mail_receipts > d.Mail.MaxReceipts do table.remove(Y.mail_receipts) end
+    end,
+    AddReceipt = function(G)
+        if type(G) ~= "string" or G == "" then return false end
+        d.Mail.TrimReceipts()
+        table.insert(Y.mail_receipts, 1, G)
+        d.Mail.TrimReceipts()
+        u.Save.SaveDataSync()
+        local V = J.MailUiRefs.RefreshReceipts
+        if type(V) == "function" then V() end
+        return true
+    end,
+    GetReceiptDropdown = function()
+        d.Mail.TrimReceipts()
+        local G = {}
+        for V, y in ipairs(Y.mail_receipts) do
+            local Z = y:match("([^\n]+)") or ("Receipt " .. V)
+            local j = y:match("To:%s*([^\n]+)") or ""
+            table.insert(G, { Text = string.format("%s | %s", Z, j), Value = tostring(V) })
+        end
+        return G
+    end,
+    IsSavedManualOrderValid = function(G)
+        if type(G) ~= "table" or type(G.id) ~= "string" or G.id == "" or type(G.recipient) ~= "table" or type(G.recipient.userId) ~= "number" or type(G.items) ~= "table" or #G.items == 0 then return false end
+        return true
+    end,
+    SaveManualOrder = function(G)
+        if not d.Mail.IsSavedManualOrderValid(G) then return false end
+        Y.mail_manual_order = G
+        u.Save.SaveDataSync()
+        return true
+    end,
+    ClearSavedManualOrder = function()
+        Y.mail_manual_order = {}
+        u.Save.SaveDataSync()
+    end,
+    WasPendingBatchSent = function(G)
+        if type(G) ~= "table" or type(G.batch) ~= "table" or #G.batch == 0 then return false end
+        if G.category == "Seeds" then
+            local V = d.Mail.GetAvailableCount(G.category, G.itemName)
+            local y = math.max(math.floor(tonumber(G.beforeCount) or 0), 0)
+            local Z = math.max(math.floor(tonumber(G.count) or 0), 0)
+            return Z > 0 and V <= y - Z
+        end
+        if G.category == "Pets" then
+            local V = d.Mail.GetInventory()
+            local y = V and V.Pets
+            if type(y) ~= "table" then return false end
+            for G, V in ipairs(G.batch) do if type(V) == "table" and (type(V.ItemKey) == "string" and y[V.ItemKey] ~= nil) then return false end end
+            return true
+        end
+        return false
+    end,
+    ReconcilePendingBatch = function(G)
+        local V = type(G) == "table" and G.pending
+        if type(V) ~= "table" or next(V) == nil then return false end
+        local y = math.floor(tonumber(V.itemIndex) or 0)
+        local Z = type(G.items) == "table" and G.items[y]
+        local j = Z and d.Mail.WasPendingBatchSent(V) or false
+        if j then
+            local G = math.max(math.floor(tonumber(V.sentBefore) or 0), 0)
+            local y = math.max(math.floor(tonumber(V.count) or 0), 0)
+            Z.sent = math.max(math.floor(tonumber(Z.sent) or 0), G + y)
+        end
+        G.pending = {}
+        d.Mail.SaveManualOrder(G)
+        return j
+    end,
+    RunManualOrder = function(G)
+        if J.MailManualRunning or not d.Mail.IsSavedManualOrderValid(G) then return false end
+        J.MailActiveOrder = G
+        J.MailManualRunning = true
+        G.state = "running"
+        d.Mail.SaveManualOrder(G)
+        d.Mail.SetManualUiStatus(string.format("Order %s started", G.id), "#66CCFF", "\240\159\147\166")
+        d.Mail.RefreshManualUi()
+        d.Mail.RefreshDraftUi()
+        task.spawn(function()
+            local V, y = pcall(function()
+                d.Mail.ReconcilePendingBatch(G)
+                for V, y in ipairs(G.items) do
+                    y.sent = math.max(math.floor(tonumber(y.sent) or 0), 0)
+                    local Z = {}
+                    local j = 0
+                    while J.MailManualRunning and y.sent < y.amount do
+                        local i = y.amount - y.sent
+                        local c = d.Mail.GetItemDisplayName(y.category, y.itemName)
+                        local T = d.Mail.GetAvailableCount(y.category, y.itemName, nil, nil, Z)
+                        if T <= 0 then
+                            local V = string.format("Waiting for %d %s", i, c)
+                            d.Mail.SetStatus(string.format("%s | %s", G.id, V), "#FFCC66")
+                            d.Mail.SetManualUiStatus(V, "#FFCC66", "\226\143\179")
+                            task.wait(2)
+                            continue
+                        end
+                        local u = T
+                        local q, g = d.Mail.BuildBatch(y.category, y.itemName, i, nil, nil, Z)
+                        if g <= 0 then
+                            task.wait(2)
+                            continue
+                        end
+                        local E = y.sent + g
+                        local a = string.format("Order %s | %s | %d/%d", G.id, c, E, y.amount)
+                        G.pending = {
+                            itemIndex = V,
+                            category = y.category,
+                            itemName = y.itemName,
+                            count = g,
+                            beforeCount = u,
+                            sentBefore =
+                                y.sent,
+                            batch = q
+                        }
+                        d.Mail.SaveManualOrder(G)
+                        d.Mail.SetStatus(string.format("%s | Sending %s %d/%d", G.id, c, E, y.amount), "#66CCFF")
+                        d.Mail.SetManualUiStatus(
+                            string.format("Sending %s %d/%d to @%s", c, E, y.amount,
+                                tostring(G.recipient.username or "?")),
+                            "#66CCFF", "\240\159\147\164")
+                        local H, r = d.Mail.SendBatch(G.recipient, q, a,
+                            function() return J.MailManualRunning and (J.MailActiveOrder == G and G.cancelled ~= true) end)
+                        if H then
+                            if G.cancelled == true or not J.MailManualRunning or J.MailActiveOrder ~= G then
+                                G.pending = {}
+                                break
+                            end
+                            y.sent = E
+                            G.pending = {}
+                            j = 0
+                            for G, V in ipairs(q) do if V.Category == "Pets" then Z[V.ItemKey] = true end end
+                            d.Mail.SaveManualOrder(G)
+                            d.Mail.RefreshDraftUi()
+                            d.Mail.SetManualUiStatus(string.format("Sent %s %d/%d", c, y.sent, y.amount), "#7CFC00",
+                                "\226\156\133")
+                            d.Mail.WaitForInventoryChange(y.category, y.itemName, u)
+                        else
+                            if G.cancelled == true or not J.MailManualRunning or J.MailActiveOrder ~= G then
+                                G.pending = {}
+                                break
+                            end
+                            G.pending = {}
+                            j += 1
+                            d.Mail.SaveManualOrder(G)
+                            d.Mail.SetStatus(string.format("%s | %s", G.id, tostring(r)), "#FF5555")
+                            d.Mail.SetManualUiStatus(string.format("Send failed. Retrying in %ds", d.Mail.RetryDelay),
+                                "#FF5555", "\226\154\160\239\184\143")
+                            if j >= d.Mail.MaxFailures then j = 0 end
+                            task.wait(d.Mail.RetryDelay)
+                        end
+                    end
+                    if not J.MailManualRunning then break end
+                end
+            end)
+            if not V then
+                warn("[Mail] Manual order error:", y)
+                J.MailManualRunning = false
+                J.MailActiveOrder = nil
+                G.state = "resume"
+                d.Mail.SaveManualOrder(G)
+                d.Mail.SetStatus("Order paused: it will resume when the script starts again", "#FF4444")
+                d.Mail.SetManualUiStatus("Paused. The order will resume when the script starts again", "#FF5555",
+                    "\226\154\160\239\184\143")
+                d.Mail.RefreshManualUi()
+                return
+            end
+            if not J.MailManualRunning then
+                J.MailActiveOrder = nil
+                d.Mail.RefreshManualUi()
+                return
+            end
+            d.Mail.AddReceipt(d.Mail.BuildReceipt(G))
+            d.Webhooks.QueueMail("manual",
+                {
+                    orderId = tostring(G.id or "Unknown"),
+                    recipient = G.recipient and G.recipient.username or "Unknown",
+                    items =
+                        d.Webhooks.CopyMailItems(G.items)
+                })
+            d.Mail.ClearSavedManualOrder()
+            table.clear(J.MailDraftItems)
+            d.Mail.RefreshDraftUi()
+            J.MailManualRunning = false
+            J.MailActiveOrder = nil
+            d.Mail.SetStatus(G.id .. " delivered", "#7CFC00")
+            d.Mail.SetManualUiStatus(string.format("Completed %s to @%s", G.id, tostring(G.recipient.username or "?")),
+                "#7CFC00", "\226\156\133")
+            d.Mail.RefreshManualUi()
+            J.Notify("Order delivered: " .. G.id, 4)
+        end)
+        return true
+    end,
+    StartManualOrder = function(G)
+        if J.MailManualRunning then return false, "An order is already running" end
+        if d.Mail.IsSavedManualOrderValid(Y.mail_manual_order) then
+            local G = d.Mail.RunManualOrder(Y.mail_manual_order)
+            return G, G and "Resumed " .. tostring(Y.mail_manual_order.id) or "Could not resume the saved order"
+        end
+        if #J.MailDraftItems == 0 then return false, "Add at least one item" end
+        local V, y = d.Mail.LookupRecipient(G)
+        if not V then return false, y end
+        local Z = {
+            version = 1,
+            id = d.Mail.MakeId("EXO"),
+            recipient = V,
+            items = d.Mail.CloneDraftItems(),
+            pending = {},
+            startedAt =
+                os.time(),
+            state = "running"
+        }
+        d.Mail.SaveManualOrder(Z)
+        if not d.Mail.RunManualOrder(Z) then return false, "Could not start the order" end
+        return true, "Started " .. Z.id
+    end,
+    ResumeManualOrder = function()
+        if J.MailManualRunning then return false end
+        local G = Y.mail_manual_order
+        if not d.Mail.IsSavedManualOrderValid(G) then return false end
+        d.Mail.SetStatus("Resuming saved order " .. tostring(G.id), "#66CCFF")
+        d.Mail.SetManualUiStatus("Resuming saved order " .. tostring(G.id), "#66CCFF", "\240\159\148\132")
+        return d.Mail.RunManualOrder(G)
+    end,
+    StopManualOrder = function()
+        if not J.MailManualRunning and not d.Mail.IsSavedManualOrderValid(Y.mail_manual_order) then return false end
+        local G = J.MailActiveOrder
+        if type(G) == "table" then G.cancelled = true end
+        J.MailManualRunning = false
+        J.MailActiveOrder = nil
+        d.Mail.ClearSavedManualOrder()
+        d.Mail.RefreshDraftUi()
+        d.Mail.SetStatus("Manual order stopped", "#FF7777")
+        d.Mail.SetManualUiStatus("Order stopped", "#FF7777", "\226\143\185\239\184\143")
+        d.Mail.RefreshManualUi()
+        return true
+    end,
+    AddRule = function(G, V, y, Z, j, i, c)
+        if type(G) ~= "table" or type(G.userId) ~= "number" then return false, "Invalid recipient" end
+        if V ~= "Seeds" and V ~= "Pets" then return false, "Select a category" end
+        if type(y) ~= "string" or y == "" then return false, "Select an item" end
+        Z = math.floor(tonumber(Z) or 0)
+        j = math.floor(tonumber(j) or 0)
+        if Z <= 0 or j <= 0 then return false, "Trigger and send amounts must be above 0" end
+        if type(Y.mail_auto_rules) ~= "table" then Y.mail_auto_rules = {} end
+        local T = d.Mail.MakeId("RULE")
+        Y.mail_auto_rules[T] = {
+            id = T,
+            enabled = true,
+            targetUserId = G.userId,
+            targetUsername = G.username,
+            targetDisplayName =
+                G.displayName,
+            category = V,
+            itemName = y,
+            triggerAmount = Z,
+            sendAmount = j,
+            petTypes = type(i) == "table" and i or
+                {},
+            petSizes = type(c) == "table" and c or {}
+        }
+        u.Save.SaveDataSync()
+        local q = J.MailUiRefs.RefreshRules
+        if type(q) == "function" then q() end
+        return true, T
+    end,
+    RemoveRule = function(G)
+        local V = Y.mail_auto_rules
+        local y = type(V) == "table" and V[G]
+        if type(y) ~= "table" then return false end
+        y.enabled = false
+        V[G] = nil
+        d.Mail.RuleCooldowns[G] = nil
+        u.Save.SaveDataSync()
+        local Z = J.MailUiRefs.RefreshRules
+        if type(Z) == "function" then Z() end
+        return true
+    end,
+    ToggleRule = function(G)
+        local V = type(Y.mail_auto_rules) == "table" and Y.mail_auto_rules[G]
+        if type(V) ~= "table" then return false end
+        V.enabled = V.enabled ~= true
+        u.Save.SaveDataSync()
+        local y = J.MailUiRefs.RefreshRules
+        if type(y) == "function" then y() end
+        return true, V.enabled
+    end,
+    GetRuleDropdown = function()
+        local G = {}
+        local V = type(Y.mail_auto_rules) == "table" and Y.mail_auto_rules or {}
+        local y = {}
+        for G, V in pairs(V) do if type(G) == "string" and type(V) == "table" then table.insert(y, G) end end
+        table.sort(y)
+        for y, Z in ipairs(y) do
+            local j = V[Z]
+            local i = d.Mail.GetItemDisplayName(j.category, j.itemName)
+            local c = j.enabled == true and "ON" or "OFF"
+            table.insert(G,
+                {
+                    Text = string.format("%s | %s | %s x%d at %d | @%s", c, Z, i, tonumber(j.sendAmount) or 0,
+                        tonumber(j.triggerAmount) or 0, tostring(j.targetUsername or "?")),
+                    Value = Z
+                })
+        end
+        return G
+    end,
+    ProcessAutoRules = function()
+        if not Y.mail_auto_send_enabled or J.MailManualRunning or d.Mail.Busy then return 0 end
+        local G = type(Y.mail_auto_rules) == "table" and Y.mail_auto_rules or {}
+        local V = {}
+        local y = 0
+        for G, Z in pairs(G) do
+            if type(G) == "string" and (type(Z) == "table" and Z.enabled == true) then
+                y += 1
+                table.insert(V, G)
+            end
+        end
+        if y == 0 then
+            d.Mail.SetStatus("Auto send waiting: add a rule", "#CFCFCF")
+            return 0
+        end
+        table.sort(V)
+        for V, y in ipairs(V) do
+            local Z = G[y]
+            local j = tonumber(d.Mail.RuleCooldowns[y]) or 0
+            if os.clock() < j then continue end
+            local i = d.Mail.GetAvailableCount(Z.category, Z.itemName, Z.petTypes, Z.petSizes)
+            local c = math.max(math.floor(tonumber(Z.triggerAmount) or 1), 1)
+            local J = math.max(math.floor(tonumber(Z.sendAmount) or 1), 1)
+            if i < c then continue end
+            local T = {
+                userId = tonumber(Z.targetUserId),
+                username = tostring(Z.targetUsername or ""),
+                displayName =
+                    tostring(Z.targetDisplayName or Z.targetUsername or "")
+            }
+            if not T.userId or T.userId <= 0 then
+                Z.enabled = false
+                u.Save.SaveDataSync()
+                continue
+            end
+            local q = math.min(J, i)
+            local g = 0
+            local E = {}
+            while Y.mail_auto_send_enabled and (Z.enabled == true and g < q) do
+                local G = d.Mail.GetAvailableCount(Z.category, Z.itemName, Z.petTypes, Z.petSizes, E)
+                local V, j = d.Mail.BuildBatch(Z.category, Z.itemName, q - g, Z.petTypes, Z.petSizes, E)
+                if j <= 0 then break end
+                local i = d.Mail.GetItemDisplayName(Z.category, Z.itemName)
+                local c = g + j
+                local J = string.format("Auto %s | %s | %d/%d", y, i, c, q)
+                d.Mail.SetStatus(string.format("Auto | Sending %s %d/%d to @%s", i, c, q, T.username), "#66CCFF")
+                local u, a = d.Mail.SendBatch(T, V, J)
+                if not u then
+                    d.Mail.RuleCooldowns[y] = os.clock() + d.Mail.RetryDelay
+                    d.Mail.SetStatus("Auto send failed: " .. tostring(a), "#FF5555")
+                    return g
+                end
+                g = c
+                for G, V in ipairs(V) do if V.Category == "Pets" then E[V.ItemKey] = true end end
+                d.Mail.WaitForInventoryChange(Z.category, Z.itemName, G, Z.petTypes, Z.petSizes)
+            end
+            d.Mail.RuleCooldowns[y] = os.clock() + 5
+            if g > 0 then
+                d.Webhooks.QueueMail("automatic",
+                    { ruleId = y, recipient = T.username, items = { { category = Z.category, name = d.Mail.GetItemDisplayName(Z.category, Z.itemName), count = g } } })
+                d.Mail.SetStatus(
+                    string.format("Auto | Sent %d %s to @%s", g, d.Mail.GetItemDisplayName(Z.category, Z.itemName),
+                        T.username),
+                    "#7CFC00")
+                return g
+            end
+        end
+        d.Mail.SetStatus("Auto send waiting for matching items", "#CFCFCF")
+        return 0
+    end,
+    ClaimInbox = function(G)
+        if not G and not Y.mail_auto_accept then return 0 end
+        if J.MailManualRunning or d.Mail.Busy then return 0 end
+        local V = y.Networking and y.Networking.Mailbox
+        local Z = V and V.OpenInbox
+        local j = V and V.Claim
+        if not Z or type(Z.Fire) ~= "function" or not j or type(j.Fire) ~= "function" then return 0 end
+        d.Mail.Busy = true
+        local i, c = pcall(function() return Z:Fire() end)
+        if not i or type(c) ~= "table" then
+            d.Mail.Busy = false
+            return 0
+        end
+        local T = {}
+        for G, V in pairs(c) do if type(G) == "string" and type(V) == "table" then table.insert(T, G) end end
+        table.sort(T)
+        local u = 0
+        local q = {}
+        for V, y in ipairs(T) do
+            if not G and not Y.mail_auto_accept then break end
+            d.Mail.SetStatus(string.format("Claiming incoming mail %d/%d", V, #T), "#66CCFF")
+            local Z, i, J = pcall(function() return j:Fire(y) end)
+            if Z and i == true then
+                u += 1
+                local G = c[y]
+                if type(G) == "table" then
+                    local V = G.Items
+                    if type(V) ~= "table" or #V == 0 then V = { G } end
+                    table.insert(q,
+                        { from = tostring(G.FromName or G.From or "Unknown"), items = d.Webhooks.CopyMailItems(V) })
+                end
+                task.wait(d.Mail.ClaimDelay)
+            elseif Z and (type(J) == "string" and J ~= "") then
+                d.Mail.SetStatus("Claim failed: " .. J, "#FF5555")
+                task.wait(1)
+            else
+                task.wait(1)
+            end
+        end
+        d.Mail.Busy = false
+        if u > 0 then
+            d.Webhooks.QueueMail("claim", { count = u, mode = G and "Manual Claim" or "Automatic Claim", mails = q })
+            d.Mail.SetStatus(string.format("Claimed %d incoming mail", u), "#7CFC00")
+        elseif #T == 0 then
+            d.Mail.SetStatus("Incoming mailbox is empty", "#CFCFCF")
         else
-            Background.Size = size
+            d.Mail.SetStatus(
+                "Incoming mail could not be claimed", "#FF5555")
         end
-    end
-
-    local function Toggle()
-        collapsed = not collapsed
-        setArrow()
-
-        if not collapsed then
-            GroupboxContainer.Visible = true
-            Groupbox:Resize(true)
-        else
-            Groupbox:Resize(true)
-            task.delay(tweenInfo.Time, function()
-                if collapsed and GroupboxContainer and GroupboxContainer.Parent then
-                    GroupboxContainer.Visible = false
+        return u
+    end,
+    LoadEquippedPets = function()
+        local G = y.Networking and (y.Networking.Pets and y.Networking.Pets.GetEquippedPets)
+        if not G or type(G.Fire) ~= "function" then return false end
+        local V, Z = pcall(function() return G:Fire() end)
+        if not V or type(Z) ~= "table" then return false end
+        table.clear(d.Mail.EquippedPets)
+        for G, V in pairs(Z) do if type(V) == "table" and V.Id ~= nil then d.Mail.EquippedPets[tostring(V.Id)] = true end end
+        return true
+    end,
+    MailLoopStart = function()
+        if d.Mail.Started then return end
+        d.Mail.Started = true
+        d.Mail.TrimReceipts()
+        if type(Y.mail_auto_rules) ~= "table" then Y.mail_auto_rules = {} end
+        task.spawn(function()
+            d.Mail.LoadEquippedPets()
+            d.Mail.ResumeManualOrder()
+        end)
+        local G = y.Networking and y.Networking.Pets
+        local V = G and G.PetEquipped
+        local Z = G and G.PetUnequipped
+        if V and V.OnClientEvent then V.OnClientEvent:Connect(function(G) if G ~= nil then d.Mail.EquippedPets[tostring(G)] = true end end) end
+        if Z and Z.OnClientEvent then Z.OnClientEvent:Connect(function(G) if G ~= nil then d.Mail.EquippedPets[tostring(G)] = nil end end) end
+        local j = y.Networking and (y.Networking.Mailbox and y.Networking.Mailbox.Updated)
+        if j and j.OnClientEvent then
+            j.OnClientEvent:Connect(function()
+                if Y.mail_auto_accept then
+                    task.defer(function()
+                        d
+                            .Mail.ClaimInbox(false)
+                    end)
                 end
             end)
         end
-    end
-
-    local UserInputService = game:GetService("UserInputService")
-    local touchInputObj, touchStartPos
-    local MAX_TAP_MOVE = 4
-    local connections = {}
-
-    local function connect(signal, fn)
-        if not signal then
-            return
-        end
-        local ok, conn = pcall(function()
-            return signal:Connect(fn)
+        task.spawn(function()
+            while true do
+                task.wait(3)
+                if not J.GetCheckIfPro() then break end
+                local G, V = pcall(d.Mail.ProcessAutoRules)
+                if not G then
+                    warn("[Mail] Auto rule error:", V)
+                    d.Mail.SetStatus("Auto send error", "#FF4444")
+                end
+            end
         end)
-        if ok and conn then
-            connections[#connections + 1] = conn
-        end
-    end
-
-    connect(HeaderFrame.InputBegan, function(input)
-        if not input then
-            return
-        end
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Toggle()
-        elseif input.UserInputType == Enum.UserInputType.Touch then
-            touchInputObj = input
-            touchStartPos = input.Position
-        end
-    end)
-
-    connect(UserInputService.InputChanged, function(input)
-        if input ~= touchInputObj or not touchStartPos then
-            return
-        end
-        local delta = input.Position - touchStartPos
-        if math.abs(delta.X) > MAX_TAP_MOVE or math.abs(delta.Y) > MAX_TAP_MOVE then
-            touchInputObj = nil
-            touchStartPos = nil
-        end
-    end)
-
-    connect(UserInputService.InputEnded, function(input)
-        if input ~= touchInputObj then
-            return
-        end
-        Toggle()
-        touchInputObj = nil
-        touchStartPos = nil
-    end)
-
-    connect(GroupboxList:GetPropertyChangedSignal("AbsoluteContentSize"), function()
-        if not collapsed then
-            Groupbox:Resize(false)
-        end
-    end)
-
-    connect(BoxHolder.AncestryChanged, function(_, newParent)
-        if newParent ~= nil then
-            return
-        end
-        for i = 1, #connections do
-            local c = connections[i]
-            if c and c.Connected then
-                c:Disconnect()
+        task.spawn(function()
+            while true do
+                task.wait(12)
+                if Y.mail_auto_accept then
+                    local G, V = pcall(function() d.Mail.ClaimInbox(false) end)
+                    if not G then warn("[Mail] Auto claim error:", V) end
+                end
             end
-        end
-    end)
-
-    if type(BaseGroupbox) == "table" then
-        setmetatable(Groupbox, BaseGroupbox)
+        end)
     end
-
-    setArrow()
-    GroupboxContainer.Visible = not collapsed
-    Groupbox:Resize(false)
-    Tab.Groupboxes[boxName] = Groupbox
-
-    return Groupbox
-end
-
-
-
-    function Tab:AddGroupbox_org(Info)
-        local BoxHolder = New("Frame", {
-            AutomaticSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 0),
-            Parent = Info.Side == 1 and TabLeft or TabRight,
-        })
-        New("UIListLayout", {
-            Padding = UDim.new(0, 6),
-            Parent = BoxHolder,
-        })
-    
-        local Background = Library:MakeOutline(BoxHolder, WindowInfo.CornerRadius)
-        Background.Size = UDim2.fromScale(1, 0)
-        Library:UpdateDPI(Background, { Size = false })
-    
-        local GroupboxHolder, GroupboxLabel, GroupboxContainer, GroupboxList, ToggleIcon, HeaderFrame
-    
-        do
-            GroupboxHolder = New("Frame", {
-                BackgroundColor3 = "BackgroundColor",
-                Position = UDim2.fromOffset(2, 2),
-                Size = UDim2.new(1, -4, 1, -4),
-                Parent = Background,
-            })
-            New("UICorner", {
-                CornerRadius = UDim.new(0, WindowInfo.CornerRadius - 1),
-                Parent = GroupboxHolder,
-            })
-            Library:MakeLine(GroupboxHolder, {
-                Position = UDim2.fromOffset(0, 34),
-                Size = UDim2.new(1, 0, 0, 1),
-            })
-    
-            HeaderFrame = New("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 34),
-                Parent = GroupboxHolder,
-            })
-    
-            local BoxIcon = Library:GetIcon(Info.IconName)
-            if BoxIcon then
-                New("ImageLabel", {
-                    Image = BoxIcon.Url,
-                    ImageColor3 = "AccentColor",
-                    ImageRectOffset = BoxIcon.ImageRectOffset,
-                    ImageRectSize = BoxIcon.ImageRectSize,
-                    Position = UDim2.fromOffset(6, 6),
-                    Size = UDim2.fromOffset(22, 22),
-                    Parent = HeaderFrame,
+}
+d.Mail.TrimReceipts()
+J.PetFinder_WebhookData = J.PetFinder_WebhookData or {}
+J.Mail_WebhookData = J.Mail_WebhookData or {}
+J.PetFinderPremiumStatusText = ""
+J.PetFinderPremiumUi = J.PetFinderPremiumUi or {}
+d.PetFinderPremium = {
+    Started = false,
+    Busy = false,
+    Folder = nil,
+    Pets = {},
+    FolderConnections = {},
+    Pending = nil,
+    Handled = {},
+    RetryAt = {},
+    Attempts = {},
+    ExpectedCounts = {},
+    MaxAttempts = 2,
+    SizeRanks = { Normal = 1, Big = 2, Huge = 3 },
+    VariantRanks = { Normal = 1, Rainbow = 2 },
+    NextScanAt = 0,
+    NextHopAt = 0,
+    ScanDelay = 10,
+    ConfirmTimeout = 3,
+    SetStatus = function(
+        G, V)
+        J.PetFinderPremiumStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\144\190 [Pet Finder Premium]</font> <font color=\'%s\'>%s</font></stroke>",
+            tostring(V or "#FFFFFF"), tostring(G or "Waiting"))
+    end,
+    ClearStatus = function()
+        J.PetFinderPremiumStatusText =
+        ""
+    end,
+    GetServerTime = function()
+        local G, V = pcall(function() return y.Workspace:GetServerTimeNow() end)
+        return G and tonumber(V) or os.time()
+    end,
+    CopyMap = function(G)
+        local V = {}
+        if type(G) == "table" then for G, y in pairs(G) do if type(G) == "string" and (G ~= "" and y == true) then V[G] = true end end end
+        return V
+    end,
+    GetDisplayName = function(G)
+        local V = type(y.PetData) == "table" and y.PetData[G] or nil
+        local Z = type(V) == "table" and V.DisplayName or nil
+        return type(Z) == "string" and (Z ~= "" and Z) or tostring(G or "Unknown")
+    end,
+    GetPetLabel = function(G, V, y)
+        local Z = {}
+        if type(G) == "string" and (G ~= "" and G ~= "Normal") then table.insert(Z, G) end
+        if type(V) == "string" and (V ~= "" and V ~= "Normal") then table.insert(Z, V) end
+        table.insert(Z, tostring(y or "Unknown"))
+        return table.concat(Z, " ")
+    end,
+    GetRarity = function(G, V)
+        if type(V) == "string" and V ~= "" then return V end
+        local Z = type(y.PetData) == "table" and y.PetData[G] or nil
+        return type(Z) == "table" and tostring(Z.Rarity or "Unknown") or "Unknown"
+    end,
+    GetSize = function(G)
+        if type(G) ~= "string" or G == "" then return "Normal" end
+        local V = type(y.PetSizes) == "table" and (type(y.PetSizes.Normalize) == "function" and y.PetSizes.Normalize(G)) or
+            nil
+        return type(V) == "string" and (V ~= "" and V) or G
+    end,
+    GetVariant = function(G) return type(G) == "string" and (G ~= "" and G) or "Normal" end,
+    GetInventoryPets = function()
+        local G = d.DataReplica.GetData("Inventory")
+        local V = type(G) == "table" and G.Pets or nil
+        return type(V) == "table" and V or {}
+    end,
+    GetPetDropdown = function()
+        local G = {}
+        if type(y.PetData) ~= "table" then return G end
+        for V, y in pairs(y.PetData) do
+            if type(V) ~= "string" or V == "" or type(y) ~= "table" then continue end
+            local Z = tostring(y.DisplayName or V)
+            local j = tostring(y.Rarity or "Unknown")
+            local i = tonumber(y.BasePrice) or 0
+            local T = tostring(y.SpawnChance or 0)
+            local u = d.Data.GetRarityColor(j)
+            table.insert(G,
+                {
+                    Text = string.format(
+                        "<font color=\"#FFFFFF\">%s</font> <font color=\"#7CFC00\">$%s</font> <font color=\"%s\">%s</font> <font color=\"#CFCFCF\">(%%%s)</font>",
+                        Z, c.formatShecklesNumber(i), u, j, T),
+                    Value = V,
+                    Rank = J.RarityRank[j] or 0
                 })
-            end
-    
-            GroupboxLabel = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Position = UDim2.fromOffset(BoxIcon and 24 or 0, 0),
-                Size = UDim2.new(1, 0, 1, 0),
-                Text = Info.Name,
-                TextSize = 15,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = HeaderFrame,
-            })
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 12),
-                PaddingRight = UDim.new(0, 28),
-                Parent = GroupboxLabel,
-            })
-    
-            ToggleIcon = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromOffset(20, 20),
-                Position = UDim2.new(1, -24, 0, 7),
-                TextColor3 = Color3.fromRGB(200, 200, 200),
-                TextSize = 14,
-                Font = Enum.Font.Code,
-                Parent = HeaderFrame,
-            })
-    
-            GroupboxContainer = New("Frame", {
-                BackgroundTransparency = 1,
-                Position = UDim2.fromOffset(0, 35),
-                Size = UDim2.new(1, 0, 1, -35),
-                Parent = GroupboxHolder,
-            })
-    
-            GroupboxList = New("UIListLayout", {
-                Padding = UDim.new(0, 8),
-                Parent = GroupboxContainer,
-            })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 7),
-                PaddingLeft = UDim.new(0, 7),
-                PaddingRight = UDim.new(0, 7),
-                PaddingTop = UDim.new(0, 7),
-                Parent = GroupboxContainer,
-            })
         end
-    
-        local Groupbox = {
-            BoxHolder = BoxHolder,
-            Holder = Background,
-            Container = GroupboxContainer,
-            ToggleIcon = ToggleIcon,
-    
-            Tab = Tab,
-            DependencyBoxes = {},
-            Elements = {},
+        table.sort(G,
+            function(G, V)
+                if G.Rank ~= V.Rank then return G.Rank > V.Rank end
+                return tostring(G.Value) < tostring(V.Value)
+            end)
+        return G
+    end,
+    GetOptionValues = function(G)
+        local V = { Normal = true }
+        if G == "Size" and (type(y.PetSizes) == "table" and type(y.PetSizes.Scales) == "table") then for G in pairs(y.PetSizes.Scales) do V[G] = true end elseif G == "Variant" and (type(y.PetTypes) == "table" and type(y.PetTypes.Rainbow) == "string") then V[y.PetTypes.Rainbow] = true end
+        for y in pairs(d.PetFinderPremium.Pets) do
+            if y and y.Parent then
+                local Z = G == "Size" and d.PetFinderPremium.GetSize(y:GetAttribute("PetSize")) or
+                    d.PetFinderPremium.GetVariant(y:GetAttribute("PetType"))
+                V[Z] = true
+            end
+        end
+        for y, Z in pairs(d.PetFinderPremium.GetInventoryPets()) do
+            if type(Z) == "table" then
+                local y = G == "Size" and d.PetFinderPremium.GetSize(Z.Size) or d.PetFinderPremium.GetVariant(Z.Type)
+                V[y] = true
+            end
+        end
+        local Z = {}
+        local j = G == "Size" and { Normal = 1, Big = 2, Huge = 3 } or { Normal = 1, Rainbow = 2 }
+        for G in pairs(V) do table.insert(Z, G) end
+        table.sort(Z,
+            function(G, V)
+                local y = j[G] or 100
+                local Z = j[V] or 100
+                if y ~= Z then return y < Z end
+                return tostring(G) < tostring(V)
+            end)
+        local i = {}
+        for G, V in ipairs(Z) do table.insert(i, { Text = V, Value = V }) end
+        return i
+    end,
+    GetSizeValues = function() return d.PetFinderPremium.GetOptionValues("Size") end,
+    GetVariantValues = function()
+        return
+            d.PetFinderPremium.GetOptionValues("Variant")
+    end,
+    GetRule = function(G)
+        local V = type(Y.pet_finder_buy_list) == "table" and Y.pet_finder_buy_list[G] or nil
+        if type(V) ~= "table" then return nil end
+        return {
+            enabled = V.enabled == true,
+            target = math.max(math.floor(tonumber(V.target) or 1), 1),
+            sizes = d
+                .PetFinderPremium.CopyMap(V.sizes),
+            variants = d.PetFinderPremium.CopyMap(V.variants)
         }
-    
-        local collapsed = true
-        if Info.StartCollapsed ~= nil then
-            collapsed = Info.StartCollapsed
+    end,
+    HasRule = function(G) return type(Y.pet_finder_buy_list) == "table" and type(Y.pet_finder_buy_list[G]) == "table" end,
+    ResetPetRuntime = function(
+        G)
+        d.PetFinderPremium.ExpectedCounts[G] = nil
+        for V in pairs(d.PetFinderPremium.Pets) do
+            local y = V and (V.Parent and V:GetAttribute("PetName")) or nil
+            if y == G then
+                d.PetFinderPremium.Attempts[V] = nil
+                d.PetFinderPremium.RetryAt[V] = nil
+                d.PetFinderPremium.Handled[V] = nil
+            end
         end
-    
-        GroupboxContainer.Visible = not collapsed
-        ToggleIcon.Text = collapsed and ">" or "˅"
-    
-        function Groupbox:Resize_old()
-            if not collapsed then
-                Background.Size = UDim2.new(1, 0, 0,
-                    (GroupboxList.AbsoluteContentSize.Y + 53) * Library.DPIScale
-                )
+    end,
+    SetRule = function(G, V, Z, j, i)
+        if type(G) ~= "string" or G == "" or type(y.PetData) ~= "table" or not y.PetData[G] then return false end
+        V = math.max(math.floor(tonumber(V) or 0), 0)
+        if V <= 0 then return false end
+        if type(Y.pet_finder_buy_list) ~= "table" then Y.pet_finder_buy_list = {} end
+        Y.pet_finder_buy_list[G] = {
+            enabled = i == true,
+            target = V,
+            sizes = d.PetFinderPremium.CopyMap(Z),
+            variants = d
+                .PetFinderPremium.CopyMap(j)
+        }
+        d.PetFinderPremium.ResetPetRuntime(G)
+        if i == true and d.PetFinderPremium.ResetHopTimer then d.PetFinderPremium.ResetHopTimer() end
+        return true
+    end,
+    SetRuleEnabled = function(G, V)
+        if not d.PetFinderPremium.HasRule(G) then return false end
+        Y.pet_finder_buy_list[G].enabled = V == true
+        d.PetFinderPremium.ResetPetRuntime(G)
+        if V == true and d.PetFinderPremium.ResetHopTimer then d.PetFinderPremium.ResetHopTimer() end
+        return true
+    end,
+    GetActiveRuleNames = function()
+        local G = {}
+        if type(Y.pet_finder_buy_list) ~= "table" then return G end
+        for V in pairs(Y.pet_finder_buy_list) do
+            local y = d.PetFinderPremium.GetRule(V)
+            if y and y.enabled then table.insert(G, V) end
+        end
+        table.sort(G)
+        return G
+    end,
+    PassesSelection = function(G, V) return type(G) ~= "table" or next(G) == nil or G[V] == true end,
+    PetNameMatches = function(
+        G, V)
+        return G == V or d.PetFinderPremium.GetDisplayName(G) == V
+    end,
+    CountOwnedRaw = function(G, V)
+        local y = 0
+        if type(V) ~= "table" then return y end
+        for Z, j in pairs(d.PetFinderPremium.GetInventoryPets()) do
+            if type(j) ~= "table" then continue end
+            local i = j.Name or j.PetName or j.Species
+            local c = d.PetFinderPremium.GetSize(j.Size)
+            local J = d.PetFinderPremium.GetVariant(j.Type)
+            if type(i) == "string" and (d.PetFinderPremium.PetNameMatches(G, i) and (d.PetFinderPremium.PassesSelection(V.sizes, c) and d.PetFinderPremium.PassesSelection(V.variants, J))) then y += 1 end
+        end
+        return y
+    end,
+    CountOwnedForRule = function(G, V)
+        local y = d.PetFinderPremium.CountOwnedRaw(G, V)
+        local Z = d.PetFinderPremium.ExpectedCounts[G]
+        if type(Z) ~= "table" or os.clock() >= ((tonumber(Z.expiresAt) or 0)) then
+            d.PetFinderPremium.ExpectedCounts[G] = nil
+            return y
+        end
+        if y >= ((tonumber(Z.count) or 0)) then
+            d.PetFinderPremium.ExpectedCounts[G] = nil
+            return y
+        end
+        return math.max(y, tonumber(Z.count) or 0)
+    end,
+    HasReachedTarget = function(G, V) return d.PetFinderPremium.CountOwnedForRule(G, V) >= V.target end,
+    GetPetData = function(
+        G)
+        if not G or not G.Parent or not G:IsA("BasePart") then return nil end
+        local V = G:GetAttribute("PetName")
+        if type(V) ~= "string" or V == "" then return nil end
+        local y = tonumber(G:GetAttribute("SpawnedAt")) or 0
+        local Z = tonumber(G:GetAttribute("Lifetime")) or 0
+        return {
+            ref = G,
+            id = G.Name,
+            name = V,
+            displayName = d.PetFinderPremium.GetDisplayName(V),
+            size = d
+                .PetFinderPremium.GetSize(G:GetAttribute("PetSize")),
+            variant = d.PetFinderPremium.GetVariant(G:GetAttribute(
+                "PetType")),
+            rarity = d.PetFinderPremium.GetRarity(V, G:GetAttribute("Rarity")),
+            price = math.max(
+                tonumber(G:GetAttribute("Price")) or 0, 0),
+            ownerId = tonumber(G:GetAttribute("OwnerUserId")) or 0,
+            expiresAt = y > 0 and
+                (Z > 0 and y + Z) or 0
+        }
+    end,
+    IsExpired = function(G) return G.expiresAt > 0 and d.PetFinderPremium.GetServerTime() >= G.expiresAt end,
+    DisconnectFolder = function()
+        for G, V in ipairs(d.PetFinderPremium.FolderConnections) do pcall(function() V:Disconnect() end) end
+        table.clear(d.PetFinderPremium.FolderConnections)
+    end,
+    GetFolder = function()
+        local G = y.Workspace:FindFirstChild("Map")
+        local V = G and G:FindFirstChild("WildPetRef")
+        return V and (V:IsA("Folder") and V) or nil
+    end,
+    BindFolder = function(G)
+        if d.PetFinderPremium.Folder == G then return end
+        d.PetFinderPremium.DisconnectFolder()
+        d.PetFinderPremium.Folder = G
+        table.clear(d.PetFinderPremium.Pets)
+        table.clear(d.PetFinderPremium.Handled)
+        table.clear(d.PetFinderPremium.RetryAt)
+        table.clear(d.PetFinderPremium.Attempts)
+        if not G then return end
+        table.insert(d.PetFinderPremium.FolderConnections,
+            G.ChildAdded:Connect(function(G)
+                if G:IsA("BasePart") then
+                    d.PetFinderPremium.Pets[G] = true
+                    if J.PetFinderPremiumUi.RefreshValues then task.defer(J.PetFinderPremiumUi.RefreshValues) end
+                end
+            end))
+        table.insert(d.PetFinderPremium.FolderConnections,
+            G.ChildRemoved:Connect(function(G)
+                d.PetFinderPremium.Pets[G] = nil
+                d.PetFinderPremium.Handled[G] = nil
+                d.PetFinderPremium.RetryAt[G] = nil
+                d.PetFinderPremium.Attempts[G] = nil
+            end))
+    end,
+    FullScan = function()
+        d.PetFinderPremium.BindFolder(d.PetFinderPremium.GetFolder())
+        local G = d.PetFinderPremium.Folder
+        if G then
+            for G, V in ipairs(G:GetChildren()) do if V:IsA("BasePart") then d.PetFinderPremium.Pets[V] = true end end
+            for V in pairs(d.PetFinderPremium.Pets) do
+                if typeof(V) ~= "Instance" or V.Parent ~= G then
+                    d.PetFinderPremium.Pets[V] = nil
+                    d.PetFinderPremium.Handled[V] = nil
+                    d.PetFinderPremium.RetryAt[V] = nil
+                    d.PetFinderPremium.Attempts[V] = nil
+                end
+            end
+        end
+        if J.PetFinderPremiumUi.RefreshValues then J.PetFinderPremiumUi.RefreshValues() end
+        if J.PetFinderPremiumUi.RefreshRules then J.PetFinderPremiumUi.RefreshRules() end
+    end,
+    PassesRule = function(G, V)
+        if not V or not V.enabled or G.ownerId ~= 0 or d.PetFinderPremium.IsExpired(G) then return false end
+        if not d.PetFinderPremium.PassesSelection(V.sizes, G.size) or not d.PetFinderPremium.PassesSelection(V.variants, G.variant) or d.PetFinderPremium.HasReachedTarget(G.name, V) then return false end
+        return ((tonumber(d.Money.GetSheckles()) or 0)) >= G.price
+    end,
+    GetCandidate = function()
+        local G
+        local V = 0
+        local y = os.clock()
+        local Z = d.PetFinderPremium.SizeRanks
+        local j = d.PetFinderPremium.VariantRanks
+        for i in pairs(d.PetFinderPremium.Pets) do
+            if d.PetFinderPremium.Handled[i] or ((tonumber(d.PetFinderPremium.Attempts[i]) or 0)) >= d.PetFinderPremium.MaxAttempts or y < ((tonumber(d.PetFinderPremium.RetryAt[i]) or 0)) then continue end
+            local c = d.PetFinderPremium.GetPetData(i)
+            local J = c and d.PetFinderPremium.GetRule(c.name) or nil
+            if c and d.PetFinderPremium.PassesRule(c, J) then
+                V += 1
+                if not G then
+                    G = c
+                else
+                    local V = Z[G.size] or 100
+                    local y = Z[c.size] or 100
+                    local i = j[G.variant] or 100
+                    local J = j[c.variant] or 100
+                    if y < V or y == V and J < i or y == V and (J == i and tostring(c.id) < tostring(G.id)) then G = c end
+                end
+            end
+        end
+        return G, V
+    end,
+    GetTrackedCount = function()
+        local G = 0
+        for V in pairs(d.PetFinderPremium.Pets) do G += 1 end
+        return G
+    end,
+    AddPurchaseLog = function(G)
+        if type(Y.pet_finder_purchase_log) ~= "table" then Y.pet_finder_purchase_log = {} end
+        table.insert(Y.pet_finder_purchase_log, 1,
+            {
+                pet = G.name,
+                display_name = G.displayName,
+                size = G.size,
+                variant = G.variant,
+                rarity = G.rarity,
+                price = G
+                    .price,
+                purchased_at = os.time()
+            })
+        while #Y.pet_finder_purchase_log > 10 do table.remove(Y.pet_finder_purchase_log) end
+        u.Save.SaveDataSync()
+        if J.PetFinderPremiumUi.RefreshLog then J.PetFinderPremiumUi.RefreshLog() end
+    end,
+    QueueWebhook = function(G)
+        if not Y.webhook_pet_buys or type(G) ~= "table" then return false end
+        return d.Webhooks.Queue(J.PetFinder_WebhookData,
+            {
+                event = "pet_purchase",
+                pet = G.name,
+                display_name = G.displayName,
+                size = G.size,
+                variant = G.variant,
+                rarity =
+                    G.rarity,
+                price = tonumber(G.price) or 0,
+                sheckles = tonumber(d.Money.GetSheckles()) or 0,
+                purchased_at = os
+                    .time(),
+                username = y.LocalPlayer and y.LocalPlayer.Name or "Unknown"
+            })
+    end,
+    ConfirmPurchase = function(G)
+        local V = d.PetFinderPremium.Pending
+        if not V or V.confirmed then return false end
+        V.confirmed = true
+        V.reason = tostring(G or "Confirmed")
+        d.PetFinderPremium.Handled[V.ref] = true
+        d.PetFinderPremium.ExpectedCounts[V.data.name] = { count = V.countBefore + 1, expiresAt = os.clock() + 20 }
+        d.PetFinderPremium.AddPurchaseLog(V.data)
+        d.PetFinderPremium.QueueWebhook(V.data)
+        d.PetFinderPremium.ResetHopTimer()
+        if J.PetFinderPremiumUi.RefreshRules then J.PetFinderPremiumUi.RefreshRules() end
+        return true
+    end,
+    BuyPet = function(G)
+        if d.PetFinderPremium.Busy or type(G) ~= "table" then return false end
+        local V = G.ref
+        local Z = d.PetFinderPremium.GetRule(G.name)
+        local j = y.Networking and (y.Networking.Pets and y.Networking.Pets.WildPetTame)
+        if not V or not V.Parent or not Z or not d.PetFinderPremium.PassesRule(G, Z) or not j or type(j.Fire) ~= "function" then return false end
+        local i = J.TeleportLockNames.PetFinderPremium
+        if not d.Teleport.LockTeleport(i, 6, false) then return false end
+        d.PetFinderPremium.Busy = true
+        d.PetFinderPremium.SetStatus("Buying " .. d.PetFinderPremium.GetPetLabel(G.size, G.variant, G.displayName),
+            "#66CCFF")
+        if not d.Teleport.TeleportTo(V, true, i) then
+            d.PetFinderPremium.Busy = false
+            d.Teleport.UnlockTeleport(i)
+            return false
+        end
+        task.wait(.2)
+        G = d.PetFinderPremium.GetPetData(V)
+        Z = G and d.PetFinderPremium.GetRule(G.name) or nil
+        if not G or not Z or not d.PetFinderPremium.PassesRule(G, Z) then
+            d.PetFinderPremium.Busy = false
+            d.Teleport.UnlockTeleport(i)
+            return false
+        end
+        local c = {
+            ref = V,
+            data = G,
+            countBefore = d.PetFinderPremium.CountOwnedForRule(G.name, Z),
+            startedAt = os
+                .clock(),
+            confirmed = false
+        }
+        d.PetFinderPremium.Pending = c
+        d.PetFinderPremium.Attempts[V] = ((tonumber(d.PetFinderPremium.Attempts[V]) or 0)) + 1
+        local T = pcall(function() j:Fire(V) end)
+        if T then
+            repeat
+                local G = tonumber(V:GetAttribute("OwnerUserId")) or 0
+                if G == tonumber(J.player_userid) then d.PetFinderPremium.ConfirmPurchase("Ownership confirmed") elseif G ~= 0 then break end
+                if c.confirmed or not Y.pet_finder_enabled then break end
+                task.wait(.05)
+            until os.clock() - c.startedAt >= d.PetFinderPremium.ConfirmTimeout
+        end
+        local u = c.confirmed
+        if u then
+            local V = d.PetFinderPremium.CountOwnedForRule(G.name, Z)
+            d.PetFinderPremium.SetStatus(
+                string.format("Purchased %s | %d/%d", d.PetFinderPremium.GetPetLabel(G.size, G.variant, G.displayName), V,
+                    Z.target), "#7CFC00")
+        elseif Y.pet_finder_enabled then
+            local y = tonumber(d.PetFinderPremium.Attempts[V]) or 0
+            if y >= d.PetFinderPremium.MaxAttempts then
+                d.PetFinderPremium.Handled[V] = true
+                d.PetFinderPremium.SetStatus("Stopped retrying: " .. G.displayName, "#FFCC66")
             else
-                Background.Size = UDim2.new(1, 0, 0, 34)
+                d.PetFinderPremium.RetryAt[V] = os.clock() + 5
+                d.PetFinderPremium.SetStatus("Purchase not confirmed: " .. G.displayName, "#FFCC66")
             end
         end
-    
-        function Groupbox:Resize()
-            if not collapsed then
-                local totalHeight = GroupboxList.AbsoluteContentSize.Y + (53 * Library.DPIScale)
-                Background.Size = UDim2.new(1, 0, 0, totalHeight)
-            else
-                Background.Size = UDim2.new(1, 0, 0, 34 * Library.DPIScale)
-            end
+        d.PetFinderPremium.Pending = nil
+        d.PetFinderPremium.Busy = false
+        d.Teleport.UnlockTeleport(i)
+        return u
+    end,
+    GetHopMinutes = function() return math.max(math.floor(tonumber(Y.pet_finder_hop_minutes) or 5), 1) end,
+    ResetHopTimer = function()
+        d.PetFinderPremium.NextHopAt =
+            os.clock() + d.PetFinderPremium.GetHopMinutes() * 60
+    end,
+    GetHopRemaining = function()
+        if d.PetFinderPremium.NextHopAt <= 0 then d.PetFinderPremium.ResetHopTimer() end
+        return math.max(math.ceil(d.PetFinderPremium.NextHopAt - os.clock()), 0)
+    end,
+    FormatTime = function(G)
+        G = math.max(math.floor(tonumber(G) or 0), 0)
+        return string.format("%dm %02ds", math.floor(G / 60), G % 60)
+    end,
+    HasUnmetTargets = function()
+        for G, V in ipairs(d.PetFinderPremium.GetActiveRuleNames()) do
+            local y = d.PetFinderPremium.GetRule(V)
+            if y and not d.PetFinderPremium.HasReachedTarget(V, y) then return true end
         end
-    
-        local function Toggle()
-            collapsed = not collapsed
-            GroupboxContainer.Visible = not collapsed
-            ToggleIcon.Text = collapsed and ">" or "˅"
-            Groupbox:Resize()
+        return false
+    end,
+    UpdateIdle = function(G)
+        local V = d.PetFinderPremium.GetTrackedCount()
+        if not Y.pet_finder_auto_hop then
+            d.PetFinderPremium.SetStatus(
+                string.format("Monitoring %d pet%s | %d ready", V, V == 1 and "" or "s", G or 0),
+                "#CFCFCF")
+            return
         end
-    
-        local touchInputObj = nil
-        local touchStartPos = nil
-        local MAX_TAP_MOVE = 4
-    
-        HeaderFrame.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                Toggle()
-            elseif input.UserInputType == Enum.UserInputType.Touch then
-                touchInputObj = input
-                touchStartPos = input.Position
+        local y = d.PetFinderPremium.GetHopRemaining()
+        if y > 0 then
+            d.PetFinderPremium.SetStatus(
+                string.format("Monitoring %d pet%s | Hop in %s", V, V == 1 and "" or "s",
+                    d.PetFinderPremium.FormatTime(y)),
+                "#FFD966")
+            return
+        end
+        local Z = J.TeleportLockNames.PetFinderPremium
+        if d.Teleport.IsLocked(Z) then
+            d.PetFinderPremium.SetStatus("Hop ready | Waiting for teleport", "#FFCC66")
+            return
+        end
+        d.PetFinderPremium.SetStatus("Hopping to a new server...", "#66CCFF")
+        d.PetFinderPremium.ResetHopTimer()
+        H.Hop.HopToNewServer()
+    end,
+    Loop = function()
+        if not J.GetCheckIfPro() then return end
+        if os.clock() >= d.PetFinderPremium.NextScanAt then
+            d.PetFinderPremium.NextScanAt = os.clock() + d.PetFinderPremium.ScanDelay
+            d.PetFinderPremium.FullScan()
+        end
+        if not Y.pet_finder_enabled then
+            d.PetFinderPremium.ClearStatus()
+            return
+        end
+        if #d.PetFinderPremium.GetActiveRuleNames() == 0 then
+            d.PetFinderPremium.SetStatus("Paused: add an enabled pet rule", "#FFCC66")
+            return
+        end
+        if not d.PetFinderPremium.HasUnmetTargets() then
+            d.PetFinderPremium.SetStatus("All pet targets reached", "#7CFC00")
+            return
+        end
+        if d.PetFinderPremium.Busy or d.PetFinderPremium.Pending then return end
+        local G, V = d.PetFinderPremium.GetCandidate()
+        if G then d.PetFinderPremium.BuyPet(G) else d.PetFinderPremium.UpdateIdle(V) end
+    end,
+    Start = function()
+        if d.PetFinderPremium.Started then return end
+        d.PetFinderPremium.Started = true
+        d.PetFinderPremium.ResetHopTimer()
+        d.PetFinderPremium.FullScan()
+        local G = y.Networking and (y.Networking.Pets and y.Networking.Pets.WildPetTameResult)
+        if G and G.OnClientEvent then
+            G.OnClientEvent:Connect(function(G, V)
+                local y = d.PetFinderPremium.Pending
+                if y and (y.ref == G and tonumber(V) == tonumber(J.player_userid)) then
+                    d.PetFinderPremium.ConfirmPurchase(
+                        "Tame result confirmed")
+                end
+            end)
+        end
+        task.spawn(function()
+            while d.PetFinderPremium.Started do
+                task.wait(.5)
+                if not J.GetCheckIfPro() then continue end
+                local G, V = pcall(d.PetFinderPremium.Loop)
+                if not G then
+                    d.PetFinderPremium.Busy = false
+                    d.PetFinderPremium.Pending = nil
+                    d.Teleport.UnlockTeleport(J.TeleportLockNames.PetFinderPremium)
+                    d.PetFinderPremium.SetStatus("Error: pet finder loop failed", "#FF4444")
+                    warn("[PetFinderPremium]", V)
+                end
             end
         end)
-    
-        game:GetService("UserInputService").InputChanged:Connect(function(input)
-            if input ~= touchInputObj then return end
-            local delta = input.Position - touchStartPos
-            if math.abs(delta.X) > MAX_TAP_MOVE or math.abs(delta.Y) > MAX_TAP_MOVE then
-                touchInputObj = nil
-                touchStartPos = nil
-            end
-        end)
-    
-        game:GetService("UserInputService").InputEnded:Connect(function(input)
-            if input ~= touchInputObj then return end
-            Toggle()
-            touchInputObj = nil
-            touchStartPos = nil
-        end)
-    
-        setmetatable(Groupbox, BaseGroupbox)
-    
-        Groupbox:Resize()
-        Tab.Groupboxes[Info.Name] = Groupbox
-    
-        return Groupbox
     end
-
-
-
-
-        function Tab:AddLeftGroupbox(Name, IconName, StartCollapsed)
-            return Tab:AddGroupbox({
-                Side = 1,
-                Name = Name,
-                IconName = IconName,
-                StartCollapsed = StartCollapsed -- pass through
-            })
+}
+J.WebhookStatusText = ""
+d.Webhooks = {
+    SetStatus = function(G, V)
+        G = tostring(G or "")
+        if G == "" then
+            J.WebhookStatusText = ""
+            return
         end
-        
-        function Tab:AddRightGroupbox(Name, IconName, StartCollapsed)
-            return Tab:AddGroupbox({
-                Side = 2,
-                Name = Name,
-                IconName = IconName,
-                StartCollapsed = StartCollapsed
-            })
+        J.WebhookStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\148\148 [Webhooks]</font> <font color=\'%s\'>%s</font></stroke>",
+            tostring(V or "#FFFFFF"), G)
+    end,
+    ClearStatus = function() J.WebhookStatusText = "" end,
+    IsMailTypeEnabled = function(G)
+        if G == "manual" then return Y.webhook_mail_manual == true end
+        if G == "automatic" then return Y.webhook_mail_auto == true end
+        if G == "claim" then return Y.webhook_mail_claims == true end
+        return false
+    end,
+    RemoveMailType = function(G)
+        if type(J.Mail_WebhookData) ~= "table" then return end
+        for V = #J.Mail_WebhookData, 1, -1 do
+            local y = J.Mail_WebhookData[V]
+            if type(y) ~= "table" or y.webhookType == G then table.remove(J.Mail_WebhookData, V) end
         end
-
-        function Tab:AddTabbox(Info)
-            local BoxHolder = New("Frame", {
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 0),
-                Parent = Info.Side == 1 and TabLeft or TabRight,
-            })
-            New("UIListLayout", {
-                Padding = UDim.new(0, 6),
-                Parent = BoxHolder,
-            })
-
-            local Background = Library:MakeOutline(BoxHolder, WindowInfo.CornerRadius)
-            Background.Size = UDim2.fromScale(1, 0)
-            Library:UpdateDPI(Background, {
-                Size = false,
-            })
-
-            local TabboxHolder
-            local TabboxButtons
-
-            do
-                TabboxHolder = New("Frame", {
-                    BackgroundColor3 = "BackgroundColor",
-                    Position = UDim2.fromOffset(2, 2),
-                    Size = UDim2.new(1, -4, 1, -4),
-                    Parent = Background,
-                })
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, WindowInfo.CornerRadius - 1),
-                    Parent = TabboxHolder,
-                })
-
-                TabboxButtons = New("Frame", {
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 34),
-                    Parent = TabboxHolder,
-                })
-                New("UIListLayout", {
-                    FillDirection = Enum.FillDirection.Horizontal,
-                    HorizontalFlex = Enum.UIFlexAlignment.Fill,
-                    Parent = TabboxButtons,
-                })
+    end,
+    CopyMailItems = function(G)
+        local V = {}
+        if type(G) ~= "table" then return V end
+        for G, y in ipairs(G) do
+            if type(y) ~= "table" then continue end
+            local Z = tostring(y.category or y.Category or "Unknown")
+            local j = tostring(y.itemName or y.ItemName or y.name or y.ItemKey or "Unknown")
+            local i = math.max(math.floor(tonumber(y.amount or y.count or y.Count or 1) or 1), 1)
+            table.insert(V, { category = Z, name = d.Mail.GetItemDisplayName(Z, j), count = i })
+        end
+        return V
+    end,
+    QueueMail = function(G, V)
+        if not Y.webhook_enabled then return false end
+        if not d.Webhooks.IsMailTypeEnabled(G) or type(V) ~= "table" then return false end
+        if type(J.Mail_WebhookData) ~= "table" then J.Mail_WebhookData = {} end
+        V.webhookType = G
+        V.queuedAt = os.time()
+        return d.Webhooks.Queue(J.Mail_WebhookData, V)
+    end,
+    TrimWebhookText = function(G, V)
+        G = tostring(G or "")
+        V = tonumber(V) or 1000
+        if #G <= V then return G end
+        return G:sub(1, V - 3) .. "..."
+    end,
+    BuildMailItemsText = function(G)
+        local V = {}
+        for G, y in ipairs(G or {}) do
+            if type(y) ~= "table" then continue end
+            table.insert(V,
+                string.format("\226\128\162 **x%d %s** `%s`", math.max(math.floor(tonumber(y.count) or 1), 1),
+                    tostring(y.name or "Unknown"), tostring(y.category or "Unknown")))
+        end
+        if #V == 0 then return "No item details available" end
+        return d.Webhooks.TrimWebhookText(table.concat(V, "\n"), 1000)
+    end,
+    BuildClaimedMailText = function(G)
+        local V = {}
+        for G, y in ipairs(G or {}) do
+            if type(y) ~= "table" then continue end
+            local Z = tostring(y.from or "Unknown")
+            local j = type(y.items) == "table" and y.items or {}
+            if #j == 0 then
+                table.insert(V, "\226\128\162 From **@" .. (Z .. "**"))
+                continue
             end
-
-            local Tabbox = {
-                ActiveTab = nil,
-
-                BoxHolder = BoxHolder,
-                Holder = Background,
-                Tabs = {},
-            }
-
-            function Tabbox:AddTab(Name)
-                local Button = New("TextButton", {
-                    BackgroundColor3 = "MainColor",
-                    BackgroundTransparency = 0,
-                    Size = UDim2.fromOffset(0, 34),
-                    Text = Name,
-                    TextSize = 15,
-                    TextTransparency = 0.5,
-                    Parent = TabboxButtons,
+            for G, y in ipairs(j) do
+                table.insert(V,
+                    string.format("\226\128\162 **@%s** \226\134\146 x%d %s `%s`", Z,
+                        math.max(math.floor(tonumber(y.count) or 1), 1), tostring(y.name or "Unknown"),
+                        tostring(y.category or "Unknown")))
+            end
+        end
+        if #V == 0 then return "No item details available" end
+        return d.Webhooks.TrimWebhookText(table.concat(V, "\n"), 1000)
+    end,
+    BuildMailPayload = function(G)
+        if type(G) ~= "table" then return nil end
+        local V = tostring(G.webhookType or "")
+        local Z
+        local j
+        local i
+        local c = {}
+        if V == "manual" then
+            Z = "\240\159\147\166 Manual Order Delivered!"
+            j = "Your manual mailbox order was completed successfully."
+            i = 5763719
+            table.insert(c, { name = "\240\159\167\190 Order", value = tostring(G.orderId or "Unknown"), inline = true })
+            table.insert(c,
+                { name = "\240\159\145\164 Recipient", value = "||@" .. (tostring(G.recipient or "Unknown") .. "||"), inline = true })
+            table.insert(c,
+                { name = "\240\159\147\166 Items Delivered", value = d.Webhooks.BuildMailItemsText(G.items), inline = false })
+        elseif V == "automatic" then
+            Z = "\226\154\153\239\184\143 Automatic Mail Sent!"
+            j = "An automatic mailbox rule completed successfully."
+            i = 3447003
+            table.insert(c,
+                { name = "\226\154\153\239\184\143 Rule", value = tostring(G.ruleId or "Unknown"), inline = true })
+            table.insert(c,
+                { name = "\240\159\145\164 Recipient", value = "||@" .. (tostring(G.recipient or "Unknown") .. "||"), inline = true })
+            table.insert(c,
+                { name = "\240\159\147\164 Items Sent", value = d.Webhooks.BuildMailItemsText(G.items), inline = false })
+        elseif V == "claim" then
+            local V = math.max(math.floor(tonumber(G.count) or 0), 0)
+            Z = "\240\159\147\165 Incoming Mail Claimed!"
+            j = string.format("Successfully claimed **%d** incoming mail%s.", V, V == 1 and "" or "s")
+            i = 10181046
+            table.insert(c,
+                { name = "\240\159\147\172 Claim Type", value = tostring(G.mode or "Unknown"), inline = true })
+            table.insert(c, { name = "\226\156\133 Claimed", value = tostring(V), inline = true })
+            table.insert(c,
+                { name = "\240\159\142\129 Received Items", value = d.Webhooks.BuildClaimedMailText(G.mails), inline = false })
+        else
+            return nil
+        end
+        return { username = "Exotic Hub", embeds = { { title = Z, description = j, color = i, fields = c, footer = { text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or "")) }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ") } } }
+    end,
+    IsValidUrl = function(G) return type(G) == "string" and (G ~= "" and G:match("^https?://[^%s]+$") ~= nil) end,
+    GetRequestFunction = function()
+        local G = _G
+        if type(getgenv) == "function" then
+            local V, y = pcall(getgenv)
+            if V and type(y) == "table" then G = y end
+        end
+        local V = { "request", "http_request", "httprequest", "httpRequest" }
+        for V, y in ipairs(V) do if type(G[y]) == "function" then return G[y] end end
+        local y = { "syn", "http", "fluxus", "krnl" }
+        for V, y in ipairs(y) do
+            local Z = G[y]
+            if type(Z) == "table" and type(Z.request) == "function" then return Z.request end
+        end
+        return nil
+    end,
+    Queue = function(G, V)
+        if not Y.webhook_enabled then return false end
+        if type(G) ~= "table" or type(V) ~= "table" then return false end
+        table.insert(G, V)
+        return true
+    end,
+    GetPetBuyStyle = function(G, V, y, Z)
+        G = tostring(G or "Normal")
+        V = tostring(V or "Normal")
+        y = tostring(y or "Unknown")
+        local j = d.PetFinderPremium.GetPetLabel(G, V, y)
+        local i = {
+            title = "\240\159\144\190 You Bought a " .. (j .. "!"),
+            message = "Pet purchase confirmed.",
+            colour =
+                Z
+        }
+        if V == "Rainbow" and G == "Huge" then
+            i.title = "\240\159\140\136 YOU BOUGHT A " .. (string.upper(j) .. " \240\159\145\145!")
+            i.message = "Incredible find! A Huge Rainbow pet has been secured!"
+            i.colour = 16729559
+        elseif V == "Rainbow" and G == "Big" then
+            i.title = "\240\159\140\136 You Bought a " .. (j .. " \226\156\168!")
+            i.message = "Amazing find! A Big Rainbow pet has been secured!"
+            i.colour = 12865023
+        elseif G == "Huge" then
+            i.title = "\240\159\145\145 YOU BOUGHT A " .. (string.upper(j) .. " \240\159\148\165!")
+            i.message = "Massive find! A Huge pet has been secured!"
+            i.colour = 16766720
+        elseif V == "Rainbow" then
+            i.title = "\240\159\140\136 You Bought a " .. (j .. " \226\156\168!")
+            i.message = "Lucky find! A Rainbow pet has been secured!"
+            i.colour = 16729559
+        elseif G == "Big" then
+            i.title = "\240\159\148\165 You Bought a " .. (j .. "!")
+            i.message = "Great find! A Big pet has been secured!"
+            i.colour = 16747586
+        end
+        return i
+    end,
+    BuildPetBuyPayload = function(G)
+        if type(G) ~= "table" then return nil end
+        local V = tostring(G.rarity or "Unknown")
+        local Z = d.Data.GetRarityColor(V)
+        local j = tonumber(((tostring(Z)):gsub("#", "")), 16) or 5763719
+        local i = tostring(G.size or "Normal")
+        local J = tostring(G.variant or "Normal")
+        local T = tostring(G.display_name or G.pet or "Unknown")
+        local u = d.PetFinderPremium.GetPetLabel(i, J, T)
+        local q = d.Webhooks.GetPetBuyStyle(i, J, T, j)
+        return { username = "Exotic Hub", embeds = { { title = q.title, description = q.message .. ("\n\nBuyer: ||" .. (tostring(G.username or "Unknown") .. "||")), color = q.colour, fields = { { name = "\240\159\144\190 Pet", value = "**" .. (u .. "**"), inline = false }, { name = "\226\173\144 Rarity", value = V, inline = true }, { name = "\240\159\146\176 Price", value = "$" .. c.formatShecklesNumber(G.price), inline = true }, { name = "\240\159\147\143 Size", value = i, inline = true }, { name = "\240\159\140\136 Variant", value = J, inline = true }, { name = "\240\159\146\181 Current Sheckles", value = "$" .. c.formatShecklesNumber(G.sheckles), inline = true } }, footer = { text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or "")) }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ") } } }
+    end,
+    Post = function(G)
+        local V = tostring(Y.webhook_url or "")
+        if type(G) ~= "table" then return false, "Invalid payload" end
+        if not d.Webhooks.IsValidUrl(V) then return false, "Invalid webhook URL" end
+        local Z, j = pcall(function() return y.HttpService:JSONEncode(G) end)
+        if not Z or type(j) ~= "string" then return false, "JSON encode failed" end
+        local i = d.Webhooks.GetRequestFunction()
+        if i then
+            local G, y = pcall(function()
+                return i({
+                    Url = V,
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body =
+                        j
                 })
-
-                local Line = Library:MakeLine(Button, {
-                    AnchorPoint = Vector2.new(0, 1),
-                    Position = UDim2.new(0, 0, 1, 1),
-                    Size = UDim2.new(1, 0, 0, 1),
-                })
-
-                local Container = New("Frame", {
-                    BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(0, 35),
-                    Size = UDim2.new(1, 0, 1, -35),
-                    Visible = false,
-                    Parent = TabboxHolder,
-                })
-                local List = New("UIListLayout", {
-                    Padding = UDim.new(0, 8),
-                    Parent = Container,
-                })
-                New("UIPadding", {
-                    PaddingBottom = UDim.new(0, 7),
-                    PaddingLeft = UDim.new(0, 7),
-                    PaddingRight = UDim.new(0, 7),
-                    PaddingTop = UDim.new(0, 7),
-                    Parent = Container,
-                })
-
-                local Tab = {
-                    ButtonHolder = Button,
-                    Container = Container,
-
-                    Tab = Tab,
-                    Elements = {},
-                    DependencyBoxes = {},
-                }
-
-                function Tab:Show()
-                    if Tabbox.ActiveTab then
-                        Tabbox.ActiveTab:Hide()
+            end)
+            if not G then return false, tostring(y) end
+            if type(y) == "table" then
+                local G = tonumber(y.StatusCode or y.Status or y.status_code)
+                if G then return G >= 200 and G < 300, tostring(G) end
+                if y.Success ~= nil then return y.Success == true, tostring(y.StatusMessage or "") end
+            end
+            return true
+        end
+        local c, J = pcall(function() y.HttpService:PostAsync(V, j, Enum.HttpContentType.ApplicationJson, false) end)
+        if not c then return false, tostring(J) end
+        return true
+    end,
+    GetPendingCount = function()
+        local G = 0
+        if Y.webhook_pet_buys and type(J.PetFinder_WebhookData) == "table" then G += #J.PetFinder_WebhookData end
+        if type(J.Mail_WebhookData) == "table" then for V, y in ipairs(J.Mail_WebhookData) do if type(y) == "table" and d.Webhooks.IsMailTypeEnabled(y.webhookType) then G += 1 end end end
+        return G
+    end,
+    GetNextWebhook = function()
+        if Y.webhook_pet_buys and type(J.PetFinder_WebhookData) == "table" then
+            while #J.PetFinder_WebhookData > 0 do
+                local G = J.PetFinder_WebhookData[1]
+                if type(G) ~= "table" then
+                    table.remove(J.PetFinder_WebhookData, 1)
+                    continue
+                end
+                local V = d.Webhooks.BuildPetBuyPayload(G)
+                if not V then
+                    table.remove(J.PetFinder_WebhookData, 1)
+                    continue
+                end
+                return J.PetFinder_WebhookData, 1, V, "pet purchase"
+            end
+        end
+        if type(J.Mail_WebhookData) ~= "table" then J.Mail_WebhookData = {} end
+        while #J.Mail_WebhookData > 0 do
+            local G = J.Mail_WebhookData[1]
+            if type(G) ~= "table" or not d.Webhooks.IsMailTypeEnabled(G.webhookType) then
+                table.remove(J.Mail_WebhookData, 1)
+                continue
+            end
+            local V = d.Webhooks.BuildMailPayload(G)
+            if not V then
+                table.remove(J.Mail_WebhookData, 1)
+                continue
+            end
+            local y = { manual = "manual order", automatic = "automatic mail", claim = "claimed mail" }
+            return J.Mail_WebhookData, 1, V, y[G.webhookType] or "mail notification"
+        end
+        return nil
+    end,
+    ProcessNext = function()
+        local G = Y.webhook_pet_buys or Y.webhook_mail_manual or Y.webhook_mail_auto or Y.webhook_mail_claims
+        if not G then
+            d.Webhooks.ClearStatus()
+            return false
+        end
+        local V = d.Webhooks.GetPendingCount()
+        if not d.Webhooks.IsValidUrl(Y.webhook_url) then
+            if V > 0 then
+                d.Webhooks.SetStatus(string.format("Add webhook URL | Pending: %d", V), "#FFCC66")
+            else
+                d.Webhooks
+                    .SetStatus("Add webhook URL", "#FFCC66")
+            end
+            return false
+        end
+        if V == 0 then
+            d.Webhooks.SetStatus("Ready", "#CFCFCF")
+            return false
+        end
+        local y, Z, j, i = d.Webhooks.GetNextWebhook()
+        if not y or not j then
+            d.Webhooks.SetStatus("Ready", "#CFCFCF")
+            return false
+        end
+        d.Webhooks.SetStatus(string.format("Sending %s | Pending: %d", i, V), "#66CCFF")
+        local c, J = d.Webhooks.Post(j)
+        if not c then
+            d.Webhooks.SetStatus(string.format("Send failed | Pending: %d", V), "#FF5555")
+            warn("[Webhooks]", J)
+            return false
+        end
+        table.remove(y, Z)
+        d.Webhooks.SetStatus(string.format("%s sent | Pending: %d", i, d.Webhooks.GetPendingCount()), "#7CFC00")
+        return true
+    end,
+    Loop = function()
+        if not Y.webhook_enabled then
+            d.Webhooks.ClearStatus()
+            return
+        end
+        local G, V = pcall(function() d.Webhooks.ProcessNext() end)
+        if not G then
+            d.Webhooks.SetStatus("Webhook loop error", "#FF5555")
+            warn("[Webhooks] Loop error:", V)
+        end
+    end
+}
+d.GardenItems = {
+    Busy = false,
+    AlreadyRunningPetPlayer = false,
+    PetSeedCollectSystem = {
+        IsOurSeed = function(G)
+            if not G or G.Parent ~= y.DroppedItems then return false end
+            if G:GetAttribute("ItemCategory") ~= "Seeds" then return false end
+            return tonumber(G:GetAttribute("DroppedBy")) == tonumber(J.player_userid)
+        end,
+        Claim = function(G)
+            if not Y.auto_collect_drop_seeds or d.GardenItems.Busy or not d.GardenItems.PetSeedCollectSystem.IsOurSeed(G) then return false end
+            local V = d.ProximityPrompt.FindProximityPromptByClass(G)
+            if not V or not V.Enabled then return false end
+            d.GardenItems.Busy = true
+            local y = J.TeleportLockNames.GardenItemCollector
+            local Z = d.Teleport.LockTeleport(y, 2, false)
+            if not Z then
+                d.GardenItems.Busy = false
+                return false
+            end
+            local j, i = pcall(function()
+                if not d.Teleport.TeleportTo(G, true, y) then return false end
+                task.wait(.1)
+                if not V.Parent or not d.GardenItems.PetSeedCollectSystem.IsOurSeed(G) then return false end
+                d.ProximityPrompt.ActivateProximityPrompt(V)
+                return true
+            end)
+            d.Teleport.UnlockTeleport(y)
+            d.GardenItems.Busy = false
+            return j and i == true
+        end
+    },
+    StartSeedCollectorPetsAndPlayer = function()
+        if d.GardenItems.AlreadyRunningPetPlayer then return end
+        d.GardenItems.AlreadyRunningPetPlayer = true
+        y.DroppedItems.ChildAdded:Connect(function(G) d.GardenItems.PetSeedCollectSystem.Claim(G) end)
+        task.spawn(function()
+            while true do
+                task.wait(5)
+                if Y.auto_collect_drop_seeds then
+                    for G, V in ipairs(y.DroppedItems:GetChildren()) do
+                        if d.GardenItems.PetSeedCollectSystem.Claim(V) then
+                            task.wait(.5)
+                        end
                     end
-
-                    Button.BackgroundTransparency = 1
-                    Button.TextTransparency = 0
-                    Line.Visible = false
-
-                    Container.Visible = true
-
-                    Tabbox.ActiveTab = Tab
-                    Tab:Resize()
                 end
-
-                function Tab:Hide()
-                    Button.BackgroundTransparency = 0
-                    Button.TextTransparency = 0.5
-                    Line.Visible = true
-                    Container.Visible = false
-
-                    Tabbox.ActiveTab = nil
+            end
+        end)
+    end
+}
+d.GardenItems.StartSeedCollectorPetsAndPlayer()
+d.GardenItems.EventSeedCollectSystem = {
+    Claim = function(G)
+        if not Y.auto_collect_event_seeds then return false end
+        if not G or not G.Parent then return false end
+        local V = d.ProximityPrompt.FindProximityPromptByClass(G)
+        if not V then return false end
+        local y = J.TeleportLockNames.SeedPackCollector
+        d.Teleport.LockTeleport(y, 5, true)
+        local Z, j = pcall(function()
+            task.spawn(function()
+                for G = 1, 1, 1 do
+                    task.wait(.1)
+                    d.ProximityPrompt.ActivateProximityPrompt(V)
+                    task.wait()
                 end
-
-                function Tab:Resize()
-                    if Tabbox.ActiveTab ~= Tab then
+            end)
+            if not d.Teleport.TeleportTo(G, true, y) then return false end
+            task.wait(.2)
+            if not V.Parent then return false end
+            for G = 1, 2, 1 do d.ProximityPrompt.ActivateProximityPrompt(V) end
+            d.Teleport.LockTeleport(y, 5, true)
+            task.wait(.2)
+            return true
+        end)
+        return Z and j == true
+    end,
+    StartGoldRainbowCollect = function()
+        y.EventSeedDrops.ChildAdded:Connect(function(G) d.GardenItems.EventSeedCollectSystem.Claim(G) end)
+        task.spawn(function()
+            while true do
+                task.wait(.5)
+                if Y.auto_collect_event_seeds then
+                    for G, V in ipairs(y.EventSeedDrops:GetChildren()) do
+                        if d.GardenItems.EventSeedCollectSystem.Claim(V) then
+                            task.wait(.5)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+}
+d.GardenItems.EventSeedCollectSystem.StartGoldRainbowCollect()
+a.RealTimeStats = {
+    statusLabel = nil,
+    updateStatusList = function(G)
+        local V = 18
+        local Z = 14
+        local j = 1000
+        local i = V
+        local c = workspace.CurrentCamera
+        if c then if c.ViewportSize.X < j then i = Z end end
+        local J = a.RealTimeStats
+        local T = J.statusLabel
+        if not T or not T.Parent then
+            local G = y.LocalPlayer
+            if not G then return end
+            local V = y.PlayerGui
+            local Z = V:FindFirstChild("StatusGui")
+            if not Z then
+                Z = Instance.new("ScreenGui")
+                Z.Name = "StatusGui"
+                Z.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+                Z.ResetOnSpawn = false
+                Z.Parent = V
+                Z.DisplayOrder = 3
+            end
+            T = Z:FindFirstChild("StatusDisplay")
+            if not T then
+                T = Instance.new("TextLabel")
+                T.Name = "StatusDisplay"
+                T.Parent = Z
+                T.Size = UDim2.new(.3, 0, .4, 0)
+                T.AnchorPoint = Vector2.new(0, .5)
+                T.Position = UDim2.new(0, 120, .65, 0)
+                T.BackgroundTransparency = 1
+                T.RichText = true
+                T.Font = Enum.Font.SourceSansBold
+                T.TextColor3 = Color3.new(1, 1, 1)
+                T.TextStrokeTransparency = .5
+                T.TextXAlignment = Enum.TextXAlignment.Left
+                T.TextYAlignment = Enum.TextYAlignment.Top
+            end
+            J.statusLabel = T
+        end
+        if T then
+            T.TextSize = i
+            local V = table.concat(G, "\n")
+            T.Text = V
+        end
+    end
+}
+c.SafeParent = function(G, V, y)
+    if typeof(G) ~= "Instance" or typeof(V) ~= "Instance" or G.Parent == nil or V.Parent == nil then return false end
+    local Z = false
+    local j = pcall(function()
+        if y and G.Parent ~= y then return end
+        G.Parent = V
+        Z = true
+    end)
+    return j and Z
+end
+c.ParentOutsidex = function(G, V) return true end
+c.ParentOutside = function(G, V)
+    if G:GetAttribute("emove") then return end
+    if G:IsA("Model") then
+        local V = G:GetPivot()
+        local y = 1000000
+        local Z = 1000000
+        G:SetAttribute("emove", true)
+        local j = CFrame.new(y, V.Position.Y, Z) * V.Rotation
+        G:PivotTo(j)
+    elseif G:IsA("BasePart") then
+        local V = G.CFrame
+        local y = 1000000
+        local Z = 1000000
+        G:SetAttribute("emove", true)
+        G.CFrame = CFrame.new(y, V.Position.Y, Z) * V.Rotation
+    end
+    return true
+end
+task.spawn(function()
+    while true do
+        task.wait(2)
+        if not Y.hide_plant_models then continue end
+        local G, V = pcall(function()
+            local G = d.Farm.GetMyPlantsFolder()
+            if G and G.Parent then
+                local V = G:GetChildren()
+                for V, y in ipairs(V) do
+                    if not Y.hide_plant_models then break end
+                    c.ParentOutside(y, G)
+                    if V % 50 == 0 then task.wait() end
+                end
+            end
+            for G, V in ipairs(d.Farm.GetMyPlantsFoldersNotMine()) do
+                if not Y.hide_plant_models then break end
+                if not V or not V.Parent then continue end
+                local Z = V:FindFirstChild("Plants")
+                if Z then c.SafeParent(Z, y.ReplicatedStorage, V) end
+            end
+        end)
+        if not G then
+            warn("[PlantPerformance] Loop error:", V)
+            task.wait(1)
+        end
+    end
+end)
+task.spawn(function()
+    pcall(function()
+        if Y.char_farm_middle then
+            local G = d.Farm.GetCenterPointPart()
+            if G then
+                d.Teleport.LockTeleport(J.TeleportLockNames.Other, 2)
+                d.Teleport.TeleportTo(d.Farm.GetCenterPointPart(), true, J.TeleportLockNames.Other)
+                print("Teleport middle")
+            else
+                print("center not found")
+            end
+        end
+    end)
+end)
+J.GetProLabel = function()
+    local G = "\240\159\148\146<font color=\'#FF0000\'>PRO</font>"
+    if J.GetCheckIfPro() then G = "" end
+    return G
+end
+J.HomeDashboardUi = function()
+    local G = T.SERVER.GetServerVersion()
+    local V = j:AddTab({
+        Name = "<font color=\"#FFFFFF\">Config & </font><font color=\"#00A2FF\">Home</font>",
+        Description =
+            "<font color=\"#B4B4B4\">Game Server Version: </font><font color=\"#FFD700\"><b>" .. (G .. "</b></font>"),
+        Icon =
+        "house"
+    })
+    local y = V:AddLeftGroupbox("Options", "calendar-sync")
+    local Z = V:AddRightGroupbox("<font color=\"#FFFFFF\">Multi Account </font><font color=\"#00A2FF\">Config</font>",
+        "copy", false)
+    local i = V:AddLeftGroupbox("<font color=\"#FFFFFF\">Website </font><font color=\"#00A2FF\">Sync</font>", "cloud-cog")
+    if i then
+        i:AddLabel({
+            Text =
+            "<font color=\'#66CCFF\'><b>Connect to Exotic Hub</b></font>\nEnter your Web API key and link this account.",
+            DoesWrap = true
+        })
+        local G = i:AddLabel({
+            Text = tostring(Y.web_api_key or "") ~= "" and
+                "<font color=\'#FFCC66\'>\226\151\143 API key saved \226\128\148 ready to link</font>" or
+                "<font color=\'#AFAFAF\'>\226\151\143 Not connected</font>",
+            DoesWrap = true
+        })
+        local function V(V) if G and type(G.SetText) == "function" then G:SetText(V) end end
+        i:AddInput("gag2_web_api_key",
+            {
+                Text = "\240\159\148\145 Web API Key",
+                Default = Y.web_api_key,
+                Numeric = false,
+                AllowEmpty = true,
+                Finished = false,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Enter API key",
+                Tooltip = "Get your API key from the Exotic Hub website.",
+                Callback = function(G)
+                    Y.web_api_key = (tostring(G or "")):match("^%s*(.-)%s*$")
+                    u.Save.SaveData()
+                    if Y.web_api_key == "" then
+                        V("<font color=\'#AFAFAF\'>\226\151\143 Not connected</font>")
+                    else
+                        V(
+                            "<font color=\'#FFCC66\'>\226\151\143 API key saved \226\128\148 ready to link</font>")
+                    end
+                end
+            })
+        i:AddDivider()
+        i:AddButton({
+            Text = "\240\159\148\151 Link This Account",
+            Func = function()
+                if d.WebApi.Busy then
+                    J.Notify("Link request already running", 3)
+                    return
+                end
+                V("<font color=\'#66CCFF\'>\226\151\143 Linking account...</font>")
+                task.spawn(function()
+                    local G, y = d.WebApi.LinkDevice()
+                    if G then
+                        V("<font color=\'#7CFC00\'>\226\151\143 Account successfully linked</font>")
+                    else
+                        V(
+                            "<font color=\'#FF6666\'>\226\151\143 " .. (tostring(y) .. "</font>"))
+                    end
+                    J.Notify(y, 5)
+                end)
+            end
+        })
+    end
+    if Z then
+        Z:AddButton({
+            Text = "Copy Config",
+            Func = function()
+                local G = u.Config.BuildCopyText()
+                if not G then
+                    J.Notify("Failed to create config", 3)
+                    return
+                end
+                c.CopyToClipBoard(G)
+                J.Notify("Config copied. Add it above the loader.", 3)
+            end
+        })
+        Z:AddButton({
+            Text = "\240\159\159\162 Copy Config With Loader",
+            Func = function()
+                local G = u.Config.BuildCopyWithLoaderText()
+                if not G then
+                    J.Notify("Failed to create config", 3)
+                    return
+                end
+                c.CopyToClipBoard(G)
+                J.Notify("Config copied. Add and enter your key.", 3)
+            end
+        })
+    end
+    if y then
+        local G = y:AddButton({ Text = "\240\159\154\168 Rejoin Server", Func = function() d.Player.Rejoin() end })
+        local V = y:AddButton({ Text = "\240\159\147\161 Hop Server", Func = function() H.Hop.HopToNewServer() end })
+        y:AddDivider()
+        y:AddToggle("automiddletp",
+            {
+                Text = "\240\159\147\141 Spawn Middle",
+                Default = Y.char_farm_middle,
+                Tooltip =
+                "Place your character in the centre of the farm when you join.",
+                Callback = function(G)
+                    Y.char_farm_middle = G
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+end
+J.MailUi = function()
+    local G = j:AddTab({ Name = "Mail " .. J.GetProLabel(), Description = "Send and receive items", Icon = "mail" })
+    local V = G:AddLeftGroupbox("Manual Order", "send")
+    local y = G:AddRightGroupbox("Automatic Send", "repeat-2")
+    local Z = G:AddLeftGroupbox("Receipts", "receipt-text")
+    local i = G:AddRightGroupbox("Incoming Mail", "mail-open")
+    if V then
+        local G = "Seeds"
+        local y = ""
+        local Z = 1
+        local j
+        local i
+        local c
+        local T
+        V:AddLabel({ Text = "Enter the exact Roblox username. @ is optional.", DoesWrap = true })
+        V:AddInput("mail_manual_username_ui",
+            {
+                Text = "\240\159\145\164 Recipient Username",
+                Default = J.MailDraftTargetUsername,
+                Numeric = false,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Roblox username",
+                Callback = function(G) J.MailDraftTargetUsername = d.Mail.CleanUsername(G) end
+            })
+        V:AddButton({
+            Text = "\240\159\148\142 Check Recipient",
+            Func = function()
+                local G, V = d.Mail.LookupRecipient(J.MailDraftTargetUsername)
+                if not G then
+                    J.Notify(V, 3)
+                    d.Mail.SetStatus(V, "#FF5555")
+                    return
+                end
+                J.Notify(string.format("Found @%s (%s)", G.username, G.displayName), 4)
+                d.Mail.SetStatus(string.format("Recipient ready: @%s", G.username), "#7CFC00")
+            end
+        })
+        V:AddToggle("mail_include_comment_ui",
+            {
+                Text = "\240\159\146\172 Include Order Comment",
+                Default = Y.mail_include_comment,
+                Tooltip =
+                "Adds the order ID and progress to each mail.",
+                Callback = function(G)
+                    Y.mail_include_comment = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        T = V:AddToggle("mail_ignore_batch_limit_ui",
+            {
+                Text = "\240\159\147\166 Ignore 20 Item Limit",
+                Default = Y.mail_ignore_batch_limit,
+                Tooltip =
+                "Sends the full amount in one mail. Applies to manual and automatic sending.",
+                DisabledTooltip = J
+                    .GetProMessage(),
+                Callback = function(G)
+                    Y.mail_ignore_batch_limit = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddDivider()
+        local q
+        q = V:AddDropdown("mail_manual_category_ui",
+            {
+                Values = { "Seeds", "Pets" },
+                Default = G,
+                Multi = false,
+                Text = "\240\159\147\166 Item Category",
+                Tooltip =
+                "Choose seeds or pets.",
+                Callback = function(V)
+                    if V ~= "Seeds" and V ~= "Pets" then return end
+                    G = V
+                    y = ""
+                    J.MailDraftCategory = V
+                    J.MailDraftItemName = ""
+                    if j then
+                        j:SetValues(d.Mail.GetItemDropdown(V))
+                        j:SetValue("")
+                    end
+                end
+            })
+        q:SetValue(G)
+        j = V:AddValueDropdown("mail_manual_item_ui",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\142\129 Select Item",
+                Tooltip = "Select the item to add to the order.",
+                Changed = function(G)
+                    if type(G) ~= "string" or G == "" then return end
+                    y = G
+                    J.MailDraftItemName = G
+                end
+            })
+        j:SetValues(d.Mail.GetItemDropdown(G))
+        local g
+        g = V:AddInput("mail_manual_amount_ui",
+            {
+                Text = "\240\159\148\162 Amount",
+                Default = tostring(Z),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Amount to send",
+                Callback = function(G)
+                    local V = l(G)
+                    if not V or V <= 0 then
+                        J.Notify("Amount must be a whole number above 0", 3)
+                        g:SetValue(tostring(Z))
                         return
                     end
-                    Background.Size = UDim2.new(1, 0, 0, List.AbsoluteContentSize.Y + 53 * Library.DPIScale)
+                    Z = V
+                    J.MailDraftAmount = V
                 end
-
-                --// Execution \\--
-                if not Tabbox.ActiveTab then
-                    Tab:Show()
-                end
-
-                Button.MouseButton1Click:Connect(Tab.Show)
-
-                setmetatable(Tab, BaseGroupbox)
-
-                Tabbox.Tabs[Name] = Tab
-
-                return Tab
-            end
-
-            if Info.Name then
-                Tab.Tabboxes[Info.Name] = Tabbox
-            else
-                table.insert(Tab.Tabboxes, Tabbox)
-            end
-
-            return Tabbox
-        end
-
-        function Tab:AddLeftTabbox(Name)
-            return Tab:AddTabbox({ Side = 1, Name = Name })
-        end
-
-        function Tab:AddRightTabbox(Name)
-            return Tab:AddTabbox({ Side = 2, Name = Name })
-        end
-
-        function Tab:Hover(Hovering)
-            if Library.ActiveTab == Tab then
-                return
-            end
-
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = Hovering and 0.25 or 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = Hovering and 0.25 or 0.5,
-                }):Play()
-            end
-        end
-
-        function Tab:Show()
-            if Library.ActiveTab then
-                Library.ActiveTab:Hide()
-            end
-
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 0,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0,
-                }):Play()
-            end
-
-            if Description then
-                CurrentTabInfo.Visible = true
-                
-                if IsDefaultSearchbarSize then
-                    SearchBox.Size = UDim2.fromScale(0.5, 1)
-                end
-
-                CurrentTabLabel.Text = Name
-                CurrentTabDescription.Text = Description
-            end
-
-            TabContainer.Visible = true
-
-            Library.ActiveTab = Tab
-        end
-
-        function Tab:Hide()
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 1,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0.5,
-                }):Play()
-            end
-            TabContainer.Visible = false
-
-            if IsDefaultSearchbarSize then
-                SearchBox.Size = UDim2.fromScale(1, 1)
-            end
-            
-            CurrentTabInfo.Visible = false
-
-            Library.ActiveTab = nil
-        end
-
-        --// Execution \\--
-        if not Library.ActiveTab then
-            Tab:Show()
-        end
-
-        TabButton.MouseEnter:Connect(function()
-            Tab:Hover(true)
-        end)
-        TabButton.MouseLeave:Connect(function()
-            Tab:Hover(false)
-        end)
-        TabButton.MouseButton1Click:Connect(Tab.Show)
-
-        Library.Tabs[Name] = Tab
-
-        return Tab
-    end
-
-    function Window:AddKeyTab(Name)
-        local TabButton: TextButton
-        local TabLabel
-        local TabIcon
-
-        local TabContainer
-
-        do
-            TabButton = New("TextButton", {
-                BackgroundColor3 = "MainColor",
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 40),
-                Text = "",
-                Parent = Tabs,
             })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 11),
-                PaddingLeft = UDim.new(0, 12),
-                PaddingRight = UDim.new(0, 12),
-                PaddingTop = UDim.new(0, 11),
-                Parent = TabButton,
-            })
-
-            TabLabel = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Position = UDim2.fromOffset(30, 0),
-                Size = UDim2.new(1, -30, 1, 0),
-                Text = Name,
-                TextSize = 16,
-                TextTransparency = 0.5,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = TabButton,
-            })
-
-            if KeyIcon then
-                TabIcon = New("ImageLabel", {
-                    Image = KeyIcon.Url,
-                    ImageColor3 = "AccentColor",
-                    ImageRectOffset = KeyIcon.ImageRectOffset,
-                    ImageRectSize = KeyIcon.ImageRectSize,
-                    ImageTransparency = 0.5,
-                    Size = UDim2.fromScale(1, 1),
-                    SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                    Parent = TabButton,
-                })
+        c = V:AddButton({
+            Text = "\226\158\149 Add To Order",
+            DisabledTooltip = J.GetProMessage(),
+            Func = function()
+                local V, j = d.Mail.AddDraftItem(G, y, Z)
+                J.Notify(j, 3)
+                if V then d.Mail.SetStatus(j, "#7CFC00") else d.Mail.SetStatus(j, "#FF5555") end
             end
-
-            --// Tab Container \\--
-            TabContainer = New("ScrollingFrame", {
-                AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
-                CanvasSize = UDim2.fromScale(0, 0),
-                ScrollBarThickness = 0,
-                Size = UDim2.fromScale(1, 1),
-                Visible = false,
-                Parent = Container,
-            })
-            New("UIListLayout", {
-                HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                Padding = UDim.new(0, 8),
-                VerticalAlignment = Enum.VerticalAlignment.Center,
-                Parent = TabContainer,
-            })
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 1),
-                PaddingRight = UDim.new(0, 1),
-                Parent = TabContainer,
-            })
-        end
-
-        --// Tab Table \\--
-        local Tab = {
-            Elements = {},
-            IsKeyTab = true,
-        }
-
-        function Tab:AddKeyBox(...)
-            local Data = {}
-
-            local First = select(1, ...)
-
-            if typeof(First) == "function" then
-                Data.Callback = First
-            else
-                Data.ExpectedKey = First
-                Data.Callback = select(2, ...)
-            end
-
-            local Holder = New("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(0.75, 0, 0, 21),
-                Parent = TabContainer,
-            })
-
-            local Box = New("TextBox", {
-                BackgroundColor3 = "MainColor",
-                BorderColor3 = "OutlineColor",
-                BorderSizePixel = 1,
-                PlaceholderText = "Key",
-                Size = UDim2.new(1, -71, 1, 0),
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = Holder,
-            })
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 8),
-                PaddingRight = UDim.new(0, 8),
-                Parent = Box,
-            })
-
-            local Button = New("TextButton", {
-                AnchorPoint = Vector2.new(1, 0),
-                BackgroundColor3 = "MainColor",
-                BorderColor3 = "OutlineColor",
-                BorderSizePixel = 1,
-                Position = UDim2.fromScale(1, 0),
-                Size = UDim2.new(0, 63, 1, 0),
-                Text = "Execute",
-                TextSize = 14,
-                Parent = Holder,
-            })
-
-            Button.MouseButton1Click:Connect(function()
-                if Data.ExpectedKey and Box.Text ~= Data.ExpectedKey then
-                    Data.Callback(false, Box.Text)
+        })
+        c:SetDisabled(not J.GetCheckIfPro())
+        T:SetDisabled(not J.GetCheckIfPro())
+        V:AddDivider()
+        i = V:AddLabel({ Text = d.Mail.GetDraftText(), DoesWrap = true })
+        J.MailUiRefs.RefreshDraft = function() if i then i:SetText(d.Mail.GetDraftText()) end end
+        J.MailManualStatusLabel = V:AddLabel({ Text = J.MailManualUiStatusText, DoesWrap = true })
+        J.MailStartOrderButton = V:AddButton({
+            Text = "\226\150\182\239\184\143 Start Sending",
+            Disabled = J
+                .MailManualRunning,
+            DisabledTooltip = "The current order is still sending.",
+            Func = function()
+                if not J.GetCheckIfPro() then
+                    J.Notify(J.GetProMessage(), 5)
                     return
                 end
-
-                Data.Callback(true, Box.Text)
-            end)
-        end
-
-        function Tab:Resize() end
-
-        function Tab:Hover(Hovering)
-            if Library.ActiveTab == Tab then
-                return
+                local G, V = d.Mail.StartManualOrder(J.MailDraftTargetUsername)
+                J.Notify(V, G and 3 or 4)
+                if not G then d.Mail.SetStatus(V, "#FF5555") end
             end
-
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = Hovering and 0.25 or 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = Hovering and 0.25 or 0.5,
-                }):Play()
-            end
-        end
-
-        function Tab:Show()
-            if Library.ActiveTab then
-                Library.ActiveTab:Hide()
-            end
-
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 0,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0,
-                }):Play()
-            end
-            TabContainer.Visible = true
-
-            Library.ActiveTab = Tab
-        end
-
-        function Tab:Hide()
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 1,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0.5,
-                }):Play()
-            end
-            TabContainer.Visible = false
-
-            Library.ActiveTab = nil
-        end
-
-        --// Execution \\--
-        if not Library.ActiveTab then
-            Tab:Show()
-        end
-
-        TabButton.MouseEnter:Connect(function()
-            Tab:Hover(true)
-        end)
-        TabButton.MouseLeave:Connect(function()
-            Tab:Hover(false)
-        end)
-        TabButton.MouseButton1Click:Connect(Tab.Show)
-
-        Tab.Container = TabContainer
-        setmetatable(Tab, BaseGroupbox)
-
-        Library.Tabs[Name] = Tab
-
-        return Tab
-    end
-
-    function Library:Toggle(Value: boolean?)
-        if typeof(Value) == "boolean" then
-            Library.Toggled = Value
-        else
-            Library.Toggled = not Library.Toggled
-        end
-
-        MainFrame.Visible = Library.Toggled
-        
-        -- Do not enable Modal for the normal window.
-        -- It traps the mouse when the GUI is parented to PlayerGui.
-        ModalElement.Modal = false
-
-        if Library.Toggled and not Library.IsMobile then
-            local OldMouseIconEnabled = UserInputService.MouseIconEnabled
-            pcall(function()
-                RunService:UnbindFromRenderStep("ShowCursor")
-            end)
-            RunService:BindToRenderStep("ShowCursor", Enum.RenderPriority.Last.Value, function()
-                UserInputService.MouseIconEnabled = not Library.ShowCustomCursor
-
-                Cursor.Position = UDim2.fromOffset(Mouse.X, Mouse.Y)
-                Cursor.Visible = Library.ShowCustomCursor
-
-                if not (Library.Toggled and ScreenGui and ScreenGui.Parent) then
-                    UserInputService.MouseIconEnabled = OldMouseIconEnabled
-                    Cursor.Visible = false
-                    RunService:UnbindFromRenderStep("ShowCursor")
+        })
+        J.MailStopOrderButton = J.MailStartOrderButton:AddButton({
+            Text = "\226\143\185\239\184\143 Stop",
+            Disabled = not
+                J.MailManualRunning,
+            DisabledTooltip = "No manual order is running.",
+            Func = function()
+                if not J.GetCheckIfPro() then
+                    J.Notify(J.GetProMessage(), 5)
+                    return
                 end
-            end)
-        elseif not Library.Toggled then
-            TooltipLabel.Visible = false
-            for _, Option in pairs(Library.Options) do
-                if Option.Type == "ColorPicker" then
-                    Option.ColorMenu:Close()
-                    Option.ContextMenu:Close()
-                elseif Option.Type == "Dropdown" or Option.Type == "KeyPicker" then
-                    Option.Menu:Close()
+                if d.Mail.StopManualOrder() then J.Notify("Manual order stopped", 3) end
+            end
+        })
+        J.MailClearOrderButton = V:AddButton({
+            Text = "\240\159\167\185 Clear Order",
+            Disabled = J.MailManualRunning,
+            DisabledTooltip =
+            "The current order is still sending.",
+            Func = function()
+                if d.Mail.ClearDraft() then
+                    d.Mail.SetManualUiStatus("Order cleared", "#CFCFCF", "\240\159\167\185")
+                    J.Notify("Order cleared", 2)
+                else
+                    J.Notify("Stop the current order first", 3)
                 end
             end
+        })
+        d.Mail.RefreshManualUi()
+    end
+    if y then
+        local G = ""
+        local V = "Seeds"
+        local Z = ""
+        local j = 5
+        local i = 5
+        local c = {}
+        local T = {}
+        local q
+        local g
+        local E
+        local a
+        y:AddLabel({ Text = "Sends when the matching inventory amount reaches the trigger.", DoesWrap = true })
+        y:AddInput("mail_rule_username_ui",
+            {
+                Text = "\240\159\145\164 Recipient Username",
+                Default = "",
+                Numeric = false,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Roblox username",
+                Callback = function(V) G = d.Mail.CleanUsername(V) end
+            })
+        local H
+        H = y:AddDropdown("mail_rule_category_ui",
+            {
+                Values = { "Seeds", "Pets" },
+                Default = V,
+                Multi = false,
+                Text = "\240\159\147\166 Item Category",
+                Tooltip =
+                "Choose seeds or pets.",
+                Callback = function(G)
+                    if G ~= "Seeds" and G ~= "Pets" then return end
+                    V = G
+                    Z = ""
+                    if q then
+                        q:SetValues(d.Mail.GetItemDropdown(G))
+                        q:SetValue("")
+                    end
+                end
+            })
+        H:SetValue(V)
+        q = y:AddValueDropdown("mail_rule_item_ui",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\142\129 Select Item",
+                Tooltip = "Select the item the rule will send.",
+                Changed = function(G)
+                    if type(G) ~= "string" or G == "" then return end
+                    Z = G
+                end
+            })
+        q:SetValues(d.Mail.GetItemDropdown(V))
+        local r
+        r = y:AddInput("mail_rule_trigger_ui",
+            {
+                Text = "\240\159\142\175 Trigger Amount",
+                Default = tostring(j),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Example: 5",
+                Tooltip = "The rule starts when you own at least this amount.",
+                Callback = function(G)
+                    local V = l(G)
+                    if not V or V <= 0 then
+                        J.Notify("Trigger must be above 0", 3)
+                        r:SetValue(tostring(j))
+                        return
+                    end
+                    j = V
+                end
+            })
+        local e
+        e = y:AddInput("mail_rule_send_amount_ui",
+            {
+                Text = "\240\159\147\164 Send Amount",
+                Default = tostring(i),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Example: 5",
+                Tooltip = "How many matching items to send each time the rule runs.",
+                Callback = function(G)
+                    local V = l(G)
+                    if not V or V <= 0 then
+                        J.Notify("Send amount must be above 0", 3)
+                        e:SetValue(tostring(i))
+                        return
+                    end
+                    i = V
+                end
+            })
+        local s
+        s = y:AddValueDropdown("mail_rule_pet_types_ui",
+            {
+                Values = { "Normal", "Rainbow" },
+                Default = {},
+                Multi = true,
+                Searchable = false,
+                MaxVisibleDropdownItems = 5,
+                Text =
+                "\226\156\168 Pet Variant",
+                Tooltip = "Pet rules only. No selection sends all variants.",
+                Changed = function(
+                    G)
+                    c = type(G) == "table" and G or {}
+                end
+            })
+        s:SetValue({})
+        local N
+        N = y:AddValueDropdown("mail_rule_pet_sizes_ui",
+            {
+                Values = { "Normal", "Big", "Huge" },
+                Default = {},
+                Multi = true,
+                Searchable = false,
+                MaxVisibleDropdownItems = 5,
+                Text =
+                "\240\159\147\143 Pet Size",
+                Tooltip = "Pet rules only. No selection sends all sizes.",
+                Changed = function(G)
+                    T =
+                        type(G) == "table" and G or {}
+                end
+            })
+        N:SetValue({})
+        a = y:AddButton({
+            Text = "\226\158\149 Add Auto Rule",
+            Func = function()
+                local y, u = d.Mail.LookupRecipient(G)
+                if not y then
+                    J.Notify(u, 4)
+                    d.Mail.SetStatus(u, "#FF5555")
+                    return
+                end
+                local q, g = d.Mail.AddRule(y, V, Z, j, i, c, T)
+                if q then
+                    J.Notify("Rule added: " .. g, 3)
+                    d.Mail.SetStatus("Auto rule added", "#7CFC00")
+                else
+                    J.Notify(g, 4)
+                    d.Mail.SetStatus(g, "#FF5555")
+                end
+            end
+        })
+        a:SetDisabled(not J.GetCheckIfPro())
+        y:AddDivider()
+        g = y:AddValueDropdown("mail_active_rules_ui",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 8,
+                Text =
+                "\240\159\147\139 Active Rules",
+                Tooltip = "Select a rule to enable, disable or remove it.",
+                Changed = function(
+                    G)
+                    if type(G) ~= "string" then return end
+                    J.MailSelectedRuleId = G
+                    local V = type(Y.mail_auto_rules) == "table" and Y.mail_auto_rules[G]
+                    if E and type(V) == "table" then
+                        E:SetText(string.format("%s | @%s | Trigger %d | Send %d",
+                            V.enabled == true and "Enabled" or "Disabled", tostring(V.targetUsername or "?"),
+                            tonumber(V.triggerAmount) or 0, tonumber(V.sendAmount) or 0))
+                    end
+                end
+            })
+        E = y:AddLabel({ Text = "Select a rule", DoesWrap = true })
+        J.MailUiRefs.RefreshRules = function()
+            if g then g:SetValues(d.Mail.GetRuleDropdown()) end
+            if E and next(Y.mail_auto_rules or {}) == nil then
+                E:SetText(
+                    "<font color=\'#888888\'>No automatic rules</font>")
+            end
         end
+        J.MailUiRefs.RefreshRules()
+        local W = y:AddButton({
+            Text = "\240\159\148\132 Enable / Disable",
+            Func = function()
+                local G, V = d.Mail.ToggleRule(J.MailSelectedRuleId)
+                if not G then
+                    J.Notify("Select a rule first", 3)
+                    return
+                end
+                J.Notify(V and "Rule enabled" or "Rule disabled", 3)
+            end
+        })
+        W:AddButton({
+            Text = "\240\159\151\145\239\184\143 Remove Rule",
+            Func = function()
+                if not d.Mail.RemoveRule(J.MailSelectedRuleId) then
+                    J.Notify("Select a rule first", 3)
+                    return
+                end
+                J.MailSelectedRuleId = ""
+                E:SetText("Select a rule")
+                J.Notify("Rule removed", 3)
+            end
+        })
+        y:AddDivider()
+        local X
+        X = y:AddToggle("mail_auto_send_enabled_ui",
+            {
+                Text = "\240\159\147\164 Enable Automatic Send",
+                Default = Y.mail_auto_send_enabled,
+                Tooltip =
+                "Runs enabled mail rules when their trigger is reached.",
+                DisabledTooltip = J.GetProMessage(),
+                Callback = function(
+                    G)
+                    Y.mail_auto_send_enabled = G
+                    if G then
+                        d.Mail.SetStatus("Automatic send enabled", "#7CFC00")
+                    elseif not Y.mail_auto_accept and not J.MailManualRunning then
+                        d.Mail.ClearStatus()
+                    end
+                    u.Save.SaveDataSync()
+                end
+            })
+        X:SetDisabled(not J.GetCheckIfPro())
     end
-
-    if WindowInfo.AutoShow then
-        task.spawn(Library.Toggle)
+    if Z then
+        local G
+        local V
+        Z:AddLabel({ Text = "Stores the latest 50 completed manual order receipts.", DoesWrap = true })
+        G = Z:AddValueDropdown("mail_receipts_ui",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 8,
+                Text =
+                "\240\159\167\190 Select Receipt",
+                Tooltip = "Select a receipt to view or copy it.",
+                Changed = function(G)
+                    local y = tonumber(G)
+                    local Z = y and Y.mail_receipts[y]
+                    if type(Z) ~= "string" then return end
+                    J.MailSelectedReceipt = Z
+                    if V then V:SetText(Z) end
+                end
+            })
+        V = Z:AddLabel({ Text = "<font color=\'#888888\'>No receipt selected</font>", DoesWrap = true })
+        J.MailUiRefs.RefreshReceipts = function()
+            if G then G:SetValues(d.Mail.GetReceiptDropdown()) end
+            if V and #Y.mail_receipts == 0 then V:SetText("<font color=\'#888888\'>No receipts saved</font>") end
+        end
+        J.MailUiRefs.RefreshReceipts()
+        local y = Z:AddButton({
+            Text = "\240\159\147\139 Copy Receipt",
+            Func = function()
+                if J.MailSelectedReceipt == "" then
+                    J.Notify("Select a receipt first", 3)
+                    return
+                end
+                c.CopyToClipBoard(J.MailSelectedReceipt)
+            end
+        })
+        y:AddButton({
+            Text = "\240\159\167\185 Clear Receipts",
+            Func = function()
+                Y.mail_receipts = {}
+                J.MailSelectedReceipt = ""
+                V:SetText("<font color=\'#888888\'>No receipts saved</font>")
+                J.MailUiRefs.RefreshReceipts()
+                u.Save.SaveDataSync()
+                J.Notify("Receipts cleared", 3)
+            end
+        })
     end
-
-   -- if Library.IsMobile then #button
-    if true then
-        local ToggleButton = Library:AddDraggableButton("<b><font color='#FFEA00'>Exotic</font></b>", function()
-            Library:Toggle()
-        end)
-        
-        -- local colors = {
-        --     "#FFD700", -- gold
-        --     "#FFEA00", -- bright gold
-        --     "#FFC700", -- warm gold
-        --     "#FFE066", -- light gold
-        --     "#FFD633", -- medium gold
-        -- }
-
-        -- local i = 1
-        
-        -- task.spawn(function()
-        --     while true do
-        --         ToggleButton.Button.Text = string.format("<b><font color='%s'>Exotic</font></b>", colors[i])
-        --         i = (i % #colors) + 1
-        --         task.wait(0.3)
-        --     end
-        -- end)
-
--- #lock
-        -- local LockButton = Library:AddDraggableButton("🔓", function(self)
-        --     Library.CantDragForced = not Library.CantDragForced
-        --     self:SetText(Library.CantDragForced and "🔒" or "🔓")
-        -- end)
-
-        -- if WindowInfo.MobileButtonsSide == "Right" then
-        --     ToggleButton.Button.Position = UDim2.new(1, -6, 0, 6)
-        --     ToggleButton.Button.AnchorPoint = Vector2.new(1, 0)
-
-        --     LockButton.Button.Position = UDim2.new(1, -6, 0, 46)
-        --     LockButton.Button.AnchorPoint = Vector2.new(1, 0)
-        -- else
-        --     local left_offset = 10
-        --     local top_offset = 55
-        --     ToggleButton.Button.Position = UDim2.new(0, left_offset, 0, 6 + top_offset)
-        --     ToggleButton.Button.AnchorPoint = Vector2.new(0, 0)
-            
-        --     LockButton.Button.Position = UDim2.new(0, 110+left_offset, 0, 6 + top_offset)
-        --     LockButton.Button.AnchorPoint = Vector2.new(0, 0)
-            
-        --     --LockButton.Button.Position = UDim2.fromOffset(6, 46)
-        -- end
+    if i then
+        i:AddLabel({ Text = "Claims item mail automatically. Guild invitations are not accepted.", DoesWrap = true })
+        i:AddToggle("mail_auto_accept_ui",
+            {
+                Text = "\240\159\147\165 Auto Accept Incoming Mail",
+                Default = Y.mail_auto_accept,
+                Tooltip =
+                "Automatically claims incoming item mail.",
+                Callback = function(G)
+                    Y.mail_auto_accept = G
+                    if G then
+                        d.Mail.SetStatus("Auto accept enabled", "#7CFC00")
+                        task.defer(function() d.Mail.ClaimInbox(false) end)
+                    elseif not Y.mail_auto_send_enabled and not J.MailManualRunning then
+                        d.Mail.ClearStatus()
+                    end
+                    u.Save.SaveDataSync()
+                end
+            })
+        i:AddButton({
+            Text = "\240\159\147\172 Claim Existing Mail",
+            Func = function()
+                task.spawn(function()
+                    local G = d.Mail.ClaimInbox(true)
+                    J.Notify(string.format("Claimed %d mail", G), 3)
+                end)
+            end
+        })
     end
-
-    --// Execution \\--
-    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        Library:UpdateSearch(SearchBox.Text)
+end
+J.PremiumUi = function()
+    local G = j:AddTab({ Name = "Premium " .. J.GetProLabel(), Description = "Premium systems", Icon = "crown" })
+    local V = G.TabLabel
+    r.applySmoothRainbow(V, .1)
+    local y = G:AddLeftGroupbox("Sprinkler Placement", "cloud-rain")
+    local Z = G:AddRightGroupbox("Sprinkler Overrides", "list-plus")
+    if y then
+        if not J.GetCheckIfPro() then y:AddLabel({ Text = J.GetProMessage(), DoesWrap = true }) end
+        y:AddLabel({ Text = "\240\159\146\161 Auto place sprinklers.", DoesWrap = true })
+        local G
+        G = y:AddValueDropdown("sprinkler_place_selected_ui",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\146\166 Sprinklers To Place",
+                Tooltip = "Selected sprinklers will be kept at their target amount.",
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.sprinkler_place_selected = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.SprinklerPlacer.GetDropdown())
+        G:SetValue(Y.sprinkler_place_selected)
+        local V = y:AddButton({
+            Text = "\226\156\133 All",
+            Func = function()
+                Y.sprinkler_place_selected = d.SprinklerPlacer.GetAllSelection()
+                G:SetValue(Y.sprinkler_place_selected)
+                u.Save.SaveDataSync()
+            end
+        })
+        V:AddButton({
+            Text = "\240\159\167\185 Clear",
+            Func = function()
+                Y.sprinkler_place_selected = {}
+                G:SetValue({})
+                u.Save.SaveDataSync()
+            end
+        })
+        y:AddDivider()
+        local Z
+        Z = y:AddInput("sprinkler_place_default_target_ui",
+            {
+                Text = "\240\159\142\175 Default Target",
+                Default = tostring(Y.sprinkler_place_default_target),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Amount per sprinkler",
+                Tooltip = "Places more when a selected sprinkler falls below this amount.",
+                Callback = function(
+                    G)
+                    local V = l(G)
+                    if not V or V <= 0 then
+                        J.Notify("Target must be a whole number above 0", 3)
+                        Z:SetValue(tostring(Y.sprinkler_place_default_target))
+                        return
+                    end
+                    Y.sprinkler_place_default_target = V
+                    u.Save.SaveDataSync()
+                end
+            })
+        y:AddDivider()
+        local j
+        j = y:AddDropdown("sprinkler_place_mode_ui",
+            {
+                Values = { "Farm Middle", "Plant Target", "Saved Position" },
+                Default = Y.sprinkler_place_mode,
+                Multi = false,
+                Text =
+                "\240\159\147\141 Placement Mode",
+                Tooltip = "Choose where sprinklers should be placed.",
+                Callback = function(
+                    G)
+                    if type(G) ~= "string" or G == "" then return end
+                    Y.sprinkler_place_mode = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        j:SetValue(Y.sprinkler_place_mode)
+        local i
+        i = y:AddValueDropdown("sprinkler_place_target_plant_ui",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\140\177 Target Plant",
+                Tooltip = "Plant Target mode places sprinklers around this plant type.",
+                Changed = function(
+                    G)
+                    if type(G) ~= "string" then return end
+                    Y.sprinkler_place_target_plant = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        i:SetValues(d.SeedData.GetSeedDataListDropDown())
+        i:SetValue(Y.sprinkler_place_target_plant)
+        local c = y:AddLabel({ Text = d.SprinklerPlacer.GetSavedPositionText(), DoesWrap = true })
+        y:AddButton({
+            Text = "\240\159\147\140 Copy Current Position",
+            Tooltip =
+            "Stand inside your farm where sprinklers should be placed.",
+            Func = function()
+                local G, V = d.SprinklerPlacer.SaveCurrentPosition()
+                J.Notify(V, 3)
+                if G then
+                    Y.sprinkler_place_mode = "Saved Position"
+                    j:SetValue("Saved Position")
+                    c:SetText(d.SprinklerPlacer.GetSavedPositionText())
+                    u.Save.SaveDataSync()
+                end
+            end
+        })
+        y:AddDivider()
+        y:AddToggle("sprinkler_place_teleport_ui",
+            {
+                Text = "\240\159\147\161 Auto Teleport",
+                Default = Y.sprinkler_place_teleport,
+                Tooltip =
+                "Leave disabled to attempt placement from anywhere. Enable it to teleport near the placement position.",
+                Callback = function(
+                    G)
+                    Y.sprinkler_place_teleport = G
+                    if not G then d.Teleport.UnlockTeleport(J.TeleportLockNames.SprinklerPlacer) end
+                    u.Save.SaveDataSync()
+                end
+            })
+        local T
+        T = y:AddToggle("enable_sprinkler_placer_ui",
+            {
+                Text = "\240\159\146\166 Enable Sprinkler System",
+                Default = Y.auto_sprinkler_place,
+                Tooltip =
+                "Automatically places selected sprinklers when their amount is too low.",
+                DisabledTooltip = J.GetProMessage(),
+                Callback = function(
+                    G)
+                    Y.auto_sprinkler_place = G
+                    if not G then
+                        d.SprinklerPlacer.CleanupTool()
+                        d.SprinklerPlacer.ClearStatus()
+                        d.Teleport.UnlockTeleport(J.TeleportLockNames.SprinklerPlacer)
+                    end
+                    u.Save.SaveDataSync()
+                end
+            })
+        T:SetDisabled(not J.GetCheckIfPro())
+    end
+    if Z then
+        local G = ""
+        local V = math.max(math.floor(tonumber(Y.sprinkler_place_default_target) or 1), 1)
+        local y = false
+        local j = {}
+        local i = 0
+        local c
+        local T
+        Z:AddLabel({ Text = "\240\159\146\161 Set a different target for individual sprinklers.", DoesWrap = true })
+        local function q()
+            for G, V in ipairs(j) do if V.Holder and typeof(V.Holder) == "Instance" then V.Holder:Destroy() end end
+            table.clear(j)
+            if Z.Resize then Z:Resize() end
+        end
+        local function g()
+            local V = d.SprinklerPlacer.GetOverrideTarget(G)
+            if V ~= nil then return V end
+            return math.max(math.floor(tonumber(Y.sprinkler_place_default_target) or 1), 1)
+        end
+        local function E()
+            if G == "" then return end
+            V = g()
+            y = true
+            if c then
+                c:SetValue(tostring(V))
+                c:SetText(string.format("\240\159\142\175 Target Amount: <font color=\'#7CFC00\'>%d</font>", V))
+            end
+            if T then T:SetValue(d.SprinklerPlacer.GetOverrideTarget(G) ~= nil) end
+            y = false
+        end
+        local a
+        a = function()
+            q()
+            i += 1
+            local V = {}
+            if type(Y.sprinkler_place_overrides) == "table" then
+                for G in pairs(Y.sprinkler_place_overrides) do
+                    if d.SprinklerPlacer.GetOverrideTarget(G) ~= nil then
+                        table.insert(V, G)
+                    end
+                end
+            end
+            table.sort(V)
+            if #V == 0 then
+                local G = Z:AddLabel({ Text = "<font color=\'#888888\'>No active sprinkler overrides</font>", DoesWrap = true })
+                table.insert(j, G)
+            else
+                for V, y in ipairs(V) do
+                    local c = d.SprinklerPlacer.GetOverrideTarget(y)
+                    local J
+                    J = Z:AddToggle(string.format("sprinkler_active_override_%d_%d", i, V),
+                        {
+                            Text = string.format("\240\159\146\166 %s <font color=\'#7CFC00\'>Target: %d</font>", y, c),
+                            Default = true,
+                            Tooltip =
+                            "Disable this sprinkler override.",
+                            Callback = function(V)
+                                if V then return end
+                                d.SprinklerPlacer.RemoveOverrideTarget(y)
+                                u.Save.SaveDataSync()
+                                if G == y then E() end
+                                task.defer(a)
+                            end
+                        })
+                    table.insert(j, J)
+                end
+            end
+            if Z.Resize then Z:Resize() end
+        end
+        local H
+        H = Z:AddValueDropdown("sprinkler_override_select_ui",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\146\166 Select Sprinkler",
+                Tooltip = "Select a sprinkler to configure its target.",
+                Changed = function(
+                    V)
+                    if type(V) ~= "string" or V == "" then return end
+                    G = V
+                    E()
+                end
+            })
+        H:SetValues(d.SprinklerPlacer.GetDropdown())
+        c = Z:AddInput("sprinkler_override_target_ui",
+            {
+                Text = "\240\159\142\175 Target Amount",
+                Default = tostring(V),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Enter target amount",
+                Tooltip = "Sets how many of this sprinkler should remain active.",
+                Callback = function(
+                    Z)
+                    if y then return end
+                    if G == "" then
+                        J.Notify("Select a sprinkler first", 3)
+                        return
+                    end
+                    local j = l(Z)
+                    if not j or j <= 0 then
+                        J.Notify("Target must be above 0", 3)
+                        E()
+                        return
+                    end
+                    V = j
+                    c:SetText(string.format("\240\159\142\175 Target Amount: <font color=\'#7CFC00\'>%d</font>", V))
+                    if d.SprinklerPlacer.GetOverrideTarget(G) ~= nil then
+                        d.SprinklerPlacer.SetOverrideTarget(G, V)
+                        u.Save.SaveDataSync()
+                        a()
+                    end
+                end
+            })
+        T = Z:AddToggle("sprinkler_override_enable_ui",
+            {
+                Text = "\240\159\146\165 Enable Override",
+                Default = false,
+                Tooltip =
+                "Use the custom target for the selected sprinkler.",
+                Callback = function(Z)
+                    if y then return end
+                    if G == "" then
+                        y = true
+                        T:SetValue(false)
+                        y = false
+                        J.Notify("Select a sprinkler first", 3)
+                        return
+                    end
+                    if Z then
+                        if not d.SprinklerPlacer.SetOverrideTarget(G, V) then
+                            y = true
+                            T:SetValue(false)
+                            y = false
+                            J.Notify("Failed to enable override", 3)
+                            return
+                        end
+                    else
+                        d.SprinklerPlacer.RemoveOverrideTarget(G)
+                    end
+                    u.Save.SaveDataSync()
+                    E()
+                    a()
+                end
+            })
+        Z:AddDivider()
+        Z:AddLabel({ Text = "= <font color=\'#7CFC00\'>Active Sprinkler Overrides</font> =", DoesWrap = true })
+        a()
+    end
+end
+J.GardenItemsUi = function()
+    local G = j:AddTab({ Name = "Garden Items", Description = "Collect garden drops", Icon = "package-open" })
+    local V = G:AddLeftGroupbox("Auto Collect", "hand")
+    if V then
+        V:AddToggle("auto_collect_drop_seeds",
+            {
+                Text = "\240\159\140\177 Auto Collect Dropped Seeds",
+                Default = Y.auto_collect_drop_seeds,
+                Tooltip =
+                "Collects seeds dropped by your pets or player.",
+                Callback = function(G)
+                    Y.auto_collect_drop_seeds = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddToggle("garden_items_auto_collect_event_seeds",
+            {
+                Text = "\240\159\140\136 Auto Collect Gold & Rainbow Seeds",
+                Default = Y.auto_collect_event_seeds,
+                Tooltip =
+                "Collects Gold and Rainbow seeds dropped by the event.",
+                Callback = function(G)
+                    Y.auto_collect_event_seeds = G
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+end
+J.PlantsUi = function()
+    local G = j:AddTab({ Name = "Plants", Description = "Plant automation", Icon = "sprout" })
+    local V = G:AddLeftGroupbox("Shovel Fruits", "shovel")
+    local y = G:AddRightGroupbox("<font color=\'#FF5555\'>\226\154\160\239\184\143 Shovel Plants</font>",
+        "triangle-alert")
+    local i = G:AddLeftGroupbox("Move Plants", "move")
+    local c = G:AddRightGroupbox("Water Plants", "droplets")
+    if c then
+        local G
+        G = c:AddValueDropdown("water_plant_selected_cans_ui",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Searchable = true,
+                MaxVisibleDropdownItems = 6,
+                Text =
+                "\240\159\146\167 Watering Cans",
+                Tooltip =
+                "Select watering cans to use. No selection uses any available can.",
+                Changed = function(G)
+                    if type(G) ~= "table" then return end
+                    Y.water_plant_selected_cans = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.WaterPlants.GetCanDropdown())
+        G:SetValue(Y.water_plant_selected_cans)
+        local V
+        V = c:AddDropdown("water_plant_mode_ui",
+            {
+                Values = { "Growing Plant", "Farm Middle", "Plant Target", "Custom Position" },
+                Default = Y
+                    .water_plant_mode,
+                Multi = false,
+                Text = "\240\159\147\141 Water Target",
+                Tooltip =
+                "Choose where the watering can should be used.",
+                Callback = function(G)
+                    if type(G) ~= "string" or G == "" then return end
+                    Y.water_plant_mode = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:SetValue(Y.water_plant_mode)
+        local y
+        y = c:AddValueDropdown("water_plant_target_plant_ui",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\140\177 Target Plant",
+                Tooltip = "Plant Target mode waters any plant of this type.",
+                Changed = function(
+                    G)
+                    if type(G) ~= "string" then return end
+                    Y.water_plant_target_plant = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        y:SetValues(d.SeedData.GetSeedDataListDropDown())
+        y:SetValue(Y.water_plant_target_plant)
+        local Z = c:AddLabel({ Text = d.WaterPlants.GetSavedPositionText(), DoesWrap = true })
+        c:AddButton({
+            Text = "\240\159\147\140 Copy Current Position",
+            Tooltip =
+            "Stand inside your farm where the watering can should be used.",
+            Func = function()
+                local G, y = d.WaterPlants.SaveCurrentPosition()
+                J.Notify(y, 3)
+                if G then
+                    Y.water_plant_mode = "Custom Position"
+                    V:SetValue("Custom Position")
+                    Z:SetText(d.WaterPlants.GetSavedPositionText())
+                    u.Save.SaveDataSync()
+                end
+            end
+        })
+        c:AddDivider()
+        c:AddToggle("water_plant_wait_effect_ui",
+            {
+                Text = "\226\143\179 Wait for Effect",
+                Default = Y.water_plant_wait_effect,
+                Tooltip =
+                "Waits for the watering effect to finish. Disable to stack watering effects.",
+                Callback = function(G)
+                    Y.water_plant_wait_effect = G
+                    if not G then d.WaterPlants.NextUseAt = 0 end
+                    u.Save.SaveDataSync()
+                end
+            })
+        c:AddToggle("auto_water_plants_ui",
+            {
+                Text = "\240\159\146\167 Enable Water Plants",
+                Default = Y.auto_water_plants,
+                Tooltip =
+                "Automatically uses watering cans at the selected target.",
+                Callback = function(G)
+                    Y.auto_water_plants = G
+                    if not G then
+                        d.WaterPlants.CleanupTool()
+                        d.WaterPlants.ClearStatus()
+                    end
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+    if i then
+        i:AddLabel({ Text = "\240\159\147\141 Moves selected plants to one position. No selection means all plants.", DoesWrap = true })
+        local G
+        G = i:AddValueDropdown("trowel_plant_types_ui",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\140\177 Plant Types",
+                Tooltip = "Selected plants will be moved. No selection moves all plants.",
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.trowel_plant_types = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.SeedData.GetSeedDataListDropDown())
+        G:SetValue(Y.trowel_plant_types)
+        local V = i:AddButton({
+            Text = "\226\156\133 All",
+            Func = function()
+                Y.trowel_plant_types = d.Trowel.GetAllSelection()
+                G:SetValue(Y.trowel_plant_types)
+                u.Save.SaveDataSync()
+            end
+        })
+        V:AddButton({
+            Text = "\240\159\167\185 Clear",
+            Func = function()
+                Y.trowel_plant_types = {}
+                G:SetValue({})
+                u.Save.SaveDataSync()
+            end
+        })
+        i:AddDivider()
+        i:AddToggle("trowel_use_fixed_spot_ui",
+            {
+                Text = "\240\159\147\140 Use Farm Middle",
+                Default = Y.trowel_use_fixed_spot,
+                Tooltip =
+                "Moves plants to the permanent middle point of your farm.",
+                Callback = function(G)
+                    Y.trowel_use_fixed_spot = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        local y = i:AddLabel({ Text = d.Trowel.GetSavedPositionText(), DoesWrap = true })
+        i:AddButton({
+            Text = "\240\159\147\141 Copy Current Position",
+            Tooltip =
+            "Stand inside either plant area before saving.",
+            Func = function()
+                local G, V = d.Trowel.SavePlayerPosition()
+                if G then
+                    y:SetText(d.Trowel.GetSavedPositionText())
+                    J.Notify("Position saved: " .. tostring(V), 3)
+                else
+                    J.Notify(V, 3)
+                end
+            end
+        })
+        i:AddDivider()
+        local Z = i:AddButton({ Text = "\226\150\182\239\184\143 Start Trowel", Func = function() d.Trowel.Start() end })
+        Z:AddButton({ Text = "\226\143\185\239\184\143 Stop Trowel", Func = function() d.Trowel.Stop() end })
+    end
+    if y then
+        y:AddLabel({
+            Text =
+            "\240\159\154\168 <font color=\'#FF5555\'><b>DANGER:</b></font> This removes the entire plant and every fruit attached to it. <font color=\'#FF5555\'><b>This cannot be undone.</b></font>",
+            DoesWrap = true
+        })
+        y:AddLabel({
+            Text =
+            "Single-harvest plants are excluded. The keep amount applies separately to every selected plant type.",
+            DoesWrap = true
+        })
+        y:AddDivider()
+        local G
+        G = y:AddValueDropdown("shovel_plant_types_ui",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\140\177 Plant Type",
+                Tooltip = "Select plant types that may be permanently removed.",
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.shovel_plant_types = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.PlantShovel.GetPlantTypeDropdown())
+        G:SetValue(Y.shovel_plant_types)
+        local V = y:AddButton({
+            Text = "\226\156\133 <font color=\'#7CFF8A\'><b>All</b></font>",
+            Func = function()
+                local V = d.PlantShovel.GetAllPlantTypeSelection()
+                Y.shovel_plant_types = V
+                G:SetValue(V)
+                u.Save.SaveDataSync()
+            end
+        })
+        V:AddButton({
+            Text = "\240\159\167\185 <font color=\'#FFB86B\'><b>Clear</b></font>",
+            Func = function()
+                Y.shovel_plant_types = {}
+                G:SetValue({})
+                u.Save.SaveDataSync()
+            end
+        })
+        y:AddButton({
+            Text = "\240\159\148\132 Reload Plant Counts",
+            Tooltip =
+            "Refreshes the current plant amounts shown in the dropdown.",
+            Func = function()
+                G:SetValues(d.PlantShovel.GetPlantTypeDropdown())
+                G:SetValue(Y.shovel_plant_types)
+                J.Notify("Plant counts refreshed", 2)
+            end
+        })
+        y:AddDivider()
+        local j
+        local i = "\226\172\135\239\184\143 <font color=\'#7CFC00\'>Minimum</font> Height"
+        j = y:AddInput("shovel_plant_min_height_ui",
+            {
+                Text = i,
+                Default = tostring(Y.shovel_plant_min_height),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Minimum Height",
+                Callback = function(G)
+                    local V = B(G)
+                    if not V or V < 0 then
+                        J.Notify("Minimum height must be 0 or more", 3)
+                        j:SetValue(tostring(Y.shovel_plant_min_height))
+                        return
+                    end
+                    local y = tonumber(Y.shovel_plant_max_height) or 200
+                    if V > y then
+                        J.Notify("Minimum height must be lower than maximum", 3)
+                        j:SetValue(tostring(Y.shovel_plant_min_height))
+                        return
+                    end
+                    Y.shovel_plant_min_height = V
+                    u.Save.SaveDataSync()
+                    j:SetText("\226\156\133 <font color=\'#00FF00\'>Minimum Height Updated</font>")
+                    task.delay(1.5, function() if j then j:SetText(i) end end)
+                end
+            })
+        local c
+        local T = "\226\172\134\239\184\143 <font color=\'#FF6B6B\'>Maximum</font> Height"
+        c = y:AddInput("shovel_plant_max_height_ui",
+            {
+                Text = T,
+                Default = tostring(Y.shovel_plant_max_height),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Maximum Height",
+                Callback = function(G)
+                    local V = B(G)
+                    if not V or V < 0 then
+                        J.Notify("Maximum height must be 0 or more", 3)
+                        c:SetValue(tostring(Y.shovel_plant_max_height))
+                        return
+                    end
+                    local y = tonumber(Y.shovel_plant_min_height) or 0
+                    if V < y then
+                        J.Notify("Maximum height must be higher than minimum", 3)
+                        c:SetValue(tostring(Y.shovel_plant_max_height))
+                        return
+                    end
+                    Y.shovel_plant_max_height = V
+                    u.Save.SaveDataSync()
+                    c:SetText("\226\156\133 <font color=\'#00FF00\'>Maximum Height Updated</font>")
+                    task.delay(1.5, function() if c then c:SetText(T) end end)
+                end
+            })
+        y:AddDivider()
+        local q
+        q = y:AddValueDropdown("shovel_plant_variants_ui",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\226\156\168 Variant",
+                Tooltip = "No selection means all variants, including plants without a mutation.",
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.shovel_plant_variants = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        q:SetValues(d.Mutations.GetNames())
+        q:SetValue(Y.shovel_plant_variants)
+        local g
+        g = y:AddValueDropdown("shovel_plant_variant_blacklist_ui",
+            {
+                Values = d.Mutations.GetNames(),
+                Default = {},
+                Multi = true,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\155\161\239\184\143 Protect Plant Variants",
+                Tooltip =
+                "Plants containing selected variants will never be shoveled.",
+                Changed = function(G)
+                    if type(G) ~= "table" then return end
+                    Y.shovel_plant_variant_blacklist = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        g:SetValue(Y.shovel_plant_variant_blacklist)
+        y:AddToggle("shovel_growing_plants_ui",
+            {
+                Text = "<font color=\'#FFAA55\'>\240\159\140\177 Shovel Growing Plants</font>",
+                Default = Y
+                    .shovel_growing_plants,
+                Tooltip = "Also removes plants where Age is lower than MaxAge.",
+                Callback = function(
+                    G)
+                    Y.shovel_growing_plants = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        y:AddDivider()
+        local E
+        local a = "\240\159\155\161\239\184\143 Max <font color=\'#7CFC00\'>Plants To Keep</font>"
+        E = y:AddInput("shovel_plants_keep_ui",
+            {
+                Text = a,
+                Default = tostring(Y.shovel_plants_keep),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Plants to keep per type",
+                Tooltip =
+                "Enter 0 to remove all eligible plants. The keep amount applies separately to each selected plant type.",
+                Callback = function(
+                    G)
+                    local V = l(G)
+                    if not V or V < 0 then
+                        J.Notify("Keep amount must be a whole number of 0 or more", 3)
+                        E:SetValue(tostring(Y.shovel_plants_keep))
+                        return
+                    end
+                    Y.shovel_plants_keep = V
+                    u.Save.SaveDataSync()
+                    E:SetText("\226\156\133 <font color=\'#00FF00\'>Keep Amount Updated</font>")
+                    task.delay(1.5, function() if E then E:SetText(a) end end)
+                end
+            })
+        y:AddDivider()
+        local H
+        H = y:AddToggle("enable_plant_shovel_ui",
+            {
+                Text = "<font color=\'#FF3333\'><b>\226\154\160\239\184\143 Enable Plant Shovel</b></font>",
+                Default = Y
+                    .auto_shovel_plants,
+                Tooltip = "Permanently removes entire plants matching the selected filters.",
+                Callback = function(
+                    G)
+                    if G == Y.auto_shovel_plants then return end
+                    if G and not Y.auto_shovel_plants then
+                        Z:Confirm({
+                            Title = "\226\154\160\239\184\143 Enable Plant Shovel?",
+                            Description =
+                            "This will permanently remove entire plants and every fruit attached to them.\n\nThis cannot be undone.\n\nCheck your selected plant types, height range, variants, growing option and keep amount before continuing.",
+                            Callback = function(
+                                G)
+                                if G then
+                                    Y.auto_shovel_plants = true
+                                    d.PlantShovel.SetStatus("Starting...", "#FF7777")
+                                    u.Save.SaveDataSync()
+                                else
+                                    H:SetValue(Y.auto_shovel_plants)
+                                end
+                            end
+                        })
+                        return
+                    end
+                    Y.auto_shovel_plants = false
+                    d.PlantShovel.ClearStatus()
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+    if V then
+        V:AddLabel({
+            Text =
+            "\226\154\160\239\184\143 Matching fruits are permanently removed. Single-harvest plants are excluded.",
+            DoesWrap = true
+        })
+        local G
+        G = V:AddValueDropdown("shovel_fruit_types",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Text = "\240\159\141\142 Fruit Type",
+                Tooltip =
+                "Only selected fruit types will be removed.",
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.shovel_fruit_types = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.ShovelFruits.GetFruitTypeDropdown())
+        G:SetValue(Y.shovel_fruit_types)
+        local y = V:AddButton({
+            Text = "\226\156\133 <font color=\'#7CFF8A\'><b>All</b></font>",
+            Func = function()
+                local V = d.ShovelFruits.GetAllFruitTypeSelection()
+                Y.shovel_fruit_types = V
+                G:SetValue(V)
+                u.Save.SaveDataSync()
+            end
+        })
+        y:AddButton({
+            Text = "\240\159\167\185 <font color=\'#FFB86B\'><b>Clear</b></font>",
+            Func = function()
+                Y.shovel_fruit_types = {}
+                G:SetValue({})
+                u.Save.SaveDataSync()
+            end
+        })
+        V:AddDivider()
+        local Z
+        Z = V:AddValueDropdown("shovel_mutation_whitelist",
+            {
+                Values = d.ShovelFruits.GetMutationNames(),
+                Default = {},
+                Multi = true,
+                Text =
+                "\226\156\133 Whitelist Mutations",
+                Tooltip =
+                "When used, only fruits containing at least one selected mutation will be removed.",
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.shovel_mutation_whitelist = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        Z:SetValue(Y.shovel_mutation_whitelist)
+        local j
+        j = V:AddValueDropdown("shovel_mutation_blacklist",
+            {
+                Values = d.ShovelFruits.GetMutationNames(),
+                Default = {},
+                Multi = true,
+                Text =
+                "\226\155\148 Blacklist Mutations",
+                Tooltip =
+                "Fruits containing any selected mutation will never be removed. Blacklist wins.",
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.shovel_mutation_blacklist = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        j:SetValue(Y.shovel_mutation_blacklist)
+        V:AddDivider()
+        local i
+        local c = "\226\172\135\239\184\143 <font color=\'#7CFC00\'>Minimum</font> Weight [KG]"
+        i = V:AddInput("shovel_min_weight",
+            {
+                Text = c,
+                Default = tostring(Y.shovel_min_weight),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Minimum Weight",
+                Callback = function(G)
+                    local V = B(G)
+                    if not V then
+                        J.Notify("Invalid number: " .. tostring(G), 3)
+                        i:SetValue(tostring(Y.shovel_min_weight))
+                        return
+                    end
+                    if V < 0 then
+                        J.Notify("Enter a value of 0 or more", 3)
+                        i:SetValue(tostring(Y.shovel_min_weight))
+                        return
+                    end
+                    local y = tonumber(Y.shovel_max_weight) or 1000000000
+                    if V > y then
+                        J.Notify("Minimum must be lower than maximum", 3)
+                        i:SetValue(tostring(Y.shovel_min_weight))
+                        return
+                    end
+                    Y.shovel_min_weight = V
+                    u.Save.SaveDataSync()
+                    i:SetText("\226\156\133 <font color=\'#00FF00\'>Minimum Weight Updated</font>")
+                    task.delay(1.5, function() if i then i:SetText(c) end end)
+                end
+            })
+        local T
+        local q = "\226\172\134\239\184\143 <font color=\'#FF6B6B\'>Maximum</font> Weight [KG]"
+        T = V:AddInput("shovel_max_weight",
+            {
+                Text = q,
+                Default = tostring(Y.shovel_max_weight),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Maximum Weight",
+                Callback = function(G)
+                    local V = B(G)
+                    if not V then
+                        J.Notify("Invalid number: " .. tostring(G), 3)
+                        T:SetValue(tostring(Y.shovel_max_weight))
+                        return
+                    end
+                    if V <= 0 then
+                        J.Notify("Enter a value greater than 0", 3)
+                        T:SetValue(tostring(Y.shovel_max_weight))
+                        return
+                    end
+                    local y = tonumber(Y.shovel_min_weight) or 0
+                    if V < y then
+                        J.Notify("Maximum must be higher than minimum", 3)
+                        T:SetValue(tostring(Y.shovel_max_weight))
+                        return
+                    end
+                    Y.shovel_max_weight = V
+                    u.Save.SaveDataSync()
+                    T:SetText("\226\156\133 <font color=\'#00FF00\'>Maximum Weight Updated</font>")
+                    task.delay(1.5, function() if T then T:SetText(q) end end)
+                end
+            })
+        V:AddDivider()
+        local g
+        g = V:AddValueDropdown("shovel_variants",
+            {
+                Values = d.ShovelFruits.GetVariantNames(),
+                Default = {},
+                Multi = true,
+                Text = "\226\156\168 Variant",
+                Tooltip =
+                "Normal, Gold or Rainbow. No selection removes nothing.",
+                Searchable = false,
+                MaxVisibleDropdownItems = 5,
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.shovel_variants = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        g:SetValue(Y.shovel_variants)
+        V:AddDivider()
+        V:AddToggle("enable_shovel_fruits",
+            {
+                Text = "<font color=\'#FF6B6B\'>Enable Shovel</font>",
+                Default = Y.auto_shovel_fruits,
+                Tooltip =
+                "Permanently removes fruits matching all configured filters.",
+                Callback = function(G)
+                    Y.auto_shovel_fruits = G == true
+                    if not G then d.ShovelFruits.CleanupTool() end
+                    u.Save.SaveData()
+                end
+            })
+    end
+end
+J.AutoUi = function()
+    local G = j:AddTab({ Name = "Seed Placer", Description = "Places selected seeds", Icon = "sprout" })
+    local V = G:AddLeftGroupbox("Seed Placement", "sprout")
+    local y = G:AddRightGroupbox("Seed Target Overrides", "list-plus")
+    if y then
+        local G = ""
+        local V = math.max(math.floor(tonumber(Y.seed_place_default_target) or 10), 1)
+        local Z = false
+        local j = {}
+        local i = 0
+        local c
+        local T
+        y:AddLabel({ Text = "\240\159\146\161 Set a different planting target for individual seeds.", DoesWrap = true })
+        local function q()
+            for G, V in ipairs(j) do if V.Holder and typeof(V.Holder) == "Instance" then V.Holder:Destroy() end end
+            table.clear(j)
+            if y.Resize then y:Resize() end
+        end
+        local function g()
+            local V = d.Seeder.GetOverrideTarget(G)
+            if V ~= nil then return V end
+            return math.max(math.floor(tonumber(Y.seed_place_default_target) or 10), 1)
+        end
+        local function E()
+            if G == "" then return end
+            V = g()
+            Z = true
+            if c then
+                c:SetValue(tostring(V))
+                c:SetText(string.format("\240\159\142\175 Target Amount: <font color=\'#7CFC00\'>%d</font>", V))
+            end
+            if T then T:SetValue(d.Seeder.GetOverrideTarget(G) ~= nil) end
+            Z = false
+        end
+        local a
+        a = function()
+            q()
+            i += 1
+            local V = {}
+            if type(Y.seed_place_overrides) == "table" then
+                for G in pairs(Y.seed_place_overrides) do
+                    if d.Seeder.GetOverrideTarget(G) ~= nil then
+                        table.insert(V, G)
+                    end
+                end
+            end
+            table.sort(V)
+            if #V == 0 then
+                local G = y:AddLabel({ Text = "<font color=\'#888888\'>No active seed overrides</font>", DoesWrap = true })
+                table.insert(j, G)
+            else
+                for V, Z in ipairs(V) do
+                    local c = d.Seeder.GetOverrideTarget(Z)
+                    local J
+                    J = y:AddToggle(string.format("seed_active_override_%d_%d", i, V),
+                        {
+                            Text = string.format("\240\159\140\177 %s <font color=\'#7CFC00\'>Target: %d</font>", Z, c),
+                            Default = true,
+                            Tooltip =
+                            "Disable this seed override.",
+                            Callback = function(V)
+                                if V then return end
+                                d.Seeder.RemoveOverrideTarget(Z)
+                                u.Save.SaveDataSync()
+                                if G == Z then E() end
+                                task.defer(a)
+                            end
+                        })
+                    table.insert(j, J)
+                end
+            end
+            if y.Resize then y:Resize() end
+        end
+        local H
+        H = y:AddValueDropdown("seed_placer_override_seed",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\140\177 Select Seed",
+                Tooltip = "Select a seed to configure its target.",
+                Changed = function(V)
+                    if type(V) ~= "string" or V == "" then return end
+                    G = V
+                    E()
+                end
+            })
+        H:SetValues(d.SeedData.GetSeedDataListDropDown())
+        c = y:AddInput("seed_placer_override_target",
+            {
+                Text = "\240\159\142\175 Target Amount",
+                Default = tostring(V),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Enter target amount",
+                Tooltip = "Sets how many of this seed should remain planted.",
+                Callback = function(y)
+                    if Z then return end
+                    if G == "" then
+                        J.Notify("Select a seed first", 3)
+                        return
+                    end
+                    local j = l(y)
+                    if not j or j <= 0 then
+                        J.Notify("Target must be above 0", 3)
+                        E()
+                        return
+                    end
+                    V = j
+                    c:SetText(string.format("\240\159\142\175 Target Amount: <font color=\'#7CFC00\'>%d</font>", V))
+                    if d.Seeder.GetOverrideTarget(G) ~= nil then
+                        d.Seeder.SetOverrideTarget(G, V)
+                        u.Save.SaveDataSync()
+                        a()
+                    end
+                end
+            })
+        T = y:AddToggle("seed_placer_enable_selected_override",
+            {
+                Text = "\240\159\146\165 Enable Override",
+                Default = false,
+                Tooltip =
+                "Use the custom target for the selected seed.",
+                Callback = function(y)
+                    if Z then return end
+                    if G == "" then
+                        Z = true
+                        T:SetValue(false)
+                        Z = false
+                        J.Notify("Select a seed first", 3)
+                        return
+                    end
+                    if y then
+                        if not d.Seeder.SetOverrideTarget(G, V) then
+                            Z = true
+                            T:SetValue(false)
+                            Z = false
+                            J.Notify("Failed to enable override", 3)
+                            return
+                        end
+                    else
+                        d.Seeder.RemoveOverrideTarget(G)
+                    end
+                    u.Save.SaveDataSync()
+                    E()
+                    a()
+                end
+            })
+        y:AddDivider()
+        y:AddLabel({ Text = "= <font color=\'#7CFC00\'>Active Seed Overrides</font> =", DoesWrap = true })
+        a()
+    end
+    if V then
+        local G
+        G = V:AddValueDropdown("seed_placer_selected_seeds",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Text = "\240\159\140\177 Seeds to Plant",
+                Tooltip =
+                "Only selected seeds will be planted.",
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Changed = function(
+                    G)
+                    if type(G) ~= "table" then return end
+                    Y.allowed_seedsplace = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.SeedData.GetSeedDataListDropDown())
+        G:SetValue(Y.allowed_seedsplace)
+        local y = V:AddButton({
+            Text = "\226\156\133 All",
+            Tooltip = "Selects every seed.",
+            Func = function()
+                Y.allowed_seedsplace = d.Seeder.GetAllSeedSelection()
+                G:SetValue(Y.allowed_seedsplace)
+                u.Save.SaveDataSync()
+            end
+        })
+        y:AddButton({
+            Text = "\240\159\167\185 Clear",
+            Tooltip = "Clears the selected seeds.",
+            Func = function()
+                Y.allowed_seedsplace = {}
+                G:SetValue({})
+                u.Save.SaveDataSync()
+            end
+        })
+        V:AddDivider()
+        local Z
+        local j = "\240\159\142\175 Target Plants"
+        Z = V:AddInput("seed_placer_default_target",
+            {
+                Text = j,
+                Default = tostring(Y.seed_place_default_target),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Plants per selected seed",
+                Tooltip = "Plants each selected seed until this amount is on your farm.",
+                Callback = function(
+                    G)
+                    local V = l(G)
+                    if not V or V <= 0 then
+                        J.Notify("Target must be a whole number above 0", 3)
+                        Z:SetValue(tostring(Y.seed_place_default_target))
+                        return
+                    end
+                    Y.seed_place_default_target = V
+                    u.Save.SaveDataSync()
+                    Z:SetText("\226\156\133 <font color=\'#00FF00\'>Target Updated</font>")
+                    task.delay(1.5, function() if Z then Z:SetText(j) end end)
+                end
+            })
+        local i
+        local c = "\240\159\140\179 Maximum Garden Plants"
+        i = V:AddInput("seed_placer_max_garden_plants",
+            {
+                Text = c,
+                Default = tostring(Y.seed_place_max_garden_plants),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Maximum plants in garden",
+                Tooltip = "Stops placing seeds when the garden reaches this amount.",
+                Callback = function(
+                    G)
+                    local V = l(G)
+                    if not V or V < 0 then
+                        J.Notify("Maximum plants must be 0 or above", 3)
+                        i:SetValue(tostring(Y.seed_place_max_garden_plants))
+                        return
+                    end
+                    Y.seed_place_max_garden_plants = V
+                    u.Save.SaveDataSync()
+                    i:SetText("\226\156\133 <font color=\'#00FF00\'>Garden Limit Updated</font>")
+                    task.delay(1.5, function() if i then i:SetText(c) end end)
+                end
+            })
+        local T
+        local q = "\226\154\161 Delay Between Placements"
+        T = V:AddInput("seed_placer_delay",
+            {
+                Text = q,
+                Default = tostring(Y.seed_place_delay),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Example: 0.3",
+                Tooltip = "Lower values place seeds faster. Minimum 0.05 seconds.",
+                Callback = function(G)
+                    local V = B(G)
+                    if not V or V < .05 then
+                        J.Notify("Delay must be 0.05 seconds or more", 3)
+                        T:SetValue(tostring(Y.seed_place_delay))
+                        return
+                    end
+                    Y.seed_place_delay = V
+                    u.Save.SaveDataSync()
+                    T:SetText("\226\156\133 <font color=\'#00FF00\'>Delay Updated</font>")
+                    task.delay(1.5, function() if T then T:SetText(q) end end)
+                end
+            })
+        V:AddDivider()
+        local g
+        g = V:AddDropdown("seed_placer_mode",
+            {
+                Values = { "Random", "Farm Middle", "Saved Position" },
+                Default = Y.seed_place_mode,
+                Multi = false,
+                Text =
+                "\240\159\147\141 Placement Mode",
+                Tooltip = "Choose where selected seeds will be planted.",
+                Callback = function(
+                    G)
+                    if type(G) ~= "string" or G == "" then return end
+                    Y.seed_place_mode = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        g:SetValue(Y.seed_place_mode)
+        local E = V:AddLabel({ Text = d.Seeder.GetSavedPositionText(), DoesWrap = true })
+        V:AddButton({
+            Text = "\240\159\147\140 Save Current Position",
+            Tooltip =
+            "Stand inside your farm where seeds should be planted.",
+            Func = function()
+                local G, V = d.Seeder.SaveCurrentPosition()
+                J.Notify(V, 3)
+                if G then
+                    Y.seed_place_mode = "Saved Position"
+                    g:SetValue("Saved Position")
+                    if E then E:SetText(d.Seeder.GetSavedPositionText()) end
+                    u.Save.SaveDataSync()
+                end
+            end
+        })
+        V:AddDivider()
+        V:AddToggle("seed_placer_wall_mode",
+            {
+                Text = "\240\159\167\177 Wall Mode",
+                Default = Y.seed_place_wall_mode,
+                Tooltip =
+                "Random mode starts around the outside of both plant areas and fills inward.",
+                Callback = function(G)
+                    Y.seed_place_wall_mode = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddDivider()
+        V:AddToggle("seed_placer_stack_mode",
+            {
+                Text = "\240\159\167\188 Layers Stack Mode",
+                Default = Y.seed_place_stack_mode,
+                Tooltip =
+                "Saved Position / Farm Middle modes places plants in closely stacked layers.",
+                Callback = function(G)
+                    Y.seed_place_stack_mode = G
+                    d.Seeder.StackIndex = 0
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddToggle("seed_placer_stack_modeunderground",
+            {
+                Text = "\240\159\145\189 Stack Underground",
+                Default = Y.seed_place_stack_mode_underground,
+                Tooltip =
+                "Saved Position / Farm Middle mode Will stack Underground",
+                Callback = function(G)
+                    Y.seed_place_stack_mode_underground = G
+                    d.Seeder.StackIndex = 0
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddDivider()
+        V:AddToggle("enable_seed_placer",
+            {
+                Text = "\240\159\140\177 Enable Seed Placer",
+                Default = Y.auto_seedplace,
+                Tooltip =
+                "Continuously plants selected seeds up to their target amount.",
+                Callback = function(G)
+                    Y.auto_seedplace = G
+                    if not G then d.Seeder.ClearStatus() end
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+end
+J.PetUi = function()
+    local G = j:AddTab({ Name = "Pet Snipe " .. J.GetProLabel(), Description = "Buy pets on the farm.", Icon = "store" })
+    local V = G:AddLeftGroupbox("Pet Finder Premium", "paw-print")
+    local y = G:AddRightGroupbox("Pet Farm Return", "map-pinned")
+    local Z = G:AddRightGroupbox("Pet Buy List", "list-plus")
+    local i = G:AddLeftGroupbox("Last Purchases", "history")
+    if Z then
+        local G = ""
+        local V = 1
+        local y = {}
+        local j = {}
+        local i = false
+        local c = {}
+        local T = 0
+        local q
+        local g
+        local E
+        local a
+        local H
+        if not J.GetCheckIfPro() then Z:AddLabel({ Text = J.GetProMessage(), DoesWrap = true }) end
+        Z:AddLabel({ Text = "\240\159\146\161 Empty size or variant selection means any.", DoesWrap = true })
+        local function r()
+            for G, V in ipairs(c) do if V.Holder and typeof(V.Holder) == "Instance" then V.Holder:Destroy() end end
+            table.clear(c)
+            if Z.Resize then Z:Resize() end
+        end
+        local function Y(G)
+            if type(G) ~= "table" or next(G) == nil then return "Any" end
+            local V = {}
+            for G, y in pairs(G) do if y == true then table.insert(V, G) end end
+            table.sort(V)
+            return #V > 0 and table.concat(V, ", ") or "Any"
+        end
+        local function e()
+            if i or G == "" or not d.PetFinderPremium.HasRule(G) then return end
+            local Z = d.PetFinderPremium.GetRule(G)
+            d.PetFinderPremium.SetRule(G, V, y, j, Z and Z.enabled)
+            u.Save.SaveDataSync()
+        end
+        local function s()
+            if G == "" then return end
+            local Z = d.PetFinderPremium.GetRule(G)
+            V = Z and Z.target or 1
+            y = Z and Z.sizes or {}
+            j = Z and Z.variants or {}
+            i = true
+            g:SetValues(d.PetFinderPremium.GetSizeValues())
+            g:SetValue(y)
+            E:SetValues(d.PetFinderPremium.GetVariantValues())
+            E:SetValue(j)
+            a:SetValue(tostring(V))
+            a:SetText(string.format("\240\159\142\175 Target Amount: <font color=\'#7CFC00\'>%d</font>", V))
+            H:SetValue(Z and Z.enabled or false)
+            i = false
+        end
+        local N
+        N = function()
+            r()
+            T += 1
+            local V = d.PetFinderPremium.GetActiveRuleNames()
+            if #V == 0 then
+                local G = Z:AddLabel({ Text = "<font color=\'#888888\'>No active pet buy rules</font>", DoesWrap = true })
+                table.insert(c, G)
+            else
+                for V, y in ipairs(V) do
+                    local j = d.PetFinderPremium.GetRule(y)
+                    local i = j and d.PetFinderPremium.CountOwnedForRule(y, j) or 0
+                    local J
+                    J = Z:AddToggle(string.format("pet_finder_active_rule_%d_%d", T, V),
+                        {
+                            Text = string.format(
+                                "\240\159\144\190 %s <font color=\'#7CFC00\'>%d/%d</font>\n<font color=\'#CFCFCF\'>Sizes: %s | Variants: %s</font>",
+                                d.PetFinderPremium.GetDisplayName(y), i, j.target, Y(j.sizes), Y(j.variants)),
+                            Default = true,
+                            Tooltip =
+                            "Disable this pet buy rule.",
+                            Callback = function(V)
+                                if V then return end
+                                d.PetFinderPremium.SetRuleEnabled(y, false)
+                                u.Save.SaveDataSync()
+                                if G == y then s() end
+                                task.defer(N)
+                            end
+                        })
+                    table.insert(c, J)
+                end
+            end
+            if Z.Resize then Z:Resize() end
+        end
+        q = Z:AddValueDropdown("pet_finder_premium_pet_ui",
+            {
+                Values = {},
+                Default = "",
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\144\190 Select Pet",
+                Tooltip = "Select a pet to add or edit.",
+                Changed = function(V)
+                    if type(V) ~= "string" or V == "" then return end
+                    G = V
+                    s()
+                end
+            })
+        q:SetValues(d.PetFinderPremium.GetPetDropdown())
+        g = Z:AddValueDropdown("pet_finder_premium_sizes_ui",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\147\143 Pet Sizes",
+                Tooltip = "Leave empty to buy any size.",
+                Changed = function(G)
+                    if i or type(G) ~= "table" then return end
+                    y = G
+                    e()
+                    N()
+                end
+            })
+        g:SetValues(d.PetFinderPremium.GetSizeValues())
+        E = Z:AddValueDropdown("pet_finder_premium_variants_ui",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\140\136 Pet Variants",
+                Tooltip = "Leave empty to buy Normal or Rainbow pets.",
+                Changed = function(
+                    G)
+                    if i or type(G) ~= "table" then return end
+                    j = G
+                    e()
+                    N()
+                end
+            })
+        E:SetValues(d.PetFinderPremium.GetVariantValues())
+        a = Z:AddInput("pet_finder_premium_target_ui",
+            {
+                Text = "\240\159\142\175 Target Amount",
+                Default = "999",
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Owned target amount",
+                Tooltip = "Stops buying this pet when the matching inventory amount is reached.",
+                Callback = function(
+                    y)
+                    if i then return end
+                    if G == "" then
+                        J.Notify("Select a pet first", 3)
+                        return
+                    end
+                    local Z = l(y)
+                    if not Z or Z <= 0 then
+                        J.Notify("Target must be above 0", 3)
+                        s()
+                        return
+                    end
+                    V = Z
+                    a:SetText(string.format("\240\159\142\175 Target Amount: <font color=\'#7CFC00\'>%d</font>", V))
+                    e()
+                    N()
+                end
+            })
+        H = Z:AddToggle("pet_finder_premium_rule_enabled_ui",
+            {
+                Text = "\226\158\149 Enable Buy Rule",
+                Default = false,
+                Tooltip =
+                "Adds the selected pet settings to the active buy list.",
+                Callback = function(Z)
+                    if i then return end
+                    if G == "" then
+                        i = true
+                        H:SetValue(false)
+                        i = false
+                        J.Notify("Select a pet first", 3)
+                        return
+                    end
+                    if Z then
+                        if not d.PetFinderPremium.SetRule(G, V, y, j, true) then
+                            i = true
+                            H:SetValue(false)
+                            i = false
+                            J.Notify("Failed to enable pet rule", 3)
+                            return
+                        end
+                    else
+                        d.PetFinderPremium.SetRuleEnabled(G, false)
+                    end
+                    u.Save.SaveDataSync()
+                    s()
+                    N()
+                end
+            })
+        Z:AddDivider()
+        Z:AddLabel({ Text = "= <font color=\'#7CFC00\'>Active Pet Buy List</font> =", DoesWrap = true })
+        J.PetFinderPremiumUi.RefreshRules = N
+        J.PetFinderPremiumUi.RefreshValues = function()
+            i = true
+            g:SetValues(d.PetFinderPremium.GetSizeValues())
+            E:SetValues(d.PetFinderPremium.GetVariantValues())
+            g:SetValue(y)
+            E:SetValue(j)
+            i = false
+        end
+        N()
+    end
+    if i then
+        local G = {}
+        local function V()
+            for G, V in ipairs(G) do if V.Holder and typeof(V.Holder) == "Instance" then V.Holder:Destroy() end end
+            table.clear(G)
+            if i.Resize then i:Resize() end
+        end
+        local function y()
+            V()
+            local y = type(Y.pet_finder_purchase_log) == "table" and Y.pet_finder_purchase_log or {}
+            if #y == 0 then
+                local V = i:AddLabel({ Text = "<font color=\'#888888\'>No pet purchases recorded</font>", DoesWrap = true })
+                table.insert(G, V)
+            else
+                for V, y in ipairs(y) do
+                    local Z = tonumber(y.purchased_at) and os.date("%d/%m %H:%M", y.purchased_at) or "Unknown time"
+                    local j = i:AddLabel({
+                        Text = string.format(
+                            "\240\159\144\190 %s %s %s | <font color=\'#7CFC00\'>%s</font> | %s",
+                            tostring(y.size or "Normal"),
+                            tostring(y.variant or "Normal"), tostring(y.display_name or y.pet or "Unknown"),
+                            c.formatShecklesNumber(y.price), Z),
+                        DoesWrap = true
+                    })
+                    table.insert(G, j)
+                end
+            end
+            if i.Resize then i:Resize() end
+        end
+        i:AddButton({
+            Text = "\240\159\167\185 Clear Purchase Log",
+            Tooltip = "Clears the saved pet purchase history.",
+            Func = function()
+                Y.pet_finder_purchase_log = {}
+                u.Save.SaveDataSync()
+                y()
+            end
+        })
+        J.PetFinderPremiumUi.RefreshLog = y
+        y()
+    end
+    if V then
+        V:AddLabel({ Text = "\240\159\144\190 Watches new wild pets and buys pets that match your enabled rules.", DoesWrap = true })
+        local function G()
+            return string.format(
+                "\226\143\177\239\184\143 Hop Timer <font color=\'#3CB371\'>(%dm)</font>",
+                d.PetFinderPremium.GetHopMinutes())
+        end
+        local y
+        y = V:AddInput("pet_finder_premium_hop_minutes_ui",
+            {
+                Text = G(),
+                Default = tostring(Y.pet_finder_hop_minutes),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Minimum 1 minute",
+                Tooltip = "How long to watch the current server before hopping.",
+                Callback = function(V)
+                    local Z = l(V)
+                    if not Z or Z < 1 then
+                        J.Notify("Hop timer must be 1 minute or more", 3)
+                        y:SetValue(tostring(Y.pet_finder_hop_minutes))
+                        return
+                    end
+                    Y.pet_finder_hop_minutes = Z
+                    y:SetText(G())
+                    d.PetFinderPremium.ResetHopTimer()
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddToggle("pet_finder_premium_auto_hop_ui",
+            {
+                Text = "\240\159\154\128 Auto Hop Server",
+                Default = Y.pet_finder_auto_hop,
+                Tooltip =
+                "Hops after the selected watch timer when no matching pet is ready.",
+                Callback = function(G)
+                    Y.pet_finder_auto_hop = G
+                    d.PetFinderPremium.ResetHopTimer()
+                    u.Save.SaveDataSync()
+                end
+            })
+        local Z
+        Z = V:AddToggle("pet_finder_premium_enabled_ui",
+            {
+                Text = "\240\159\144\190 Enable Pet Finder Premium",
+                Default = Y.pet_finder_enabled,
+                Tooltip =
+                "Automatically buys pets from your enabled buy list.",
+                DisabledTooltip = J.GetProMessage(),
+                Callback = function(
+                    G)
+                    Y.pet_finder_enabled = G
+                    if G then
+                        d.PetFinderPremium.ResetHopTimer()
+                        d.PetFinderPremium.FullScan()
+                    else
+                        d.PetFinderPremium.ClearStatus()
+                        d.Teleport.UnlockTeleport(J.TeleportLockNames.PetFinderPremium)
+                    end
+                    u.Save.SaveDataSync()
+                end
+            })
+        Z:SetDisabled(not J.GetCheckIfPro())
+    end
+    if y then
+        y:AddLabel({ Text = "\240\159\144\190 Returns you to the farm centre when you are too far away.", DoesWrap = true })
+        local function G()
+            return string.format(
+                "\226\143\177\239\184\143 Return Timer <font color=\'#3CB371\'>(%ss)</font>", d.PetFarmReturn.GetTimer())
+        end
+        local V
+        V = y:AddInput("pet_return_farm_timer_ui",
+            {
+                Text = G(),
+                Default = tostring(Y.pet_return_farm_timer),
+                Numeric = true,
+                AllowEmpty = true,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Minimum 3 seconds",
+                Tooltip = "How often to check if you are too far from the farm.",
+                Callback = function(y)
+                    local Z = l(y)
+                    if not Z or Z < 3 then
+                        J.Notify("Timer must be 3 seconds or more", 3)
+                        V:SetValue(tostring(Y.pet_return_farm_timer))
+                        return
+                    end
+                    Y.pet_return_farm_timer = Z
+                    V:SetText(G())
+                    d.PetFarmReturn.ResetTimer()
+                    u.Save.SaveDataSync()
+                end
+            })
+        y:AddToggle("pet_return_farm_enabled_ui",
+            {
+                Text = "\240\159\143\161 Enable Farm Return",
+                Default = Y.pet_return_farm,
+                Tooltip =
+                "Returns you to the farm centre when you are more than 20 studs away.",
+                Callback = function(G)
+                    Y.pet_return_farm = G
+                    if G then d.PetFarmReturn.ResetTimer() else J.PetFarmStatusText = "" end
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+end
+J.CollectUi = function()
+    local G = j:AddTab({ Name = "Fruit Collect", Description = "Fruit Collection", Icon = "store" })
+    local V = G:AddLeftGroupbox("Fruit Collector", "badge-dollar-sign")
+    if V then
+        local G
+        G = V:AddValueDropdown("dd_collect_frutisx22",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Text = "\240\159\140\177 Collect Fruits",
+                Tooltip =
+                "Selected Fruits will be collected if they are ready.",
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Changed = function(
+                    G)
+                    if not G then return end
+                    Y.collect_fruit_list = G
+                    d.FruitCollect.ResetBucket()
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.SeedData.GetSeedDataListDropDown())
+        G:SetValue(Y.collect_fruit_list)
+        V:AddToggle("collection_teleportcollect",
+            {
+                Text = "<font color=\'#FFFFFF\'>\240\159\147\161 Auto Teleport</font>",
+                Default = Y.collection_teleport,
+                Tooltip =
+                "Teleports back to your garden if you are out of collection range.",
+                Callback = function(G)
+                    Y.collection_teleport = G
+                    u.Save.SaveData()
+                end
+            })
+        V:AddToggle("enablefruitcollector",
+            {
+                Text = "<font color=\'#CF02B0\'>Enable Fruit Collector</font>",
+                Default = Y.auto_collect_fruit_enabled,
+                Tooltip =
+                "Collects frutis and teleports you to the farm.",
+                Callback = function(G)
+                    Y.auto_collect_fruit_enabled = G
+                    d.FruitCollect.ResetBucket()
+                    u.Save.SaveData()
+                end
+            })
+    end
+end
+J.Shopui = function()
+    local G = j:AddTab({ Name = "Shop", Description = "Shop", Icon = "store" })
+    local V = G:AddLeftGroupbox("Seed Shop", "badge-dollar-sign")
+    local y = G:AddLeftGroupbox("Gear Shop", "badge-dollar-sign")
+    if y then
+        y:AddLabel({
+            Text =
+            "\226\132\185\239\184\143 Auto buys all gear. If you don\'t want to buy a gear. Select it in the list below.",
+            DoesWrap = true
+        })
+        local G
+        G = y:AddValueDropdown("avoidgearshopbuy1",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Text = "\226\154\160\239\184\143 Don\'t Buy Selected",
+                Tooltip =
+                "Selected seeds will not be purchased.",
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Changed = function(
+                    G)
+                    if not G then return end
+                    Y.gear_shop_avoid = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.GearData.GetGearShopDropDown())
+        G:SetValue(Y.gear_shop_avoid)
+        y:AddToggle("dd_gearshop-enabled",
+            {
+                Text = "<font color=\'#FFFFFF\'>\240\159\148\171 Enable Gear Shop</font>",
+                Default = Y.enabled_gear_shop,
+                Tooltip =
+                "When enabled, buys from the gear shop.",
+                Callback = function(G)
+                    Y.enabled_gear_shop = G
+                    u.Save.SaveData()
+                end
+            })
+    end
+    if V then
+        V:AddLabel({
+            Text =
+            "\226\132\185\239\184\143 Auto buys all seeds. If you don\'t want to buy a seed. Select it in the list below.",
+            DoesWrap = true
+        })
+        local G
+        G = V:AddValueDropdown("avoidseeds_seedshop",
+            {
+                Values = {},
+                Default = {},
+                Multi = true,
+                Text = "\226\154\160\239\184\143 Don\'t Buy Selected",
+                Tooltip =
+                "Selected seeds will not be purchased.",
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Changed = function(
+                    G)
+                    if not G then return end
+                    Y.seed_avoid = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        G:SetValues(d.SeedData.GetSeedShopDropDown())
+        G:SetValue(Y.seed_avoid)
+        V:AddToggle("seedshopautobuyenabled",
+            {
+                Text = "<font color=\'#FFFFFF\'>\240\159\140\177 Enable Seed Shop</font>",
+                Default = Y.enabled_seed_shop,
+                Tooltip =
+                "If enabled buys the seed shop.",
+                Callback = function(G)
+                    Y.enabled_seed_shop = G
+                    u.Save.SaveData()
+                end
+            })
+    end
+end
+J.SellingUi = function()
+    local G = j:AddTab({ Name = "Sell Fruits", Description = "Selling", Icon = "store" })
+    local V = G:AddLeftGroupbox("Auto Sell", "badge-dollar-sign")
+    if V then
+        V:AddToggle("auto_use_daily_deal_ui",
+            {
+                Text = "\226\173\144 Save & Use Daily Deal",
+                Default = Y.auto_use_daily_deal,
+                Tooltip =
+                "Saves the Daily Deal until your fruit backpack is full.",
+                Callback = function(G)
+                    Y.auto_use_daily_deal = G
+                    d.SellManager.DailyDealNextCheckAt = 0
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddToggle("sell_when_backpack_full_ui",
+            {
+                Text = "\240\159\142\146 Sell When Backpack Is Full",
+                Default = Y.sell_when_backpack_full,
+                Tooltip =
+                "Automatically sells all fruits when your backpack is full.",
+                Callback = function(G)
+                    Y.sell_when_backpack_full = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddToggle("autopsellfruitsturbo",
+            {
+                Text = "<font color=\'#CF02B0\'>\226\154\161 Turbo Sell</font>",
+                Default = Y.turbo_sell,
+                Tooltip =
+                "Sells really fast",
+                Callback = function(G)
+                    Y.turbo_sell = G
+                    u.Save.SaveData()
+                end
+            })
+        V:AddToggle("autopsellfruits",
+            {
+                Text = "<font color=\'#CF02B0\'>\240\159\146\176 Enable Auto Sell</font>",
+                Default = Y
+                    .auto_sell_sellallinventory,
+                Tooltip = "Sells all your fruits.",
+                Callback = function(G)
+                    Y.auto_sell_sellallinventory = G
+                    u.Save.SaveData()
+                end
+            })
+    end
+end
+c.is_dex_loaded = false
+c.LoadDexTool = function()
+    if c.is_dex_loaded then return end
+    local G, V = pcall(function()
+        (loadstring(game:HttpGet("https://github.com/BOXLEGENDARY/Dex/releases/latest/download/out.lua")))()
+        c.is_dex_loaded = true
     end)
-
-    Library:GiveSignal(UserInputService.InputBegan:Connect(function(Input: InputObject)
-        if UserInputService:GetFocusedTextBox() then
-            return
-        end
-
-        if
-            (
-                typeof(Library.ToggleKeybind) == "table"
-                and Library.ToggleKeybind.Type == "KeyPicker"
-                and Input.KeyCode.Name == Library.ToggleKeybind.Value
-            ) or Input.KeyCode == Library.ToggleKeybind
-        then
-            Library.Toggle()
-        end
-    end))
-
-    Library:GiveSignal(UserInputService.WindowFocused:Connect(function()
-        Library.IsRobloxFocused = true
-    end))
-    Library:GiveSignal(UserInputService.WindowFocusReleased:Connect(function()
-        Library.IsRobloxFocused = false
-    end))
-
-    return Window
 end
-
-local function OnPlayerChange()
-    local PlayerList, ExcludedPlayerList = GetPlayers(), GetPlayers(true)
-
-    for _, Dropdown in pairs(Options) do
-        if Dropdown.Type == "Dropdown" and Dropdown.SpecialType == "Player" then
-            Dropdown:SetValues(Dropdown.ExcludeLocalPlayer and ExcludedPlayerList or PlayerList)
-        end
+c.is_spy_loaded = false
+c.LoadSpyTool = function()
+    if c.is_spy_loaded then return end
+    local G, V = pcall(function()
+        (loadstring(game:HttpGet("https://github.com/notpoiu/cobalt/releases/latest/download/Cobalt.luau")))()
+        c.is_spy_loaded = true
+    end)
+end
+J.WebhooksUi = function()
+    local G = j:AddTab({ Name = "Webhooks", Description = "Webhook notifications", Icon = "webhook" })
+    local V = G:AddRightGroupbox("Notifications", "bell-ring")
+    local y = G:AddLeftGroupbox("Webhook URL", "link")
+    if V then
+        V:AddToggle("webhook_pet_buy_notifications",
+            {
+                Text = "\240\159\144\190 Pet Purchases",
+                Default = Y.webhook_pet_buys,
+                Tooltip =
+                "Send a notification after a pet purchase is confirmed.",
+                Callback = function(G)
+                    Y.webhook_pet_buys = G
+                    if not G then
+                        if type(J.PetFinder_WebhookData) == "table" then table.clear(J.PetFinder_WebhookData) end
+                        d.Webhooks.ClearStatus()
+                    end
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddToggle("webhook_mail_manual_notifications",
+            {
+                Text = "\240\159\147\166 Manual Orders Completed",
+                Default = Y.webhook_mail_manual,
+                Tooltip =
+                "Send a notification when a manual order is fully delivered.",
+                Callback = function(G)
+                    Y.webhook_mail_manual = G
+                    if not G then d.Webhooks.RemoveMailType("manual") end
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddToggle("webhook_mail_auto_notifications",
+            {
+                Text = "\226\154\153\239\184\143 Automatic Mail Sent",
+                Default = Y.webhook_mail_auto,
+                Tooltip =
+                "Send a notification after an automatic mail cycle completes.",
+                Callback = function(G)
+                    Y.webhook_mail_auto = G
+                    if not G then d.Webhooks.RemoveMailType("automatic") end
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddToggle("webhook_mail_claim_notifications",
+            {
+                Text = "\240\159\147\165 Incoming Mail Claimed",
+                Default = Y.webhook_mail_claims,
+                Tooltip =
+                "Send a notification after incoming mail is claimed.",
+                Callback = function(G)
+                    Y.webhook_mail_claims = G
+                    if not G then d.Webhooks.RemoveMailType("claim") end
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+    if y then
+        y:AddLabel({ Text = "\240\159\148\151 Notifications will be posted to this URL.", DoesWrap = true })
+        local G
+        G = y:AddInput("webhook_url_input",
+            {
+                Text = "\240\159\148\151 Webhook URL",
+                Default = tostring(Y.webhook_url or ""),
+                Numeric = false,
+                AllowEmpty = true,
+                Finished = false,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "https://your-webhook-url",
+                Tooltip = "Enter the URL that will receive notifications.",
+                Callback = function(
+                    V)
+                    local y = (tostring(V or "")):match("^%s*(.-)%s*$") or ""
+                    if y ~= "" and not d.Webhooks.IsValidUrl(y) then
+                        J.Notify("Enter a valid HTTP or HTTPS webhook URL", 3)
+                        G:SetValue(tostring(Y.webhook_url or ""))
+                        return
+                    end
+                    Y.webhook_url = y
+                    u.Save.SaveDataSync()
+                    if y == "" then J.Notify("Webhook URL cleared", 2) else J.Notify("Webhook URL saved", 2) end
+                end
+            })
+        y:AddToggle("webhook_enabled",
+            {
+                Text = "Enable Webhooks",
+                Default = Y.webhook_enabled,
+                Tooltip =
+                "Enable or disable all webhook notifications",
+                Callback = function(G)
+                    Y.webhook_enabled = G
+                    if not G then
+                        table.clear(J.PetFinder_WebhookData)
+                        table.clear(J.Mail_WebhookData)
+                        d.Webhooks.ClearStatus()
+                    end
+                    u.Save.SaveDataSync()
+                end
+            })
     end
 end
-local function OnTeamChange()
-    local TeamList = GetTeams()
-
-    for _, Dropdown in pairs(Options) do
-        if Dropdown.Type == "Dropdown" and Dropdown.SpecialType == "Team" then
-            Dropdown:SetValues(TeamList)
-        end
+J.SettingsUi = function()
+    local G = j:AddTab({ Name = "Settings", Description = "Settings", Icon = "settings" })
+    local V = G:AddLeftGroupbox("Dev Tools", "align-center-horizontal")
+    local Z = G:AddRightGroupbox("<uc>Data</uc>", "blocks")
+    local i = G:AddLeftGroupbox("Required", "shield-check")
+    local T = G:AddLeftGroupbox("Performance", "gauge")
+    local q = G:AddRightGroupbox("Player UI", "blocks")
+    if q then
+        q:AddToggle("hideplayerstats",
+            {
+                Text = "\226\132\185\239\184\143 Hide Exo Stats",
+                Default = Y.hide_log_ui,
+                Tooltip =
+                "Hides the stats info for systems.",
+                Callback = function(G)
+                    Y.hide_log_ui = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        q:AddToggle("hide_player_ui_toggle",
+            {
+                Text = "\240\159\145\129\239\184\143 Hide Plot & Teleport UI",
+                Default = Y.hide_player_ui,
+                Tooltip =
+                "Hides the plot panels and teleport buttons.",
+                Callback = function(G)
+                    Y.hide_player_ui = G
+                    d.PlayerUI.Apply()
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+    if T then
+        T:AddToggle("hide_plant_models_ui",
+            {
+                Text = "Hide Plant Models",
+                Default = Y.hide_plant_models,
+                Tooltip =
+                "Hides plant models to reduce game lag. Automation will continue working.",
+                Callback = function(G)
+                    Y.hide_plant_models = G
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+    if i then
+        i:AddToggle("auto_idle_touch_ui",
+            {
+                Text = "\240\159\145\134 Idle Activity",
+                Default = Y.auto_idle_touch,
+                Tooltip =
+                "Simulates activity after three minutes without user input.",
+                Callback = function(G)
+                    Y.auto_idle_touch = G
+                    J.ExoAutoTouch.ResetTimer()
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
+    if Z then
+        local G = nil
+        local V = ""
+        local j = Z:AddDropdown("ddDatalistsdsx1",
+            {
+                Values = {},
+                Default = {},
+                Multi = false,
+                Searchable = true,
+                MaxVisibleDropdownItems = 10,
+                Text =
+                "\240\159\148\146 Select Key",
+                Tooltip = "Reads data based on key",
+                Callback = function(Z)
+                    if Z == nil then return end
+                    V = Z
+                    local j = d.DataReplica.GetData(Z)
+                    local i = y.HttpService:JSONEncode(j)
+                    if G then G:SetText(i) end
+                end
+            })
+        Z:AddButton({
+            Text = "Copy",
+            Func = function()
+                if V == "" or V == nil then return end
+                local G = d.DataReplica.GetData(V)
+                if G then
+                    local Z = y.HttpService:JSONEncode(G)
+                    local j = string.format("%s \n%s", V, Z)
+                    c.CopyToClipBoard(j)
+                end
+            end
+        })
+        G = Z:AddLabel({ Text = "--", DoesWrap = true })
+        j:SetValues(d.DataReplica.AllBigDataKeys)
+    end
+    if V then
+        local G = V:AddButton({ Text = "DEX", Func = function() c.LoadDexTool() end })
+        local y = V:AddButton({ Text = "SPY", Func = function() c.LoadSpyTool() end })
+        V:AddDivider()
+        V:AddDivider()
+        V:AddDivider()
     end
 end
+J.InitUi = function()
+    J.HomeDashboardUi()
+    J.PremiumUi()
+    J.MailUi()
+    J.PlantsUi()
+    J.AutoUi()
+    J.PetUi()
+    J.GardenItemsUi()
+    J.CollectUi()
+    J.SellingUi()
+    J.Shopui()
+    J.WebhooksUi()
+    J.SettingsUi()
+end
+if Z and j then J.InitUi() end
+d.Mail.MailLoopStart()
+d.PetFinderPremium.Start()
+task.spawn(function()
+    while true do
+        task.wait(3)
+        d.Webhooks.Loop()
+    end
+end)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        d.PetFarmReturn.Loop()
+    end
+end)
+task.spawn(function()
+    while true do
+        task.wait(5)
+        E.SeedShop.SeedBuyerLoop()
+        E.GearShop.GearShopLoop()
+    end
+end)
+task.spawn(function() while true do task.wait(3) end end)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if J.TrowelRunning then
+            d.Trowel.Loop()
+        else
+            d.WaterPlants.Loop()
+            d.SprinklerPlacer.Loop()
+            d.PlantShovel.LoopPlantShovel()
+            d.ShovelFruits.LoopShovelFruits()
+            d.Seeder.SeedPlaceLoop()
+        end
+    end
+end)
+task.spawn(function()
+    while true do
+        task.wait(.5)
+        local G = {}
+        if Y.auto_collect_fruit_enabled then
+            local V = d.FruitCollect.GetTextCurrentInventoryFruitStats()
+            table.insert(G, V)
+        end
+        if Y.auto_seedplace and J.SeedPlaceStatusText ~= "" then table.insert(G, J.SeedPlaceStatusText) end
+        if Y.auto_sell_sellallinventory and (type(J.SellStatusText) == "string" and J.SellStatusText ~= "") then
+            table
+                .insert(G, J.SellStatusText)
+        end
+        if Y.pet_finder_enabled and (type(J.PetFinderPremiumStatusText) == "string" and J.PetFinderPremiumStatusText ~= "") then
+            table.insert(G, J.PetFinderPremiumStatusText)
+        end
+        if d.Mail and type(d.Mail.RefreshManualUi) == "function" then d.Mail.RefreshManualUi() end
+        if ((J.MailManualRunning or Y.mail_auto_send_enabled or Y.mail_auto_accept)) and (type(J.MailStatusText) == "string" and J.MailStatusText ~= "") then
+            table.insert(G, J.MailStatusText)
+        end
+        if Y.auto_collect_fruit_enabled and not Y.collection_teleport then
+            if d.FruitCollect.IsFarFromGarden() then
+                local V = string.format(
+                    "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\226\143\184\239\184\143 [Out Of Garden]</font> <font color=\'%s\'> Fruit collector is paused.</font></stroke>",
+                    "#FF88FF")
+                table.insert(G, V)
+            end
+        end
+        if Y.auto_shovel_plants then
+            local V = J.PlantShovelStatusText
+            if type(V) == "string" and V ~= "" then table.insert(G, V) end
+        end
+        if Y.auto_shovel_fruits then
+            local V = J.ShovelStatusText
+            if type(V) == "string" and V ~= "" then table.insert(G, V) end
+        end
+        if Y.auto_water_plants and (type(J.WaterPlantStatusText) == "string" and J.WaterPlantStatusText ~= "") then
+            table
+                .insert(G, J.WaterPlantStatusText)
+        end
+        if Y.auto_sprinkler_place and J.SprinklerPlaceStatusText ~= "" then table.insert(G, J.SprinklerPlaceStatusText) end
+        if Y.pet_return_farm and J.PetFarmStatusText ~= "" then table.insert(G, J.PetFarmStatusText) end
+        if J.TrowelRunning and (type(J.TrowelStatusText) == "string" and J.TrowelStatusText ~= "") then
+            table.insert(G,
+                J.TrowelStatusText)
+        end
+        local V = d.Teleport.GetLockStatusText()
+        if V ~= "" then table.insert(G, V) end
+        if Y.webhook_enabled and (type(J.WebhookStatusText) == "string" and J.WebhookStatusText ~= "") then
+            table.insert(
+                G, J.WebhookStatusText)
+        end
+        if Y.hide_log_ui then table.clear(G) end
+        a.RealTimeStats.updateStatusList(G)
+    end
+end)
+J.IsHeadless = type(G.IsHeadless) == "function" and G.IsHeadless() == true
+J.HeadlessUI = {
+    Create = function()
+        if not J.IsHeadless or not y.PlayerGui then return end
+        local G = y.PlayerGui:FindFirstChild("ExoHeadlessGui")
+        if G then G:Destroy() end
+        local V = Instance.new("ScreenGui")
+        V.Name = "ExoHeadlessGui"
+        V.ResetOnSpawn = false
+        V.IgnoreGuiInset = true
+        V.DisplayOrder = 999999
+        V.Parent = y.PlayerGui
+        local Z = Instance.new("Frame")
+        Z.Name = "Main"
+        Z.AnchorPoint = Vector2.new(.5, 0)
+        Z.Position = UDim2.new(.5, 0, 0, 5)
+        Z.Size = UDim2.fromOffset(260, 34)
+        Z.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        Z.BorderSizePixel = 0
+        Z.Parent = V
+        local j = Instance.new("UICorner")
+        j.CornerRadius = UDim.new(0, 6)
+        j.Parent = Z
+        local i = Instance.new("TextLabel")
+        i.BackgroundTransparency = 1
+        i.Position = UDim2.fromOffset(10, 0)
+        i.Size = UDim2.new(1, -130, 1, 0)
+        i.Font = Enum.Font.GothamSemibold
+        i.Text = "EXOHUB HEADLESS"
+        i.TextColor3 = Color3.fromRGB(255, 255, 255)
+        i.TextSize = 13
+        i.TextXAlignment = Enum.TextXAlignment.Left
+        i.Parent = Z
+        local c = Instance.new("TextButton")
+        c.Position = UDim2.new(1, -115, 0, 4)
+        c.Size = UDim2.fromOffset(78, 26)
+        c.BackgroundColor3 = Color3.fromRGB(45, 100, 185)
+        c.BorderSizePixel = 0
+        c.Font = Enum.Font.GothamSemibold
+        c.Text = "Rejoin"
+        c.TextColor3 = Color3.fromRGB(255, 255, 255)
+        c.TextSize = 12
+        c.Parent = Z
+        local T = Instance.new("UICorner")
+        T.CornerRadius = UDim.new(0, 5)
+        T.Parent = c
+        local d = Instance.new("TextButton")
+        d.Position = UDim2.new(1, -32, 0, 4)
+        d.Size = UDim2.fromOffset(28, 26)
+        d.BackgroundColor3 = Color3.fromRGB(145, 45, 45)
+        d.BorderSizePixel = 0
+        d.Font = Enum.Font.GothamBold
+        d.Text = "\195\151"
+        d.TextColor3 = Color3.fromRGB(255, 255, 255)
+        d.TextSize = 16
+        d.Parent = Z
+        local u = Instance.new("UICorner")
+        u.CornerRadius = UDim.new(0, 5)
+        u.Parent = d
+        d.MouseButton1Click:Connect(function() V:Destroy() end)
+        c.MouseButton1Click:Connect(function()
+            if not c.Active then return end
+            c.Active = false
+            c.Text = "Joining..."
+            local G = pcall(function() y.TeleportService:Teleport(game.PlaceId, y.LocalPlayer) end)
+            if not G then
+                c.Text = "Failed"
+                task.wait(2)
+                if c.Parent then
+                    c.Text = "Rejoin"
+                    c.Active = true
+                end
+            end
+        end)
+    end
+}
+J.HeadlessUI.Create()
+J.ExoAutoTouch = {
+    Enabled = true,
+    Started = false,
+    Interval = 300,
+    InputHoldTime = .05,
+    TouchMargin = 20,
+    TouchId = 0,
+    IdleTime = 180,
+    LastInput =
+        os.clock(),
+    VirtualInputManager = game:GetService("VirtualInputManager"),
+    SendMobileActivity = function()
+        local G = workspace.CurrentCamera
+        if not G then return false end
+        local V = G.ViewportSize
+        local y = J.ExoAutoTouch.TouchMargin
+        local Z = y
+        local j = math.max(y, V.Y - y)
+        J.ExoAutoTouch.VirtualInputManager:SendTouchEvent(J.ExoAutoTouch.TouchId, Enum.UserInputState.Begin.Value, Z, j)
+        task.wait(J.ExoAutoTouch.InputHoldTime)
+        J.ExoAutoTouch.VirtualInputManager:SendTouchEvent(J.ExoAutoTouch.TouchId, Enum.UserInputState.End.Value, Z, j)
+        return true
+    end,
+    SendPCActivity = function()
+        local G = J.ExoAutoTouch.VirtualInputManager
+        local V = Enum.KeyCode.F15
+        G:SendKeyEvent(true, V, false, game)
+        task.wait(J.ExoAutoTouch.InputHoldTime)
+        G:SendKeyEvent(false, V, false, game)
+        return true
+    end,
+    SendConsoleActivity = function()
+        local G = J.ExoAutoTouch.VirtualInputManager
+        local V = 0
+        local y = Enum.KeyCode.ButtonL3
+        G:HandleGamepadButtonInput(V, y, Enum.UserInputState.Begin.Value)
+        task.wait(J.ExoAutoTouch.InputHoldTime)
+        G:HandleGamepadButtonInput(V, y, Enum.UserInputState.End.Value)
+        return true
+    end,
+    MarkActive = function()
+        if c.UserDevice.IsMobile() then return J.ExoAutoTouch.SendMobileActivity() end
+        if c.UserDevice.IsPC() then return J.ExoAutoTouch.SendPCActivity() end
+        return J.ExoAutoTouch.SendConsoleActivity()
+    end,
+    ResetTimer = function() J.ExoAutoTouch.LastInput = os.clock() end,
+    Start = function()
+        if J.ExoAutoTouch.Started then return end
+        J.ExoAutoTouch.Started = true
+        J.ExoAutoTouch.ResetTimer()
+        y.UserInputService.InputBegan:Connect(function() J.ExoAutoTouch.ResetTimer() end)
+        task.spawn(function()
+            while J.ExoAutoTouch.Started do
+                task.wait(1)
+                if not Y.auto_idle_touch then continue end
+                if os.clock() - J.ExoAutoTouch.LastInput < J.ExoAutoTouch.IdleTime then continue end
+                pcall(J.ExoAutoTouch.MarkActive)
+                J.ExoAutoTouch.ResetTimer()
+            end
+        end)
+    end,
+    Stop = function() J.ExoAutoTouch.Started = false end
+}
+J.ExoAutoTouch.Start()
+local m = time() + 90
+while time() < m do
+    local G = c.IsLoadingCompleted()
+    if G == true then
+        warn("Loading complete")
+        break
+    end
+    task.wait(1)
+end
+J.SimulateRealMobileTap = function()
+    if not d.PlayerData.GetLoadingScreenActive() then return end
+    if not c.UserDevice.IsMobile() then return end
+    local G = game:GetService("VirtualInputManager")
+    local V = workspace.CurrentCamera
+    if not V then return false end
+    local y = V.ViewportSize
+    if y.X <= 0 or y.Y <= 0 then return false end
+    local Z = 35
+    local j = Z
+    local i = y.Y - Z
+    return pcall(function()
+        G:SendTouchEvent(1, 0, j, i)
+        task.wait(.08)
+        G:SendTouchEvent(1, 2, j, i)
+    end)
+end
+J.SimulateScreenTapWithGui = function()
+    if not d.PlayerData.GetLoadingScreenActive() then return end
+    if not c.UserDevice.IsPC() then return end
+    local G = game:GetService("VirtualInputManager")
+    local V = workspace.CurrentCamera
+    if not V then return false end
+    local y = V.ViewportSize
+    if y.X <= 0 or y.Y <= 0 then return false end
+    local Z = 35
+    local j = Z
+    local i = y.Y - Z
+    return pcall(function()
+        G:SendMouseButtonEvent(j, i, 0, true, game, 1)
+        task.wait(.05)
+        G:SendMouseButtonEvent(j, i, 0, false, game, 1)
+    end)
+end
+J.loading_check_started = time() + 90
+while time() < J.loading_check_started do
+    if d.PlayerData.GetLoadingScreenActive() == false then break end
+    J.SimulateRealMobileTap()
+    J.SimulateScreenTapWithGui()
+    task.wait(10)
+end
+d.AntiFling = { Enabled = false, _trackedParts = {}, _playerParts = {}, _playerConns = {}, _charConns = {}, _mainConns = {} }
+local K = d.AntiFling
+local b = y.Players.LocalPlayer
+local function S(G, V)
+    if V:IsA("BasePart") then
+        K._trackedParts[V] = true
+        if not K._playerParts[G] then K._playerParts[G] = {} end
+        K._playerParts[G][V] = true
+    end
+end
+local function z(G, V)
+    K._trackedParts[V] = nil
+    if K._playerParts[G] then K._playerParts[G][V] = nil end
+end
+local function f(G)
+    if K._charConns[G] then
+        for G, V in ipairs(K._charConns[G]) do V:Disconnect() end
+        K._charConns[G] = nil
+    end
+    if K._playerParts[G] then
+        for G in pairs(K._playerParts[G]) do K._trackedParts[G] = nil end
+        K._playerParts[G] = nil
+    end
+end
+local function t(G, V)
+    f(G)
+    K._charConns[G] = {}
+    for V, y in ipairs(V:GetDescendants()) do S(G, y) end
+    table.insert(K._charConns[G], V.DescendantAdded:Connect(function(V) S(G, V) end))
+    table.insert(K._charConns[G], V.DescendantRemoving:Connect(function(V) z(G, V) end))
+end
+local function M(G)
+    if G == b then return end
+    if G.Character then t(G, G.Character) end
+    if not K._playerConns[G] then K._playerConns[G] = G.CharacterAdded:Connect(function(V) t(G, V) end) end
+end
+local function A(G)
+    if K._playerConns[G] then
+        K._playerConns[G]:Disconnect()
+        K._playerConns[G] = nil
+    end
+    f(G)
+end
+function d.AntiFling.Start()
+    if K.Enabled then return end
+    K.Enabled = true
+    table.insert(K._mainConns, y.Players.PlayerAdded:Connect(M))
+    table.insert(K._mainConns, y.Players.PlayerRemoving:Connect(A))
+    table.insert(K._mainConns,
+        y.RunService.PreSimulation:Connect(function() for G in pairs(K._trackedParts) do G.CanCollide = false end end))
+    for G, V in ipairs(y.Players:GetPlayers()) do M(V) end
+end
 
-Library:GiveSignal(Players.PlayerAdded:Connect(OnPlayerChange))
-Library:GiveSignal(Players.PlayerRemoving:Connect(OnPlayerChange))
+function d.AntiFling.Stop()
+    if not K.Enabled then return end
+    K.Enabled = false
+    for G, V in ipairs(K._mainConns) do V:Disconnect() end
+    K._mainConns = {}
+    for G, V in pairs(K._playerConns) do V:Disconnect() end
+    K._playerConns = {}
+    for G, V in pairs(K._charConns) do for G, V in ipairs(V) do V:Disconnect() end end
+    K._charConns = {}
+    K._trackedParts = {}
+    K._playerParts = {}
+end
 
-Library:GiveSignal(Teams.ChildAdded:Connect(OnTeamChange))
-Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
-
-getgenv().Library = Library
-return Library
+d.AntiFling.Start()
