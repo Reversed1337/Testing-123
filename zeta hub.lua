@@ -75,8 +75,25 @@ function Addcantsleep() if (getconnections or get_signal_cons) then for G, V in 
                 V.Disable(V) elseif V.Disconnect then V.Disconnect(V) end end end end
 
 pcall(function() Addcantsleep() end)
+-- Make sure the Obsidian library is loaded
 local Z = G.Library
-local j = G.Window
+if not Z or type(Z.CreateWindow) ~= "function" then
+    -- If G.Library is missing or broken, load Obsidian directly
+    Z = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/Library.lua"))()
+    if not Z then
+        warn("Failed to load Obsidian UI library – UI will not work")
+        Z = {}  -- dummy table to avoid crashes
+    end
+    G.Library = Z
+end
+
+-- Create the main window
+local j = Z:CreateWindow("Exotic Hub")
+if not j or type(j.AddTab) ~= "function" then
+    warn("Failed to create Obsidian window – UI will not work")
+    j = {}  -- dummy table
+end
+G.Window = j
 local i = type(G.IsHeadless) == "function" and G.IsHeadless() == true
 y.AppName = "Exotic Hub"
 y.CurentV = "v13"
