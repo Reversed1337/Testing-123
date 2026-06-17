@@ -149,7 +149,7 @@ getgenv().gag2_config = {
     webhook_mail_claims = true,
     webhook_mail_manual = true,
     webhook_pet_buys = true,
-    webhook_url = "https://discord.com/api/webhooks/1439707733170327635/MULcRXVCxzd9QwiGHSaarmMhweMqi4uwYqEJWBYQ0C6tjtvv6ollQ8EXUOTL3sDBILZr",
+    webhook_url = "",
 }
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zeta%20hub.lua"))()
