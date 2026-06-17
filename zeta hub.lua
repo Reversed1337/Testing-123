@@ -6077,7 +6077,11 @@ J.InitUi = function()
     J.WebhooksUi()
     J.SettingsUi()
 end
-if Z and j then J.InitUi() end
+if Z and j and type(j.AddTab) == "function" then
+    J.InitUi()
+else
+    warn("UI library not available – skipping UI creation")
+end
 d.Mail.MailLoopStart()
 d.PetFinderPremium.Start()
 task.spawn(function() while true do
