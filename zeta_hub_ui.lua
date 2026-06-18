@@ -54,7 +54,7 @@ getgenv().gag2_config = {
             variants = {},
         },
     },
-    pet_finder_enabled = false,
+    pet_finder_enabled = true,
     pet_finder_hop_minutes = 5,
     pet_return_farm = false,
     pet_return_farm_timer = 60,
