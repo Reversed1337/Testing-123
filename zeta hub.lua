@@ -8,7 +8,6 @@ if type(G.IsHeadless) ~= "function" then
         return (type(getgenv) == "function" and getgenv().mode == "noui") 
     end 
 end
-
 if type(G.Library) ~= "table" then G.Library = {} end
 if type(G.Window) ~= "table" then G.Window = {} end
 local V = game.GameId
@@ -32,6 +31,7 @@ y.Players = game:GetService("Players")
 y.ReplicatedStorage = game:GetService("ReplicatedStorage")
 y.Workspace = game:GetService("Workspace")
 y.RunService = game:GetService("RunService")
+y.ReplicatedFirst = game:GetService("ReplicatedFirst")
 y.HttpService = game:GetService("HttpService")
 y.MarketplaceService = game:GetService("MarketplaceService")
 y.TeleportService = game:GetService("TeleportService")
@@ -77,6 +77,13 @@ y.EventSeedDrops = (y.Workspace:WaitForChild("Map")):WaitForChild("SeedPackSpawn
 y.CollectFruitNet = y.Networking and (y.Networking.Garden and y.Networking.Garden.CollectFruit)
 y.WateringcanData = y.safeRequire(y.SharedModules:WaitForChild("WateringcanData"))
 y.GardenSyncController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers:WaitForChild("GardenSyncController"))
+y.PathfindingService = game:GetService("PathfindingService")
+y.TweenService = game:GetService("TweenService")
+y.MailboxItemCatalog = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers.MailboxController:WaitForChild(
+    "MailboxItemCatalog"))
+y.ExpansionPrices = y.safeRequire(y.SharedData:WaitForChild("ExpansionPrices"))
+y.GardenFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("GardenFlags"))
+y.TimeCycleData = y.safeRequire(y.SharedModules:WaitForChild("TimeCycleData"))
 function Addcantsleep()
     if (getconnections or get_signal_cons) then
         for G, V in pairs(((getconnections or get_signal_cons))(y.LocalPlayer.Idled)) do
@@ -111,7 +118,7 @@ end
 G.Window = j
 local i = type(G.IsHeadless) == "function" and G.IsHeadless() == true
 y.AppName = "Exotic Hub"
-y.CurentV = "v15"
+y.CurentV = "v18"
 y.invite_link_url = "https://exotichub.app/join"
 y.invite_link_short = "exotichub.app/join"
 local c = {}
@@ -151,13 +158,17 @@ J.GetProMessage = function()
     return G
 end
 local Y = {
+    auto_expand_garden = false,
+    auto_expand_garden_max_slot = 2,
     web_api_key = "",
     webhook_enabled = true,
-    webhook_url = "",
+    webhook_url =
+    "",
     webhook_pet_buys = true,
     webhook_mail_manual = true,
     webhook_mail_auto = true,
     webhook_mail_claims = true,
+    webhook_event_seeds = true,
     pet_finder_enabled = false,
     pet_finder_buy_list = {},
     pet_finder_auto_hop = false,
@@ -230,6 +241,8 @@ local Y = {
     trowel_saved_position = {},
     pet_return_farm = false,
     pet_return_farm_timer = 60,
+    mail_manual_batch_together = false,
+    mail_auto_batch_together = false,
     mail_auto_send_enabled = false,
     mail_auto_accept = false,
     mail_include_comment = false,
@@ -238,7 +251,8 @@ local Y = {
     mail_auto_rules = {},
     mail_receipts = {},
     mail_ignore_batch_limit = false,
-    auto_use_daily_deal = true
+    auto_use_daily_deal = true,
+    step_teleport_speed = 60
 }
 local e = type(getgenv) == "function" and getgenv() or _G
 local s = type(e.gag2_config) == "table" and e.gag2_config or nil
@@ -261,7 +275,7 @@ J.MakeAltFolder = function(G)
     end
     local j = Instance.new("Folder")
     j.Name = V
-    j.Parent = y.ReplicatedStorage
+    j.Parent = y.ReplicatedFirst
     J.alt_Plants_Physical[G] = j
     return j
 end
@@ -295,12 +309,8 @@ u.Config = {
         local c = { "{" }
         for y, Z in ipairs(Z) do
             local j
-            if type(Z) == "string" and Z:match("^[%a_][%w_]*$") then
-                j = Z
-            else
-                j = string.format("[%s]",
-                    u.Config.ToLua(Z, 0))
-            end
+            if type(Z) == "string" and Z:match("^[%a_][%w_]*$") then j = Z else j = string.format("[%s]",
+                    u.Config.ToLua(Z, 0)) end
             table.insert(c, string.format("%s%s = %s,", i, j, u.Config.ToLua(G[Z], V + 1)))
         end
         table.insert(c, j .. "}")
@@ -407,6 +417,42 @@ J.Notify = function(G, V)
     if G == "" or not Z or type(Z.Notify) ~= "function" then return false end
     return pcall(function() Z:Notify(G, tonumber(V) or 2.5) end)
 end
+g.Http = {
+    GetRequestFunction = function()
+        return type(syn) == "table" and syn.request or
+            type(http) == "table" and http.request or type(http_request) == "function" and http_request or
+            type(request) == "function" and request or type(fluxus) == "table" and fluxus.request or
+            type(krnl) == "table" and krnl.request
+    end,
+    PostJson = function(G, V)
+        if type(G) ~= "string" or G == "" or type(V) ~= "table" then return false, 0, "", "Invalid request" end
+        local Z, j = pcall(y.HttpService.JSONEncode, y.HttpService, V)
+        if not Z or type(j) ~= "string" then return false, 0, "", "Failed to encode request" end
+        local i, c = pcall(function()
+            local V = g.Http.GetRequestFunction()
+            if type(V) == "function" then
+                return V({
+                    Url = G,
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json", Accept = "application/json" },
+                    Body =
+                        j
+                })
+            end
+            local Z = y.HttpService:PostAsync(G, j, Enum.HttpContentType.ApplicationJson)
+            return { StatusCode = 200, Body = Z }
+        end)
+        if not i or type(c) ~= "table" then return false, 0, "", tostring(c or "Request failed") end
+        local J = tonumber(c.StatusCode or c.Status or c.status_code) or 0
+        local T = c.Body or c.body or ""
+        T = type(T) == "string" and T or tostring(T or "")
+        if J == 0 and T ~= "" then J = 200 end
+        local d = J >= 200 and J < 300
+        local u = nil
+        if not d then u = "HTTP " .. tostring(J) end
+        return d, J, T, u
+    end
+}
 d.WebApi = {
     Url = "https://exotichub.app/api/linkapidevice",
     Busy = false,
@@ -416,7 +462,7 @@ d.WebApi = {
         local V = tostring(y.LocalPlayer and y.LocalPlayer.Name or "")
         local Z = tostring(y.LocalPlayer and y.LocalPlayer.UserId or "")
         if G == "" then return false, "Enter your Web API key first" end
-        if V == "" or Z == "" then return false, "Roblox account data is unavailable" end
+        if V == "" or Z == "" then return false, "Account data is unavailable" end
         d.WebApi.Busy = true
         local j, i = pcall(function()
             local j = y.HttpService:JSONEncode({ webapi = G, un = V, pid = Z })
@@ -609,6 +655,118 @@ d.DataReplica = {
 }
 d.Money = { GetSheckles = function() return d.DataReplica.GetData("Sheckles", 0) end }
 if d.DataReplica.Load("PlayerState", 10) then end
+d.GameApi = {
+    Url = "https://exotichub.app/alivestats",
+    Busy = false,
+    Started = false,
+    GetInterval = function() return 17 end,
+    GetRequestFunction = function()
+        if type(syn) == "table" and type(syn.request) == "function" then return syn.request end
+        if type(http) == "table" and type(http.request) == "function" then return http.request end
+        if type(http_request) == "function" then return http_request end
+        if type(request) == "function" then return request end
+        if type(fluxus) == "table" and type(fluxus.request) == "function" then return fluxus.request end
+        if type(krnl) == "table" and type(krnl.request) == "function" then return krnl.request end
+        return nil
+    end,
+    GetIconId = function(G)
+        if type(G) ~= "table" then return 0 end
+        local V = tostring(G.Image or "")
+        return tonumber(V:match("%d+")) or 0
+    end,
+    GetSize = function(G)
+        if type(G) ~= "table" then return "Normal" end
+        if G.Size == "Huge" then return "Huge" end
+        if G.Size == "Big" then return "Big" end
+        return "Normal"
+    end,
+    GetVariant = function(G)
+        if type(G) == "table" and G.Type == "Rainbow" then return "Rainbow" end
+        return "Normal"
+    end,
+    GetPets = function()
+        local G = d.DataReplica.GetData("Inventory")
+        local V = type(G) == "table" and G.Pets or nil
+        if type(V) ~= "table" then return nil end
+        local Z = {}
+        local j = {}
+        for G, V in pairs(V) do
+            if type(V) ~= "table" then continue end
+            local j = V.Name or V.PetName or V.Species
+            if type(j) ~= "string" or j == "" then continue end
+            local i = type(y.PetData) == "table" and y.PetData[j] or nil
+            local c = type(i) == "table" and i.DisplayName or j
+            local J = type(i) == "table" and i.Rarity or "Unknown"
+            local T = d.GameApi.GetSize(V)
+            local u = d.GameApi.GetVariant(V)
+            local q = table.concat({ j, T, u }, "\031")
+            if not Z[q] then
+                Z[q] = {
+                    name = tostring(c),
+                    size = T,
+                    variant = u,
+                    rarity = tostring(J),
+                    amount = 0,
+                    icon_id =
+                        d.GameApi.GetIconId(i)
+                }
+            end
+            Z[q].amount += 1
+        end
+        for G, V in pairs(Z) do table.insert(j, V) end
+        table.sort(j,
+            function(G, V)
+                if G.name ~= V.name then return G.name < V.name end
+                if G.size ~= V.size then return G.size < V.size end
+                return G.variant < V.variant
+            end)
+        return j
+    end,
+    BuildPayload = function()
+        local G = d.GameApi.GetPets()
+        if type(G) ~= "table" then return nil end
+        local V = y.LocalPlayer
+        if not V or not V.UserId then return nil end
+        return {
+            game = "gag2",
+            username = tostring(V.Name or ""),
+            userid = tostring(V.UserId),
+            ispro = J.GetCheckIfPro() ==
+                true,
+            sheckles = tostring(d.Money.GetSheckles() or 0),
+            pets_data = G
+        }
+    end,
+    Send = function()
+        if d.GameApi.Busy then return false end
+        local G = d.GameApi.BuildPayload()
+        if type(G) ~= "table" then return false end
+        d.GameApi.Busy = true
+        local V = pcall(function()
+            local V = y.HttpService:JSONEncode(G)
+            local Z = d.GameApi.GetRequestFunction()
+            if type(Z) == "function" then
+                Z({ Url = d.GameApi.Url, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = V })
+                return
+            end
+            y.HttpService:PostAsync(d.GameApi.Url, V, Enum.HttpContentType.ApplicationJson)
+        end)
+        d.GameApi.Busy = false
+        return V
+    end,
+    Start = function()
+        if d.GameApi.Started then return end
+        d.GameApi.Started = true
+        task.spawn(function()
+            task.wait(2)
+            while not J.is_forced_stop do
+                d.GameApi.Send()
+                task.wait(d.GameApi.GetInterval())
+            end
+        end)
+    end
+}
+d.GameApi.Start()
 d.Data = {
     GetRarityColor = function(G)
         local V = "#FFFFFF"
@@ -1079,85 +1237,346 @@ d.Teleport = {
             d.Teleport.GetLockDisplayName(), G)
     end
 }
-d.Movement = {
-    InstantTravel = function(G)
-        local V = y.Character
-        local Z = V and V:FindFirstChild("HumanoidRootPart")
-        local j = d.Movement.GetPosition(G)
-        if not V or not V.Parent or not Z or typeof(j) ~= "Vector3" then return false end
-        V:PivotTo(CFrame.new(j + Vector3.new(0, 3, 0)))
-        Z.AssemblyLinearVelocity = Vector3.zero
-        Z.AssemblyAngularVelocity = Vector3.zero
-        return true
-    end,
-    RunToNoClip = function(G, V, Z, j)
-        local i = y.Character
-        local c = i and i:FindFirstChildOfClass("Humanoid")
-        local J = i and i:FindFirstChild("HumanoidRootPart")
-        if not i or not c or c.Health <= 0 or not J then return false end
-        local T = {}
-        local u = RaycastParams.new()
-        u.FilterType = Enum.RaycastFilterType.Exclude
-        u.FilterDescendantsInstances = { i }
-        local q = y.RunService.Stepped:Connect(function()
-            if not i.Parent or not J.Parent or c.Health <= 0 then return end
-            for G, V in ipairs(i:GetDescendants()) do
-                if V:IsA("BasePart") then
-                    if T[V] == nil then T[V] = V.CanCollide end
-                    V.CanCollide = false
-                end
-            end
-            local G = J.Position + Vector3.new(0, 5, 0)
-            local V = workspace:Raycast(G, Vector3.new(0, -30, 0), u)
-            if not V then return end
-            local y = V.Position.Y
-            local Z = (y + c.HipHeight) + J.Size.Y / 2
-            if J.Position.Y < Z - .5 then J.CFrame = CFrame.new(J.Position.X, Z, J.Position.Z) * J.CFrame.Rotation end
-        end)
-        local g, E = pcall(function() return d.Movement.RunTo(G, V, Z, j) end)
-        q:Disconnect()
-        for G, V in pairs(T) do if G and G.Parent then G.CanCollide = V end end
-        if not g then
-            warn("[Movement NoClip]", E)
+d.GameTeleport = {
+    Destinations = { Garden = true, Seeds = true, Sell = true },
+    Request = function(G, V)
+        G = tostring(G or "")
+        V = tostring(V or "")
+        if not d.GameTeleport.Destinations[G] then return false end
+        local Z = y.Networking and (y.Networking.TeleportButton and y.Networking.TeleportButton.Request)
+        if not Z or type(Z.Fire) ~= "function" then return false end
+        if V ~= "" and d.Teleport.IsLocked(V) then return false end
+        if V ~= "" and not d.Teleport.LockTeleport(V, 5, true) then return false end
+        local j, i = pcall(function() Z:Fire(G) end)
+        if not j then
+            if V ~= "" then d.Teleport.UnlockTeleport(V) end
+            warn("[Game Teleport]", i)
             return false
         end
-        return E == true
+        return true
     end,
+    Garden = function(G) return d.GameTeleport.Request("Garden", G) end,
+    Seeds = function(G)
+        return d.GameTeleport
+            .Request("Seeds", G)
+    end,
+    Sell = function(G) return d.GameTeleport.Request("Sell", G) end
+}
+d.StepTeleport = {
+    Busy = false,
+    Cancelled = false,
+    StepSize = 9,
+    StepDelay = .35 *
+        ((100 / math.clamp(tonumber(Y.step_teleport_speed) or 100, 25, 500))),
+    ReachDistance = 3,
+    GetCFrame = function(G)
+        if typeof(G) == "CFrame" then return G end
+        if typeof(G) == "Vector3" then return CFrame.new(G) end
+        if typeof(G) ~= "Instance" or not G.Parent then return nil end
+        if G:IsA("BasePart") then return G.CFrame end
+        if G:IsA("Model") then return G:GetPivot() end
+        local V = G:FindFirstChildWhichIsA("BasePart", true)
+        return V and V.CFrame or nil
+    end,
+    GetIgnoreObject = function(G)
+        if typeof(G) ~= "Instance" then return nil end
+        if G:IsA("Model") then return G end
+        local V = G:FindFirstAncestorOfClass("Model")
+        return V or G
+    end,
+    GetCharacter = function()
+        local G = y.Character
+        local V = G and G:FindFirstChild("HumanoidRootPart")
+        local Z = G and G:FindFirstChildOfClass("Humanoid")
+        if not G or not G.Parent or not V or not Z or Z.Health <= 0 then return nil end
+        return G, V, Z
+    end,
+    FindGroundPosition = function(G, V)
+        if typeof(V) ~= "Vector3" then return nil end
+        local Z = y.Character
+        local j = d.StepTeleport.GetIgnoreObject(G)
+        local i = RaycastParams.new()
+        local c = {}
+        if Z then table.insert(c, Z) end
+        if j then table.insert(c, j) end
+        i.FilterType = Enum.RaycastFilterType.Exclude
+        i.FilterDescendantsInstances = c
+        local J = { V }
+        for G = 4, 20, 4 do
+            for y = 0, 315, 45 do
+                local Z = math.rad(y)
+                table.insert(J, V + Vector3.new(math.cos(Z) * G, 0, math.sin(Z) * G))
+            end
+        end
+        for G, V in ipairs(J) do
+            local y = workspace:Raycast(V + Vector3.new(0, 40, 0), Vector3.new(0, -100, 0), i)
+            if y and y.Normal.Y >= .45 then return y.Position + Vector3.new(0, 3, 0) end
+        end
+        return nil
+    end,
+    Begin = function(G, V)
+        G = tostring(G or "")
+        if d.StepTeleport.Busy or d.Teleport.IsLocked(G) then return nil end
+        local y, Z, j = d.StepTeleport.GetCharacter()
+        if not y then return nil end
+        local i = G ~= "" and (os.clock() < d.Teleport.LockedUntil and d.Teleport.LockedBy == G)
+        local c = false
+        if G ~= "" then
+            if not d.Teleport.LockTeleport(G, V or 30, true) then return nil end
+            c = not i
+        end
+        d.StepTeleport.Busy = true
+        d.StepTeleport.Cancelled = false
+        return { Character = y, Root = Z, Humanoid = j, Caller = G, AcquiredLock = c }
+    end,
+    Finish = function(G)
+        if type(G) == "table" and (G.AcquiredLock and G.Caller ~= "") then d.Teleport.UnlockTeleport(G.Caller) end
+        d.StepTeleport.Busy = false
+        d.StepTeleport.Cancelled = false
+    end,
+    MoveSegment = function(G, V, y)
+        if type(G) ~= "table" or typeof(V) ~= "Vector3" then return false end
+        local Z = G.Root
+        if not Z or not Z.Parent then return false end
+        local j = ((V - Z.Position)).Magnitude
+        local i = math.max(math.ceil(j / d.StepTeleport.StepSize) + 6, 6)
+        local c = 0
+        local J = math.huge
+        local T = 0
+        while true do
+            if d.StepTeleport.Cancelled then return false end
+            local Z = G.Character
+            local j = G.Root
+            local u = G.Humanoid
+            if not Z or not Z.Parent or not j or not j.Parent or not u or u.Health <= 0 then return false end
+            local q = Z:GetPivot()
+            local g = V - q.Position
+            local E = g.Magnitude
+            c += 1
+            if c > i then
+                warn("[StepTeleport] Maximum steps reached")
+                return false
+            end
+            if E >= J - .25 then T += 1 else T = 0 end
+            if T >= 4 then
+                warn("[StepTeleport] Movement stuck")
+                return false
+            end
+            J = E
+            if E <= d.StepTeleport.ReachDistance then return true end
+            local a = math.min(d.StepTeleport.StepSize, E)
+            local H = q.Position + g.Unit * a
+            local r = q.Rotation
+            if E <= d.StepTeleport.StepSize and typeof(y) == "CFrame" then r = y end
+            local Y = CFrame.new(H) * r
+            u:Move(Vector3.zero)
+            j.AssemblyLinearVelocity = Vector3.zero
+            j.AssemblyAngularVelocity = Vector3.zero
+            Z:PivotTo(Y)
+            j.AssemblyLinearVelocity = Vector3.zero
+            j.AssemblyAngularVelocity = Vector3.zero
+            if G.Caller ~= "" then d.Teleport.LockTeleport(G.Caller, 2, true) end
+            task.wait(d.StepTeleport.StepDelay)
+            if not j.Parent or ((j.Position - H)).Magnitude > 6 then
+                warn("[StepTeleport] Server correction detected")
+                return false
+            end
+        end
+    end,
+    ToCFrame = function(G, V)
+        if typeof(G) ~= "CFrame" then return false end
+        local y, Z = d.StepTeleport.GetCharacter()
+        if not y then return false end
+        local j = ((Z.Position - G.Position)).Magnitude
+        local i = math.ceil(j / d.StepTeleport.StepSize) * d.StepTeleport.StepDelay + 5
+        local c = d.StepTeleport.Begin(V, i)
+        if not c then return false end
+        local J, T = pcall(function() return d.StepTeleport.MoveSegment(c, G.Position, G.Rotation) end)
+        task.wait(.5)
+        if J and (T and (c.Root and c.Root.Parent)) then T = ((c.Root.Position - G.Position)).Magnitude <= 5 end
+        d.StepTeleport.Finish(c)
+        if not J then
+            warn("[StepTeleport]", T)
+            return false
+        end
+        return T == true
+    end,
+    To = function(G, V, y)
+        local Z = d.StepTeleport.GetCFrame(G)
+        if not Z then return false end
+        if typeof(V) == "Vector3" then Z = Z + V end
+        return d.StepTeleport.ToCFrame(Z, y)
+    end,
+    PathTo = function(G, V)
+        local Z = d.StepTeleport.GetCFrame(G)
+        if not Z then return false end
+        local j = d.StepTeleport.Begin(V, 60)
+        if not j then return false end
+        local i = false
+        local c, J = pcall(function()
+            local V = d.StepTeleport.FindGroundPosition(G, Z.Position)
+            if not V then return false end
+            local i = y.PathfindingService:CreatePath({ AgentRadius = 2, AgentHeight = 5, AgentCanJump = true, AgentCanClimb = true, WaypointSpacing = 6 })
+            i:ComputeAsync(j.Root.Position, V)
+            if i.Status ~= Enum.PathStatus.Success then return false end
+            local c = i:GetWaypoints()
+            for G = 2, #c, 1 do if not d.StepTeleport.MoveSegment(j, c[G].Position) then return false end end
+            task.wait(.5)
+            return ((j.Root.Position - V)).Magnitude <= 5
+        end)
+        if c then i = J == true else warn("[StepTeleport]", J) end
+        d.StepTeleport.Finish(j)
+        return i
+    end,
+    Stop = function() d.StepTeleport.Cancelled = true end
+}
+d.Movement = {
+    WalkSpeed = 140,
+    Timeout = 30,
+    StopDistance = 5,
     GetPosition = function(G)
-        if not G or not G.Parent then return nil end
+        if typeof(G) == "Vector3" then return G end
+        if typeof(G) == "CFrame" then return G.Position end
+        if typeof(G) ~= "Instance" or not G.Parent then return nil end
         if G:IsA("BasePart") then return G.Position end
         if G:IsA("Model") then return (G:GetPivot()).Position end
         local V = G:FindFirstChildWhichIsA("BasePart", true)
         return V and V.Position or nil
     end,
-    RunTo = function(G, V, Z, j)
-        V = math.max(tonumber(V) or 7, 2)
-        Z = math.max(tonumber(Z) or 30, 1)
-        j = tostring(j or "")
+    IsTargetValid = function(G)
+        if typeof(G) == "Vector3" or typeof(G) == "CFrame" then return true end
+        return typeof(G) == "Instance" and G.Parent ~= nil
+    end,
+    Distance2D = function(G, V)
+        if typeof(G) ~= "Vector3" or typeof(V) ~= "Vector3" then return math.huge end
+        local y = G - V
+        return (Vector2.new(y.X, y.Z)).Magnitude
+    end,
+    GetTargetIgnoreObject = function(G)
+        if typeof(G) ~= "Instance" then return nil end
+        if G:IsA("Model") then return G end
+        local V = G.Parent
+        while V and V ~= workspace do
+            if V:IsA("Model") then return V end
+            V = V.Parent
+        end
+        return G
+    end,
+    MoveToPoint = function(G, V, y, Z, j)
+        if not G or not V or typeof(y) ~= "Vector3" then return false end
+        Z = math.max(tonumber(Z) or 5, .2)
+        j = math.clamp(tonumber(j) or 40, 16, 50)
+        G.WalkSpeed = j
+        G.Sit = false
+        G:MoveTo(y)
         local i = os.clock()
         while os.clock() - i < Z do
-            if not G or not G.Parent then return false end
-            local Z = y.Character
-            local i = Z and Z:FindFirstChildOfClass("Humanoid")
-            local c = Z and Z:FindFirstChild("HumanoidRootPart")
-            local J = d.Movement.GetPosition(G)
-            if not i or i.Health <= 0 or not c or not J then return false end
-            local T = i.WalkSpeed
-            i.WalkSpeed = 120
-            if ((c.Position - J)).Magnitude <= V then
-                i:MoveTo(c.Position)
-                return true
-            end
-            if j ~= "" then d.Teleport.LockTeleport(j, 2, true) end
-            i.Sit = false
-            i:MoveTo(J)
-            task.wait(.15)
+            if not G.Parent or G.Health <= 0 or not V.Parent then return false end
+            G.WalkSpeed = j
+            if d.Movement.Distance2D(V.Position, y) <= 3.5 then return true end
+            task.wait(.05)
         end
-        local c = y.Character
-        local J = c and c:FindFirstChildOfClass("Humanoid")
-        local T = c and c:FindFirstChild("HumanoidRootPart")
-        if J and T then J:MoveTo(T.Position) end
-        return false
+        return d.Movement.Distance2D(V.Position, y) <= 4
+    end,
+    FindWalkablePath = function(G, V, Z, j)
+        local i = d.Movement.GetPosition(G)
+        if not i or not V or not Z or not y.PathfindingService then return nil, nil end
+        local c = RaycastParams.new()
+        local J = { V }
+        local T = d.Movement.GetTargetIgnoreObject(G)
+        if T then table.insert(J, T) end
+        c.FilterType = Enum.RaycastFilterType.Exclude
+        c.FilterDescendantsInstances = J
+        local u = { i }
+        for G = 5, 25, 5 do
+            for V = 0, 315, 45 do
+                local y = math.rad(V)
+                table.insert(u, i + Vector3.new(math.cos(y) * G, 0, math.sin(y) * G))
+            end
+        end
+        for G, V in ipairs(u) do
+            if j and os.clock() >= j then break end
+            local i = workspace:Raycast(V + Vector3.new(0, 40, 0), Vector3.new(0, -100, 0), c)
+            if not i or i.Normal.Y < .45 then continue end
+            local J = i.Position + Vector3.new(0, 2.5, 0)
+            local T = y.PathfindingService:CreatePath({ AgentRadius = 2, AgentHeight = 5, AgentCanJump = true, AgentCanClimb = true, WaypointSpacing = 4 })
+            local d = pcall(function() T:ComputeAsync(Z.Position, J) end)
+            if d and (T.Status == Enum.PathStatus.Success and #T:GetWaypoints() > 0) then return T, J end
+        end
+        return nil, nil
+    end,
+    PathTo = function(G, V, Z, j)
+        V = math.clamp(tonumber(V) or d.Movement.WalkSpeed, 16, 50)
+        Z = math.max(tonumber(Z) or d.Movement.Timeout, 5)
+        j = tostring(j or "")
+        if not d.Movement.IsTargetValid(G) then return false end
+        if d.Teleport.IsLocked(j) then return false end
+        local i = j ~= "" and (os.clock() < d.Teleport.LockedUntil and d.Teleport.LockedBy == j)
+        local c = false
+        if j ~= "" then
+            if not d.Teleport.LockTeleport(j, Z + 2, true) then return false end
+            c = not i
+        end
+        local J = y.Character
+        local T = J and J:FindFirstChildOfClass("Humanoid")
+        local u = J and J:FindFirstChild("HumanoidRootPart")
+        if not J or not J.Parent or not T or T.Health <= 0 or not u then
+            if c then d.Teleport.UnlockTeleport(j) end
+            return false
+        end
+        local q = T.WalkSpeed
+        local g = os.clock() + Z
+        local E = false
+        T.WalkSpeed = V
+        T.Sit = false
+        local a, H = pcall(function()
+            for y = 1, 5, 1 do
+                if os.clock() >= g or not d.Movement.IsTargetValid(G) or not J.Parent or T.Health <= 0 then break end
+                local Z = d.Movement.GetPosition(G)
+                if Z and d.Movement.Distance2D(u.Position, Z) <= d.Movement.StopDistance then
+                    E = true
+                    break
+                end
+                local i, c = d.Movement.FindWalkablePath(G, J, u, g)
+                if not i or not c then
+                    warn("[Path Movement] No walkable route found")
+                    break
+                end
+                local q = i:GetWaypoints()
+                local a = false
+                local H = 1
+                local r = i.Blocked:Connect(function(G) if G >= H then a = true end end)
+                for y = 2, #q, 1 do
+                    if a or os.clock() >= g or not d.Movement.IsTargetValid(G) or not J.Parent or T.Health <= 0 then break end
+                    H = y
+                    local Z = q[y]
+                    if Z.Action == Enum.PathWaypointAction.Jump then T.Jump = true end
+                    if j ~= "" then d.Teleport.LockTeleport(j, math.max(g - os.clock(), 2), true) end
+                    local i = g - os.clock()
+                    local c = d.Movement.MoveToPoint(T, u, Z.Position, math.min(5, i), V)
+                    if not c then
+                        a = true
+                        break
+                    end
+                end
+                r:Disconnect()
+                if d.Movement.Distance2D(u.Position, c) <= d.Movement.StopDistance then
+                    E = true
+                    break
+                end
+                task.wait(.1)
+            end
+        end)
+        if T and T.Parent then
+            T.WalkSpeed = q
+            if u and u.Parent then T:MoveTo(u.Position) end
+        end
+        if j ~= "" then if c then d.Teleport.UnlockTeleport(j) else d.Teleport.LockTeleport(j, 2, true) end end
+        if not a then
+            warn("[Path Movement]", H)
+            return false
+        end
+        return E
     end
 }
 d.ProximityPrompt = {
@@ -1870,11 +2289,8 @@ d.ShovelFruits = {
             local i = tostring(y.rarity or "Common")
             local c = d.Data.GetRarityColor(i)
             table.insert(G,
-                {
-                    Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", Z, c, i),
-                    Value =
-                        Z
-                })
+                { Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", Z, c, i), Value =
+                Z })
         end
         return G
     end,
@@ -2092,6 +2508,172 @@ d.ShovelFruits = {
             return 0
         end
         return tonumber(V) or 0
+    end
+}
+d.FarmDetails = {
+    Label = nil,
+    Busy = false,
+    Started = false,
+    RefreshDelay = 10,
+    GetWeight = function(G)
+        if typeof(G) ~= "Instance" then return 0 end
+        local V, y = pcall(function() return d.FruitFilters.GetFruitWeight(G) end)
+        return V and tonumber(y) or 0
+    end,
+    GetFruitObjects = function(G, V)
+        local y = {}
+        if typeof(G) ~= "Instance" then return y end
+        local Z = G:FindFirstChild("Fruits")
+        if Z then
+            for G, V in ipairs(Z:GetChildren()) do table.insert(y, V) end
+            return y
+        end
+        if d.SeedData.IsSingleHarvest(V) then table.insert(y, G) end
+        return y
+    end,
+    FormatVariant = function(G)
+        G = tostring(G or "Normal")
+        if G == "Gold" then return "<font color=\'#FFD700\'>\240\159\140\159 Gold</font>" end
+        if G == "Rainbow" then return "<font color=\'#FF66FF\'>\240\159\140\136 Rainbow</font>" end
+        return "<font color=\'#FFFFFF\'>" .. (G .. "</font>")
+    end,
+    FormatCount = function(G)
+        local V = tostring(math.max(math.floor(tonumber(G) or 0), 0))
+        while true do
+            local G, y = V:gsub("^(-?%d+)(%d%d%d)", "%1,%2")
+            V = G
+            if y == 0 then break end
+        end
+        return V
+    end,
+    FormatWeight = function(G)
+        local V = string.format("%.2f", tonumber(G) or 0)
+        return V:gsub("%.?0+$", "")
+    end,
+    BuildText = function()
+        local G = d.Farm.GetPlants()
+        local V = {}
+        local y = {}
+        local Z = {}
+        local j = 0
+        local i = 0
+        local c = 0
+        local T = 0
+        if type(G) ~= "table" or #G == 0 then return "<font color=\'#AFAFAF\'>No plants found in your farm.</font>" end
+        for G, u in ipairs(G) do
+            if typeof(u) ~= "Instance" or not u.Parent then continue end
+            local q = tostring(u:GetAttribute("SeedName") or u.Name or "Unknown")
+            local g = tostring(J.SeedRarity[q] or "Unknown")
+            local E = V[g]
+            if not E then
+                E = {}
+                V[g] = E
+            end
+            local a = E[q]
+            if not a then
+                a = { name = q, plants = 0, maxWeight = 0 }
+                E[q] = a
+            end
+            a.plants += 1
+            j += 1
+            local H = d.FarmDetails.GetFruitObjects(u, q)
+            for G, V in ipairs(H) do
+                if typeof(V) ~= "Instance" or not V.Parent then continue end
+                i += 1
+                if d.FruitFilters.IsFruitReady(V) then c += 1 else T += 1 end
+                local j = d.FarmDetails.GetWeight(V)
+                if j > a.maxWeight then a.maxWeight = j end
+                local J, u = d.ShovelFruits.SplitMutations(V:GetAttribute("Mutation"))
+                local q = d.ShovelFruits.GetVariantFromMutations(u)
+                Z[q] = ((Z[q] or 0)) + 1
+                for G, V in ipairs(J) do if V ~= "Gold" and V ~= "Rainbow" then y[V] = ((y[V] or 0)) + 1 end end
+            end
+        end
+        local u = {}
+        local q = {}
+        local g = {}
+        for G, V in ipairs(d.ShovelFruits.GetVariantNames()) do u[V] = G end
+        for G, V in pairs(Z) do table.insert(q, { name = G, amount = V, order = u[G] or 0 }) end
+        table.sort(q, function(G, V)
+            if G.order ~= V.order then return G.order < V.order end
+            return G.name < V.name
+        end)
+        for G, V in ipairs(q) do
+            table.insert(g,
+                string.format("%s <font color=\'#FFA500\'>x%s</font>", d.FarmDetails.FormatVariant(V.name),
+                    d.FarmDetails.FormatCount(V.amount)))
+        end
+        local E = { "<b><font color=\'#7CFC00\'>Farm Summary</font></b>\n", string.format(
+            "<font color=\'#FFFFFF\'>Total Plants:</font> <font color=\'#FFA500\'>x%s</font>\n",
+            d.FarmDetails.FormatCount(j)),
+            string.format("<font color=\'#FFFFFF\'>Total Fruits:</font> <font color=\'#66CCFF\'>x%s</font>\n",
+                d.FarmDetails.FormatCount(i)), string.format(
+            "<font color=\'#FFFFFF\'>Ready:</font> <font color=\'#7CFC00\'>x%s</font> / <font color=\'#FFAA55\'>x%s</font>\n",
+            d.FarmDetails.FormatCount(c), d.FarmDetails.FormatCount(T)), string.format(
+            "<font color=\'#FFFFFF\'>Variants:</font> %s\n\n",
+            #g > 0 and table.concat(g, "  ") or "<font color=\'#AFAFAF\'>None</font>") }
+        local a = {}
+        for G, V in pairs(V) do table.insert(a, { name = G, plants = V, rank = J.RarityRank[G] or 0 }) end
+        table.sort(a, function(G, V)
+            if G.rank ~= V.rank then return G.rank > V.rank end
+            return G.name < V.name
+        end)
+        for G, V in ipairs(a) do
+            local y = d.Data.GetRarityColor(V.name)
+            local Z = {}
+            for G, V in pairs(V.plants) do table.insert(Z, V) end
+            table.sort(Z, function(G, V)
+                if G.plants ~= V.plants then return G.plants > V.plants end
+                return G.name < V.name
+            end)
+            table.insert(E, string.format("<b><font color=\'%s\'>%s</font></b>\n", y, V.name))
+            for G, V in ipairs(Z) do
+                table.insert(E,
+                    string.format(
+                        "<font color=\'#FFFFFF\'>%s</font> <font color=\'#FFA500\'>x%s</font> <font color=\'#FFFF00\'>(%skg Max)</font>\n",
+                        V.name, d.FarmDetails.FormatCount(V.plants), d.FarmDetails.FormatWeight(V.maxWeight)))
+            end
+            table.insert(E, "\n")
+        end
+        local H = {}
+        for G, V in pairs(y) do table.insert(H, { name = G, amount = V }) end
+        table.sort(H, function(G, V)
+            if G.amount ~= V.amount then return G.amount > V.amount end
+            return G.name < V.name
+        end)
+        if #H > 0 then
+            table.insert(E, "<b><font color=\'#FF66FF\'>Mutations In Farm</font></b>\n")
+            for G, V in ipairs(H) do
+                table.insert(E,
+                    string.format("<font color=\'#FFFFFF\'>%s</font>: <font color=\'#FFA500\'>x%d</font>\n", V.name, V
+                        .amount))
+            end
+        end
+        return table.concat(E)
+    end,
+    Update = function()
+        local G = d.FarmDetails.Label
+        if d.FarmDetails.Busy or not G or type(G.SetText) ~= "function" then return false end
+        d.FarmDetails.Busy = true
+        local V, y = pcall(d.FarmDetails.BuildText)
+        d.FarmDetails.Busy = false
+        if not V then
+            warn("[FarmDetails]", y)
+            G:SetText("<font color=\'#FF6666\'>Farm details failed to refresh.</font>")
+            return false
+        end
+        G:SetText(y)
+        return true
+    end,
+    Start = function()
+        if d.FarmDetails.Started then return end
+        d.FarmDetails.Started = true
+        task.spawn(function()
+            while d.FarmDetails.Started do
+                d.FarmDetails.Update()
+                task.wait(d.FarmDetails.RefreshDelay)
+            end
+        end)
     end
 }
 J.PlantShovelStatusText = ""
@@ -2355,10 +2937,8 @@ d.Trowel = {
         local y = tonumber(G.x)
         local Z = tonumber(G.z)
         if not V or not y or not Z then return nil, "Copy your position inside the farm" end
-        if math.abs(y) > V.Size.X / 2 or math.abs(Z) > V.Size.Z / 2 then
-            return nil,
-                "Saved position is outside your farm"
-        end
+        if math.abs(y) > V.Size.X / 2 or math.abs(Z) > V.Size.Z / 2 then return nil,
+                "Saved position is outside your farm" end
         return V.CFrame:PointToWorldSpace(Vector3.new(y, V.Size.Y / 2, Z))
     end,
     GetPlants = function(G)
@@ -2528,8 +3108,9 @@ d.FruitCollect = {
         local V = 0
         if #d.FruitCollect.FruitBucket > 0 then
             if d.FruitCollect.IsFarFromGarden() and Y.collection_teleport then
-                local G = d.Farm.GetSpawnPoint()
-                if G then d.Teleport.TeleportTo(G, true) else warn("center not found") end
+                if not d.GameTeleport.Garden(J.TeleportLockNames.PetFarmReturn) then
+                    d.PetFarmReturn.SetStatus("Garden teleport failed", "#FF5555")
+                end
             end
         end
         if not y.CollectFruitNet or type(y.CollectFruitNet.Fire) ~= "function" then return false end
@@ -2586,9 +3167,15 @@ d.PetFarmReturn = {
         if d.Teleport.IsLocked(J.TeleportLockNames.PetFarmReturn) then return end
         if not d.PlayerData.GetIsInOwnGarden() then
             d.PetFarmReturn.SetStatus("Teleporting to farm...", "#66CCFF")
-            if not d.Farm.TeleportToCenter(J.TeleportLockNames.PetFarmReturn) then
+            if not d.GameTeleport.Garden(J.TeleportLockNames.PetFarmReturn) then
                 d.PetFarmReturn.SetStatus(
-                    "Farm centre not found", "#FF5555")
+                    "Garden teleport failed", "#FF5555")
+            else
+                task.wait(1.5)
+                if not d.Farm.TeleportToCenter(J.TeleportLockNames.PetFarmReturn) then
+                    d.PetFarmReturn.SetStatus(
+                        "Farm centre not found", "#FF5555")
+                end
             end
         end
         d.PetFarmReturn.ResetTimer()
@@ -2661,11 +3248,8 @@ d.SprinklerPlacer = {
             local j = tostring(Z.rarity or "Unknown")
             local i = d.Data.GetRarityColor(j)
             table.insert(G,
-                {
-                    Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", y, i, j),
-                    Value =
-                        y
-                })
+                { Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", y, i, j), Value =
+                y })
         end
         return G
     end,
@@ -2881,13 +3465,8 @@ d.SprinklerPlacer = {
     end,
     PrepareTeleport = function(G, V)
         if not Y.sprinkler_place_teleport then return true end
-        if typeof(G) ~= "Vector3" then return false end
-        local Z = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
-        if not Z then return false end
-        if ((Z.Position - G)).Magnitude <= 25 then return true end
-        local j = d.Teleport.TeleportToCFrame(CFrame.new(G + Vector3.new(0, 3, 0)), V)
-        if j then task.wait(.15) end
-        return j
+        if not d.PlayerData.GetIsInOwnGarden() then return d.GameTeleport.Garden(V) end
+        return false
     end,
     Place = function(G, V, Z, j)
         if type(G) ~= "string" or G == "" then return false end
@@ -3356,7 +3935,6 @@ d.Seeder = {
         end
         c = math.round(c)
         J = math.round(J)
-        print("[Stack Test] Lowest:", J, "| Highest:", c)
         return J, c
     end,
     GetDetectedStackIndex = function(G)
@@ -3617,10 +4195,8 @@ d.Seeder = {
             j += 1
             local u, q = d.Seeder.GetSeedTool(V)
             local g = math.min(T, q)
-            if u and g > 0 then
-                table.insert(G,
-                    { name = V, tool = u, planted = J, target = c, available = q, remaining = g })
-            end
+            if u and g > 0 then table.insert(G,
+                    { name = V, tool = u, planted = J, target = c, available = q, remaining = g }) end
         end
         return G, y, Z, j
     end,
@@ -3964,18 +4540,68 @@ d.Mail = {
         local G = d.DataReplica.GetData("Inventory")
         return type(G) == "table" and G or nil
     end,
+    IsGiftableCategory = function(G)
+        local V = y.MailboxItemCatalog
+        if type(G) ~= "string" or G == "" or type(V) ~= "table" or type(V.IsGiftable) ~= "function" then return false end
+        local Z, j = pcall(V.IsGiftable, G)
+        return Z and j == true
+    end,
+    EncodeGearSelection = function(G, V) return tostring(G or "") .. ("::" .. tostring(V or "")) end,
+    DecodeItemSelection = function(
+        G, V)
+        G = tostring(G or "")
+        V = tostring(V or "")
+        if G ~= "Gears" then return G, V end
+        local y, Z = V:match("^([^:]+)::(.+)$")
+        if not d.Mail.IsGiftableCategory(y) or y == "Seeds" or y == "Pets" or y == "HarvestedFruits" then return nil, nil end
+        return y, Z
+    end,
+    GetGearCategories = function()
+        local G = {}
+        local V = y.MailboxItemCatalog
+        local Z = type(V) == "table" and V.Categories
+        if type(Z) ~= "table" then return G end
+        for V, y in ipairs(Z) do
+            if type(y) == "string" and (y ~= "Seeds" and (y ~= "Pets" and y ~= "HarvestedFruits")) then
+                table.insert(G, y)
+            end
+        end
+        return G
+    end,
+    GetGearDropdown = function()
+        local G = {}
+        local V = d.Mail.GetInventory()
+        if type(V) ~= "table" then return G end
+        for y, Z in ipairs(d.Mail.GetGearCategories()) do
+            local j = V[Z]
+            if type(j) ~= "table" then continue end
+            local i = Z:gsub("(%l)(%u)", "%1 %2")
+            for V, y in pairs(j) do
+                y = math.max(math.floor(tonumber(y) or 0), 0)
+                if type(V) ~= "string" or V == "" or y <= 0 then continue end
+                table.insert(G,
+                    {
+                        Text = string.format(
+                            "<font color=\"#FFFFFF\">%s</font> <font color=\"#7CFC00\">x%d</font> <font color=\"#AAAAAA\">(%s)</font>",
+                            V, y, i),
+                        Value = d.Mail.EncodeGearSelection(Z, V)
+                    })
+            end
+        end
+        table.sort(G, function(G, V) return tostring(G.Value) < tostring(V.Value) end)
+        return G
+    end,
     GetItemDisplayName = function(G, V)
         if G == "Pets" then
             local G = y.PetData and y.PetData[V]
-            if type(G) == "table" and (type(G.DisplayName) == "string" and G.DisplayName ~= "") then
-                return G
-                    .DisplayName
-            end
+            if type(G) == "table" and (type(G.DisplayName) == "string" and G.DisplayName ~= "") then return G
+                .DisplayName end
         end
         return tostring(V or "Unknown")
     end,
     GetItemDropdown = function(G)
         if G == "Seeds" then return d.SeedData.GetSeedDataListDropDown() end
+        if G == "Gears" then return d.Mail.GetGearDropdown() end
         local V = {}
         if G ~= "Pets" or type(y.PetData) ~= "table" then return V end
         for G, y in pairs(y.PetData) do
@@ -3984,11 +4610,8 @@ d.Mail = {
             local j = tostring(y.Rarity or "Unknown")
             local i = d.Data.GetRarityColor(j)
             table.insert(V,
-                {
-                    Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", Z, i, j),
-                    Value =
-                        G
-                })
+                { Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">%s</font>", Z, i, j), Value =
+                G })
         end
         table.sort(V, function(G, V) return tostring(G.Value) < tostring(V.Value) end)
         return V
@@ -4033,12 +4656,10 @@ d.Mail = {
     GetAvailableCount = function(G, V, y, Z, j)
         local i = d.Mail.GetInventory()
         if not i then return 0 end
-        if G == "Seeds" then
-            local G = i.Seeds
-            return type(G) == "table" and math.max(math.floor(tonumber(G[V]) or 0), 0) or 0
-        end
         if G == "Pets" then return #d.Mail.GetMatchingPets(V, y, Z, j) end
-        return 0
+        if not d.Mail.IsGiftableCategory(G) or G == "HarvestedFruits" then return 0 end
+        local c = i[G]
+        return type(c) == "table" and math.max(math.floor(tonumber(c[V]) or 0), 0) or 0
     end,
     GetBatchAmount = function(G)
         G = math.max(math.floor(tonumber(G) or 0), 0)
@@ -4049,19 +4670,17 @@ d.Mail = {
         local c = {}
         y = d.Mail.GetBatchAmount(y)
         if y <= 0 then return c, 0 end
-        if G == "Seeds" then
-            local Z = d.Mail.GetAvailableCount(G, V)
-            local j = math.min(y, Z)
-            if j > 0 then table.insert(c, { Category = "Seeds", ItemKey = V, Count = j }) end
-            return c, j
-        end
         if G == "Pets" then
             local G = d.Mail.GetMatchingPets(V, Z, j, i)
             local J = math.min(y, #G)
             for V = 1, J, 1 do table.insert(c, { Category = "Pets", ItemKey = G[V].key, Count = 1 }) end
             return c, J
         end
-        return c, 0
+        if not d.Mail.IsGiftableCategory(G) or G == "HarvestedFruits" then return c, 0 end
+        local J = d.Mail.GetAvailableCount(G, V)
+        local T = math.min(y, J)
+        if T > 0 then table.insert(c, { Category = G, ItemKey = V, Count = T }) end
+        return c, T
     end,
     MarkBatchSent = function(G)
         for G, V in ipairs(G or {}) do
@@ -4152,7 +4771,8 @@ d.Mail = {
     end,
     AddDraftItem = function(G, V, y)
         if J.MailManualRunning then return false, "Stop the current order first" end
-        if G ~= "Seeds" and G ~= "Pets" then return false, "Select an item category" end
+        G, V = d.Mail.DecodeItemSelection(G, V)
+        if not d.Mail.IsGiftableCategory(G) or G == "HarvestedFruits" then return false, "Select an item category" end
         if type(V) ~= "string" or V == "" then return false, "Select an item" end
         y = math.floor(tonumber(y) or 0)
         if y <= 0 then return false, "Amount must be above 0" end
@@ -4230,26 +4850,126 @@ d.Mail = {
         Y.mail_manual_order = {}
         u.Save.SaveDataSync()
     end,
+    ApplyPendingParts = function(G, V)
+        if type(G) ~= "table" or type(G.items) ~= "table" or type(V) ~= "table" then return false end
+        for V, y in ipairs(V) do
+            local Z = math.floor(tonumber(y.itemIndex) or 0)
+            local j = G.items[Z]
+            if not j then continue end
+            local i = math.max(math.floor(tonumber(j.amount) or 0), 0)
+            local c = math.max(math.floor(tonumber(y.sentBefore) or 0), 0)
+            local J = math.max(math.floor(tonumber(y.count) or 0), 0)
+            j.sent = math.min(math.max(math.floor(tonumber(j.sent) or 0), c + J), i)
+        end
+        return true
+    end,
+    BuildCombinedManualBatch = function(G)
+        local V = {}
+        local y = {}
+        local Z = 0
+        local j = 0
+        local i = Y.mail_ignore_batch_limit and math.huge or d.Mail.MaxBatchItems
+        if type(G) ~= "table" or type(G.items) ~= "table" then return V, y, Z, j end
+        for G, c in ipairs(G.items) do
+            local J = math.max(math.floor(tonumber(c.amount) or 0), 0)
+            c.sent = math.max(math.floor(tonumber(c.sent) or 0), 0)
+            local T = math.max(J - c.sent, 0)
+            if T <= 0 then continue end
+            Z += 1
+            if i <= 0 then continue end
+            local u = d.Mail.GetAvailableCount(c.category, c.itemName)
+            local q = math.min(T, u, i)
+            if q <= 0 then continue end
+            local g, E = d.Mail.BuildBatch(c.category, c.itemName, q)
+            if E <= 0 then continue end
+            for G, y in ipairs(g) do table.insert(V, y) end
+            table.insert(y,
+                {
+                    itemIndex = G,
+                    category = c.category,
+                    itemName = c.itemName,
+                    count = E,
+                    beforeCount = u,
+                    sentBefore = c
+                        .sent,
+                    batch = g
+                })
+            j += E
+            i -= E
+        end
+        return V, y, Z, j
+    end,
+    RunCombinedManualItems = function(G)
+        local V = 0
+        while J.MailManualRunning and (J.MailActiveOrder == G and G.cancelled ~= true) do
+            local y, Z, j, i = d.Mail.BuildCombinedManualBatch(G)
+            if j <= 0 then return true end
+            if i <= 0 then
+                d.Mail.SetStatus(G.id .. " | Waiting for remaining items", "#FFCC66")
+                d.Mail.SetManualUiStatus("Waiting for remaining order items", "#FFCC66", "\226\143\179")
+                task.wait(2)
+                continue
+            end
+            G.pending = { parts = Z, batch = y }
+            d.Mail.SaveManualOrder(G)
+            d.Mail.SetStatus(string.format("%s | Sending %d items together", G.id, i), "#66CCFF")
+            d.Mail.SetManualUiStatus(
+                string.format("Sending %d items from %d order lines to @%s", i, #Z, tostring(G.recipient.username or "?")),
+                "#66CCFF", "\240\159\147\164")
+            local c, T = d.Mail.SendBatch(G.recipient, y, string.format("Order %s | Combined %d items", G.id, i),
+                function() return J.MailManualRunning and (J.MailActiveOrder == G and G.cancelled ~= true) end)
+            if c then
+                d.Mail.ApplyPendingParts(G, Z)
+                G.pending = {}
+                V = 0
+                d.Mail.SaveManualOrder(G)
+                d.Mail.RefreshDraftUi()
+                d.Mail.SetManualUiStatus(string.format("Sent %d items together", i), "#7CFC00", "\226\156\133")
+            else
+                G.pending = {}
+                V += 1
+                d.Mail.SaveManualOrder(G)
+                if G.cancelled == true or not J.MailManualRunning or J.MailActiveOrder ~= G then break end
+                d.Mail.SetStatus(string.format("%s | %s", G.id, tostring(T)), "#FF5555")
+                d.Mail.SetManualUiStatus(string.format("Combined send failed. Retrying in %ds", d.Mail.RetryDelay),
+                    "#FF5555",
+                    "\226\154\160\239\184\143")
+                task.wait(d.Mail.RetryDelay)
+            end
+        end
+        return false
+    end,
     WasPendingBatchSent = function(G)
         if type(G) ~= "table" or type(G.batch) ~= "table" or #G.batch == 0 then return false end
-        if G.category == "Seeds" then
+        if G.category ~= "Pets" then
+            if not d.Mail.IsGiftableCategory(G.category) or G.category == "HarvestedFruits" then return false end
             local V = d.Mail.GetAvailableCount(G.category, G.itemName)
             local y = math.max(math.floor(tonumber(G.beforeCount) or 0), 0)
             local Z = math.max(math.floor(tonumber(G.count) or 0), 0)
             return Z > 0 and V <= y - Z
         end
-        if G.category == "Pets" then
-            local V = d.Mail.GetInventory()
-            local y = V and V.Pets
-            if type(y) ~= "table" then return false end
-            for G, V in ipairs(G.batch) do if type(V) == "table" and (type(V.ItemKey) == "string" and y[V.ItemKey] ~= nil) then return false end end
-            return true
-        end
-        return false
+        local V = d.Mail.GetInventory()
+        local y = V and V.Pets
+        if type(y) ~= "table" then return false end
+        for G, V in ipairs(G.batch) do if type(V) == "table" and (type(V.ItemKey) == "string" and y[V.ItemKey] ~= nil) then return false end end
+        return true
     end,
     ReconcilePendingBatch = function(G)
         local V = type(G) == "table" and G.pending
         if type(V) ~= "table" or next(V) == nil then return false end
+        if type(V.parts) == "table" and #V.parts > 0 then
+            local y = true
+            for G, V in ipairs(V.parts) do
+                if not d.Mail.WasPendingBatchSent(V) then
+                    y = false
+                    break
+                end
+            end
+            if y then d.Mail.ApplyPendingParts(G, V.parts) end
+            G.pending = {}
+            d.Mail.SaveManualOrder(G)
+            return y
+        end
         local y = math.floor(tonumber(V.itemIndex) or 0)
         local Z = type(G.items) == "table" and G.items[y]
         local j = Z and d.Mail.WasPendingBatchSent(V) or false
@@ -4274,6 +4994,10 @@ d.Mail = {
         task.spawn(function()
             local V, y = pcall(function()
                 d.Mail.ReconcilePendingBatch(G)
+                if G.batchTogether == true then
+                    d.Mail.RunCombinedManualItems(G)
+                    return
+                end
                 for V, y in ipairs(G.items) do
                     y.sent = math.max(math.floor(tonumber(y.sent) or 0), 0)
                     local Z = {}
@@ -4402,7 +5126,8 @@ d.Mail = {
             pending = {},
             startedAt =
                 os.time(),
-            state = "running"
+            state = "running",
+            batchTogether = Y.mail_manual_batch_together == true
         }
         d.Mail.SaveManualOrder(Z)
         if not d.Mail.RunManualOrder(Z) then return false, "Could not start the order" end
@@ -4431,7 +5156,8 @@ d.Mail = {
     end,
     AddRule = function(G, V, y, Z, j, i, c)
         if type(G) ~= "table" or type(G.userId) ~= "number" then return false, "Invalid recipient" end
-        if V ~= "Seeds" and V ~= "Pets" then return false, "Select a category" end
+        V, y = d.Mail.DecodeItemSelection(V, y)
+        if not d.Mail.IsGiftableCategory(V) or V == "HarvestedFruits" then return false, "Select a category" end
         if type(y) ~= "string" or y == "" then return false, "Select an item" end
         Z = math.floor(tonumber(Z) or 0)
         j = math.floor(tonumber(j) or 0)
@@ -4498,6 +5224,91 @@ d.Mail = {
         end
         return G
     end,
+    ProcessCombinedAutoRules = function(G, V)
+        local y
+        local Z = {}
+        local j = {}
+        local i = {}
+        local c = {}
+        local J = Y.mail_ignore_batch_limit and math.huge or d.Mail.MaxBatchItems
+        for V, T in ipairs(V) do
+            if J <= 0 then break end
+            local q = G[T]
+            local g = tonumber(d.Mail.RuleCooldowns[T]) or 0
+            if type(q) ~= "table" or q.enabled ~= true or os.clock() < g then continue end
+            local E = tonumber(q.targetUserId)
+            if not E or E <= 0 then
+                q.enabled = false
+                u.Save.SaveDataSync()
+                continue
+            end
+            if y and y.userId ~= E then continue end
+            local a = tostring(q.category) .. ("::" .. tostring(q.itemName))
+            local H = math.max(math.floor(tonumber(q.triggerAmount) or 1), 1)
+            local r = math.max(math.floor(tonumber(q.sendAmount) or 1), 1)
+            local Y = d.Mail.GetAvailableCount(q.category, q.itemName, q.petTypes, q.petSizes)
+            if Y < H then continue end
+            local e = Y
+            if q.category == "Pets" then
+                e = d.Mail.GetAvailableCount(q.category, q.itemName, q.petTypes, q.petSizes, i)
+            else
+                e =
+                    math.max(Y - ((c[a] or 0)), 0)
+            end
+            if e <= 0 then continue end
+            local s = math.min(r, e, J)
+            local N, W = d.Mail.BuildBatch(q.category, q.itemName, s, q.petTypes, q.petSizes, i)
+            if W <= 0 then continue end
+            y = y or
+                {
+                    userId = E,
+                    username = tostring(q.targetUsername or ""),
+                    displayName = tostring(q.targetDisplayName or
+                        q.targetUsername or "")
+                }
+            for G, V in ipairs(N) do
+                table.insert(Z, V)
+                if V.Category == "Pets" and type(V.ItemKey) == "string" then i[V.ItemKey] = true end
+            end
+            if q.category ~= "Pets" then c[a] = ((c[a] or 0)) + W end
+            table.insert(j, { ruleId = T, rule = q, count = W })
+            J -= W
+        end
+        if not y or #Z == 0 or #j == 0 then return 0 end
+        d.Mail.SetStatus(string.format("Auto | Sending %d items from %d rules to @%s", #Z, #j, y.username), "#66CCFF")
+        local T, q = d.Mail.SendBatch(y, Z, string.format("Auto combined | %d rules", #j))
+        if not T then
+            for G, V in ipairs(j) do d.Mail.RuleCooldowns[V.ruleId] = os.clock() + d.Mail.RetryDelay end
+            d.Mail.SetStatus("Auto combined send failed: " .. tostring(q), "#FF5555")
+            return 0
+        end
+        local g = 0
+        local E = {}
+        local a = {}
+        for G, V in ipairs(j) do
+            local y = V.rule
+            local Z = math.max(math.floor(tonumber(V.count) or 0), 0)
+            local j = tostring(y.category) .. ("::" .. tostring(y.itemName))
+            g += Z
+            d.Mail.RuleCooldowns[V.ruleId] = os.clock() + 5
+            local i = a[j]
+            if not i then
+                i = { category = y.category, name = d.Mail.GetItemDisplayName(y.category, y.itemName), count = 0 }
+                a[j] = i
+                table.insert(E, i)
+            end
+            i.count += Z
+        end
+        d.Webhooks.QueueMail("automatic",
+            {
+                ruleId = string.format("Combined (%d rules)", #j),
+                recipient = y.username,
+                items =
+                    E
+            })
+        d.Mail.SetStatus(string.format("Auto | Sent %d items from %d rules to @%s", g, #j, y.username), "#7CFC00")
+        return g
+    end,
     ProcessAutoRules = function()
         if not Y.mail_auto_send_enabled or J.MailManualRunning or d.Mail.Busy then return 0 end
         local G = type(Y.mail_auto_rules) == "table" and Y.mail_auto_rules or {}
@@ -4514,6 +5325,11 @@ d.Mail = {
             return 0
         end
         table.sort(V)
+        if Y.mail_auto_batch_together then
+            local y = d.Mail.ProcessCombinedAutoRules(G, V)
+            if y <= 0 then d.Mail.SetStatus("Auto send waiting for matching items", "#CFCFCF") end
+            return y
+        end
         for V, y in ipairs(V) do
             local Z = G[y]
             local j = tonumber(d.Mail.RuleCooldowns[y]) or 0
@@ -4678,6 +5494,7 @@ d.Mail = {
 d.Mail.TrimReceipts()
 J.PetFinder_WebhookData = J.PetFinder_WebhookData or {}
 J.Mail_WebhookData = J.Mail_WebhookData or {}
+J.EventSeed_WebhookData = J.EventSeed_WebhookData or {}
 J.PetFinderPremiumStatusText = ""
 J.PetFinderPremiumUi = J.PetFinderPremiumUi or {}
 d.PetFinderPremium = {
@@ -5064,7 +5881,9 @@ d.PetFinderPremium = {
         d.PetFinderPremium.Busy = true
         d.PetFinderPremium.SetStatus("Buying " .. d.PetFinderPremium.GetPetLabel(G.size, G.variant, G.displayName),
             "#66CCFF")
-        if not d.Teleport.TeleportTo(V, true, i) then
+        local c = d.StepTeleport.GetCFrame(V)
+        local T = c and d.StepTeleport.FindGroundPosition(V, ((c + Vector3.new(5, 0, 0))).Position)
+        if not T or not d.StepTeleport.ToCFrame(CFrame.new(T), i) then
             d.PetFinderPremium.Busy = false
             d.Teleport.UnlockTeleport(i)
             return false
@@ -5077,27 +5896,27 @@ d.PetFinderPremium = {
             d.Teleport.UnlockTeleport(i)
             return false
         end
-        local c = {
-            ref = V,
-            data = G,
-            countBefore = d.PetFinderPremium.CountOwnedForRule(G.name, Z),
-            startedAt = os
-                .clock(),
-            confirmed = false
-        }
-        d.PetFinderPremium.Pending = c
+        local u = { ref = V, data = G, countBefore = d.PetFinderPremium.CountOwnedForRule(G.name, Z), startedAt = os
+        .clock(), confirmed = false }
+        d.PetFinderPremium.Pending = u
         d.PetFinderPremium.Attempts[V] = ((tonumber(d.PetFinderPremium.Attempts[V]) or 0)) + 1
-        local T = pcall(function() j:Fire(V) end)
-        if T then
+        local q = pcall(function()
+            if not V or not V.Parent then error("Pet disappeared") end
+            local G = tonumber(V:GetAttribute("OwnerUserId")) or 0
+            if G ~= 0 then error("Pet is no longer available") end
+            if not d.Teleport.TeleportTo(V, false, i) then error("Final pet teleport failed") end
+            j:Fire(V)
+        end)
+        if q then
             repeat
                 local G = tonumber(V:GetAttribute("OwnerUserId")) or 0
                 if G == tonumber(J.player_userid) then d.PetFinderPremium.ConfirmPurchase("Ownership confirmed") elseif G ~= 0 then break end
-                if c.confirmed or not Y.pet_finder_enabled then break end
+                if u.confirmed or not Y.pet_finder_enabled then break end
                 task.wait(.05)
-            until os.clock() - c.startedAt >= d.PetFinderPremium.ConfirmTimeout
+            until os.clock() - u.startedAt >= d.PetFinderPremium.ConfirmTimeout
         end
-        local u = c.confirmed
-        if u then
+        local g = u.confirmed
+        if g then
             local V = d.PetFinderPremium.CountOwnedForRule(G.name, Z)
             d.PetFinderPremium.SetStatus(
                 string.format("Purchased %s | %d/%d", d.PetFinderPremium.GetPetLabel(G.size, G.variant, G.displayName), V,
@@ -5115,7 +5934,7 @@ d.PetFinderPremium = {
         d.PetFinderPremium.Pending = nil
         d.PetFinderPremium.Busy = false
         d.Teleport.UnlockTeleport(i)
-        return u
+        return g
     end,
     GetHopMinutes = function() return math.max(math.floor(tonumber(Y.pet_finder_hop_minutes) or 5), 1) end,
     ResetHopTimer = function()
@@ -5217,6 +6036,8 @@ d.PetFinderPremium = {
 }
 J.WebhookStatusText = ""
 d.Webhooks = {
+    EventSeedListenerStarted = false,
+    EventSeedConnection = nil,
     SetStatus = function(G, V)
         G = tostring(G or "")
         if G == "" then
@@ -5260,6 +6081,27 @@ d.Webhooks = {
         V.webhookType = G
         V.queuedAt = os.time()
         return d.Webhooks.Queue(J.Mail_WebhookData, V)
+    end,
+    QueueEventSeed = function(G, V)
+        if not Y.webhook_enabled or not Y.webhook_event_seeds or tostring(G or "") ~= tostring(y.LocalPlayer.Name) then return false end
+        V = tostring(V or "")
+        if V ~= "Gold Seed" and V ~= "Rainbow Seed" then return false end
+        return d.Webhooks.Queue(J.EventSeed_WebhookData, { username = tostring(G), seed = V, queuedAt = os.time() })
+    end,
+    BuildEventSeedPayload = function(G)
+        if type(G) ~= "table" then return nil end
+        local V = tostring(G.seed or "")
+        if V ~= "Gold Seed" and V ~= "Rainbow Seed" then return nil end
+        local Z = V == "Rainbow Seed"
+        return { username = "Exotic Hub", embeds = { { title = Z and "\240\159\140\136 Rainbow Seed Claimed!" or "\240\159\159\161 Gold Seed Claimed!", description = Z and "A rare **Rainbow Seed** was collected successfully!" or "A rare **Gold Seed** was collected successfully!", color = Z and 16729559 or 16766720, fields = { { name = "\240\159\140\177 Seed", value = "**" .. (V .. "**"), inline = true }, { name = "\240\159\145\164 Account", value = "||@" .. (tostring(G.username or "Unknown") .. "||"), inline = true } }, footer = { text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or "")) }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ") } } }
+    end,
+    StartEventSeedListener = function()
+        if d.Webhooks.EventSeedListenerStarted then return false end
+        local G = y.Networking and (y.Networking.SeedPackSpawn and y.Networking.SeedPackSpawn.Claimed)
+        if not G or not G.OnClientEvent then return false end
+        d.Webhooks.EventSeedListenerStarted = true
+        d.Webhooks.EventSeedConnection = G.OnClientEvent:Connect(function(G, V) d.Webhooks.QueueEventSeed(G, V) end)
+        return true
     end,
     TrimWebhookText = function(G, V)
         G = tostring(G or "")
@@ -5366,12 +6208,8 @@ d.Webhooks = {
         V = tostring(V or "Normal")
         y = tostring(y or "Unknown")
         local j = d.PetFinderPremium.GetPetLabel(G, V, y)
-        local i = {
-            title = "\240\159\144\190 You Bought a " .. (j .. "!"),
-            message = "Pet purchase confirmed.",
-            colour =
-                Z
-        }
+        local i = { title = "\240\159\144\190 You Bought a " .. (j .. "!"), message = "Pet purchase confirmed.", colour =
+        Z }
         if V == "Rainbow" and G == "Huge" then
             i.title = "\240\159\140\136 YOU BOUGHT A " .. (string.upper(j) .. " \240\159\145\145!")
             i.message = "Incredible find! A Huge Rainbow pet has been secured!"
@@ -5440,6 +6278,7 @@ d.Webhooks = {
         local G = 0
         if Y.webhook_pet_buys and type(J.PetFinder_WebhookData) == "table" then G += #J.PetFinder_WebhookData end
         if type(J.Mail_WebhookData) == "table" then for V, y in ipairs(J.Mail_WebhookData) do if type(y) == "table" and d.Webhooks.IsMailTypeEnabled(y.webhookType) then G += 1 end end end
+        if Y.webhook_event_seeds and type(J.EventSeed_WebhookData) == "table" then G += #J.EventSeed_WebhookData end
         return G
     end,
     GetNextWebhook = function()
@@ -5456,6 +6295,21 @@ d.Webhooks = {
                     continue
                 end
                 return J.PetFinder_WebhookData, 1, V, "pet purchase"
+            end
+        end
+        if Y.webhook_event_seeds and type(J.EventSeed_WebhookData) == "table" then
+            while #J.EventSeed_WebhookData > 0 do
+                local G = J.EventSeed_WebhookData[1]
+                if type(G) ~= "table" then
+                    table.remove(J.EventSeed_WebhookData, 1)
+                    continue
+                end
+                local V = d.Webhooks.BuildEventSeedPayload(G)
+                if not V then
+                    table.remove(J.EventSeed_WebhookData, 1)
+                    continue
+                end
+                return J.EventSeed_WebhookData, 1, V, "event seed"
             end
         end
         if type(J.Mail_WebhookData) ~= "table" then J.Mail_WebhookData = {} end
@@ -5476,7 +6330,8 @@ d.Webhooks = {
         return nil
     end,
     ProcessNext = function()
-        local G = Y.webhook_pet_buys or Y.webhook_mail_manual or Y.webhook_mail_auto or Y.webhook_mail_claims
+        local G = Y.webhook_pet_buys or Y.webhook_event_seeds or Y.webhook_mail_manual or Y.webhook_mail_auto or
+            Y.webhook_mail_claims
         if not G then
             d.Webhooks.ClearStatus()
             return false
@@ -5521,6 +6376,407 @@ d.Webhooks = {
             d.Webhooks.SetStatus("Webhook loop error", "#FF5555")
             warn("[Webhooks] Loop error:", V)
         end
+    end
+}
+d.Webhooks.StartEventSeedListener()
+J.MoonPredictorStatusText = ""
+d.MoonPredictor = {
+    Started = false,
+    DebugBusy = false,
+    Label = nil,
+    RollMode = "number",
+    ValidationText =
+    "Waiting for a night to validate",
+    Colours = { Moon = "#B7C9FF", Goldmoon = "#FFD700", ["Rainbow Moon"] = "#FF66FF", Bloodmoon = "#FF4444" },
+    GetNight = function()
+        local G = y.TimeCycleData and (y.TimeCycleData.Data and y.TimeCycleData.Data.Night)
+        if type(G) ~= "table" or type(G.Weathers) ~= "table" then return nil end
+        return G
+    end,
+    GetServerTime = function()
+        local G, V = pcall(function() return y.Workspace:GetServerTimeNow() end)
+        return G and tonumber(V) or os.time()
+    end,
+    Pick = function(G, V)
+        local y = d.MoonPredictor.GetNight()
+        if not y then return nil end
+        local Z = 0
+        for G, V in y.Weathers do if type(V) == "table" then Z += tonumber(V.Chance) or 0 end end
+        if Z <= 0 then return nil end
+        local j = math.floor(tonumber(G) or 0) * 1000 + 3
+        local i = Random.new(j)
+        local c = V == "integer" and i:NextInteger(1, math.floor(Z)) or i:NextNumber(0, Z)
+        local J = 0
+        for G, V in y.Weathers do
+            if type(V) ~= "table" then continue end
+            J += tonumber(V.Chance) or 0
+            if c <= J then return tostring(G), c, j end
+        end
+        return "Moon", c, j
+    end,
+    ValidateCurrent = function()
+        if tostring(y.Workspace:GetAttribute("ActivePhase") or "") ~= "Night" then return false end
+        local G = tostring(y.Workspace:GetAttribute("ActiveWeather") or "")
+        local V = d.MoonPredictor.GetNight()
+        if not V or type(V.Weathers[G]) ~= "table" then return false end
+        local Z = math.floor(os.time() / 600)
+        local j = d.MoonPredictor.Pick(Z, "number")
+        local i = d.MoonPredictor.Pick(Z, "integer")
+        if j == G and i ~= G then
+            d.MoonPredictor.RollMode = "number"
+            d.MoonPredictor.ValidationText = "NextNumber confirmed by live moon"
+            return true
+        end
+        if i == G and j ~= G then
+            d.MoonPredictor.RollMode = "integer"
+            d.MoonPredictor.ValidationText = "NextInteger confirmed by live moon"
+            return true
+        end
+        if j == G and i == G then
+            d.MoonPredictor.ValidationText = "Both methods match the live moon"
+            return true
+        end
+        d.MoonPredictor.ValidationText = "Live moon differs; it may be forced"
+        return false
+    end,
+    GetNextNightAt = function()
+        local G = d.MoonPredictor.GetServerTime()
+        local V = tostring(y.Workspace:GetAttribute("ActivePhase") or "")
+        local Z = tonumber(y.Workspace:GetAttribute("PhaseDuration"))
+        local j = y.TimeCycleData and y.TimeCycleData.Data
+        local i = j and (j.Day and tonumber(j.Day.Lasts)) or 450
+        local c = j and (j.Sunset and tonumber(j.Sunset.Lasts)) or 30
+        if Z then
+            if V == "Night" then
+                return (Z + i) + c
+            elseif V == "Day" then
+                return Z + c
+            elseif V == "Sunset" then
+                return
+                    Z
+            end
+        end
+        local J = math.floor(G / 600) * 600
+        local T = (J + i) + c
+        return G < T and T or T + 600
+    end,
+    GetRare = function(G, V)
+        G = math.clamp(math.floor(tonumber(G) or 1), 1, 20)
+        V = V == "integer" and "integer" or "number"
+        local y = d.MoonPredictor.GetNextNightAt()
+        local Z = math.floor(y / 600)
+        local j = {}
+        for i = 0, 999, 1 do
+            local c, J, T = d.MoonPredictor.Pick(Z + i, V)
+            if c and c ~= "Moon" then
+                table.insert(j, { Name = c, At = y + i * 600, Roll = J, Seed = T })
+                if #j >= G then break end
+            end
+        end
+        return j
+    end,
+    FormatTime = function(G)
+        G = math.max(math.floor(tonumber(G) or 0), 0)
+        local V = math.floor(G / 3600)
+        local y = math.floor(((G % 3600)) / 60)
+        local Z = G % 60
+        if V > 0 then return string.format("%dh %02dm", V, y) end
+        if y > 0 then return string.format("%dm %02ds", y, Z) end
+        return string.format("%ds", Z)
+    end,
+    GetLines = function(G, V, y)
+        local Z = d.MoonPredictor.GetServerTime()
+        local j = {}
+        for G, V in ipairs(d.MoonPredictor.GetRare(V, G)) do
+            if y then
+                table.insert(j,
+                    string.format("%d. **%s** \226\128\148 <t:%d:R> (`%d`)", G, V.Name, math.floor(V.At), V.Seed))
+            else
+                local G = d.MoonPredictor.Colours[V.Name] or "#FFFFFF"
+                table.insert(j,
+                    string.format("<font color=\'%s\'>%s</font> <font color=\'#7CFC00\'>in %s</font>", G, V.Name,
+                        d.MoonPredictor.FormatTime(V.At - Z)))
+            end
+        end
+        return j
+    end,
+    Update = function()
+        if not Y.moon_predictor_enabled then
+            J.MoonPredictorStatusText = ""
+            if d.MoonPredictor.Label and type(d.MoonPredictor.Label.SetText) == "function" then
+                d.MoonPredictor.Label
+                    :SetText("<font color=\'#AFAFAF\'>Moon predictor disabled.</font>")
+            end
+            return
+        end
+        d.MoonPredictor.ValidateCurrent()
+        local G = d.MoonPredictor.GetServerTime()
+        local V = tostring(y.Workspace:GetAttribute("ActivePhase") or "Unknown")
+        local Z = tostring(y.Workspace:GetAttribute("ActiveWeather") or "Unknown")
+        local j = tonumber(y.Workspace:GetAttribute("PhaseDuration")) or G
+        local i = {}
+        if V == "Night" then
+            table.insert(i,
+                string.format("<b>Current:</b> <font color=\'%s\'>%s</font> <font color=\'#AFAFAF\'>(%s left)</font>",
+                    d.MoonPredictor.Colours[Z] or "#FFFFFF", Z, d.MoonPredictor.FormatTime(j - G)))
+        else
+            table.insert(i,
+                string.format("<b>Next Night:</b> <font color=\'#B7C9FF\'>in %s</font>",
+                    d.MoonPredictor.FormatTime(d.MoonPredictor.GetNextNightAt() - G)))
+        end
+        table.insert(i, "<font color=\'#AFAFAF\'>Upcoming rare moons:</font>")
+        for G, V in ipairs(d.MoonPredictor.GetLines(d.MoonPredictor.RollMode, 8, false)) do table.insert(i, V) end
+        if d.MoonPredictor.Label and type(d.MoonPredictor.Label.SetText) == "function" then
+            d.MoonPredictor.Label:SetText(
+                table.concat(i, "\n"))
+        end
+        local c = (d.MoonPredictor.GetRare(1, d.MoonPredictor.RollMode))[1]
+        if not c then
+            J.MoonPredictorStatusText = ""
+            return
+        end
+        J.MoonPredictorStatusText = string.format(
+            "<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\140\153 [Moon]</font> <font color=\'%s\'>%s in %s</font></stroke>",
+            d.MoonPredictor.Colours[c.Name] or "#FFFFFF", c.Name, d.MoonPredictor.FormatTime(c.At - G))
+    end,
+    SendDebugPost = function()
+        if d.MoonPredictor.DebugBusy then return false, "Debug post already running" end
+        if not Y.webhook_enabled or not d.Webhooks.IsValidUrl(Y.webhook_url) then
+            return false,
+                "Add and enable your webhook first"
+        end
+        d.MoonPredictor.DebugBusy = true
+        d.MoonPredictor.ValidateCurrent()
+        local G = math.floor(os.time() / 600)
+        local V, Z, j = d.MoonPredictor.Pick(G, "number")
+        local i, c, J = d.MoonPredictor.Pick(G, "integer")
+        local T = table.concat(d.MoonPredictor.GetLines("number", 12, true), "\n")
+        local u = table.concat(d.MoonPredictor.GetLines("integer", 12, true), "\n")
+        local q = { username = "Exotic Hub", embeds = { { title = "\240\159\140\153 Moon Predictor Debug", description = string.format("Live: **%s / %s**\nNext Night: <t:%d:R>\nSelected: **%s**\nValidation: %s", tostring(y.Workspace:GetAttribute("ActivePhase") or "Unknown"), tostring(y.Workspace:GetAttribute("ActiveWeather") or "Unknown"), math.floor(d.MoonPredictor.GetNextNightAt()), d.MoonPredictor.RollMode, d.MoonPredictor.ValidationText), color = 9268223, fields = { { name = "NextNumber", value = T ~= "" and T or "No predictions", inline = false }, { name = "NextInteger", value = u ~= "" and u or "No predictions", inline = false }, { name = "Current cycle", value = string.format("Cycle `%d`\nNumber `%s` roll `%.6f` seed `%d`\nInteger `%s` roll `%s` seed `%d`", G, tostring(V), tonumber(Z) or 0, tonumber(j) or 0, tostring(i), tostring(c), tonumber(J) or 0), inline = false } }, footer = { text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or "")) }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ") } } }
+        local g, E = d.Webhooks.Post(q)
+        d.MoonPredictor.DebugBusy = false
+        warn("[Moon Predictor][NextNumber]\n" .. T)
+        warn("[Moon Predictor][NextInteger]\n" .. u)
+        return g, g and "Moon debug post sent" or tostring(E or "Debug post failed")
+    end,
+    Start = function()
+        if d.MoonPredictor.Started then return end
+        d.MoonPredictor.Started = true
+        task.spawn(function()
+            while d.MoonPredictor.Started do
+                local G, V = pcall(d.MoonPredictor.Update)
+                if not G then
+                    J.MoonPredictorStatusText = ""
+                    warn("[Moon Predictor]", V)
+                end
+                task.wait(1)
+            end
+        end)
+    end
+}
+d.MoonPredictionApi = {
+    Url = "https://exotichub.app/gag2predict",
+    Busy = false,
+    Started = false,
+    Debug = false,
+    Interval = 30,
+    PredictionCount = 20,
+    LastSignature =
+    "",
+    GetMoonPredictionIconId = function(G)
+        local V = d.MoonPredictor.GetNight()
+        local y = V and (V.Weathers and V.Weathers[tostring(G or "")]) or nil
+        local Z = type(y) == "table" and tostring(y.Image or "") or ""
+        return Z:match("%d+") or "0"
+    end,
+    GetMoonPredictionIcons = function()
+        local G = d.MoonPredictor.GetNight()
+        local V = {}
+        if not G or type(G.Weathers) ~= "table" then return V end
+        for G, y in G.Weathers do
+            local Z = type(y) == "table" and tostring(y.Image or "") or ""
+            V[tostring(G)] = Z:match("%d+") or "0"
+        end
+        return V
+    end,
+    GetMoonPredictionEvents = function()
+        local G = d.MoonPredictor.GetRare(d.MoonPredictionApi.PredictionCount, d.MoonPredictor.RollMode)
+        if type(G) ~= "table" then return nil end
+        local V = {}
+        for G, y in ipairs(G) do
+            local Z = tostring(y.Name or "")
+            local j = math.floor(tonumber(y.At) or 0)
+            if Z == "" or j <= 0 then continue end
+            table.insert(V,
+                {
+                    name = Z,
+                    starts_at = j,
+                    cycle = math.floor(j / 600),
+                    icon_id = d.MoonPredictionApi
+                        .GetMoonPredictionIconId(Z)
+                })
+        end
+        return V
+    end,
+    BuildMoonPredictionPayload = function()
+        local G = y.LocalPlayer
+        local V = d.MoonPredictionApi.GetMoonPredictionEvents()
+        if not G or not G.UserId or type(V) ~= "table" then return nil end
+        local Z = math.floor(d.MoonPredictor.GetServerTime())
+        local j = tostring(y.Workspace:GetAttribute("ActivePhase") or "Unknown")
+        local i = tostring(y.Workspace:GetAttribute("ActiveWeather") or "Unknown")
+        local c = math.floor(tonumber(y.Workspace:GetAttribute("PhaseDuration")) or 0)
+        return {
+            version = 1,
+            game = "gag2",
+            generated_at = Z,
+            source = { user_id = tostring(G.UserId), job_id = tostring(game.JobId or ""), place_version = tonumber(game.PlaceVersion) or 0 },
+            phase = { name = j, weather = i, ends_at = c, icon_id = j == "Night" and d.MoonPredictionApi.GetMoonPredictionIconId(i) or "0" },
+            next_night_at =
+                math.floor(d.MoonPredictor.GetNextNightAt()),
+            icons = d.MoonPredictionApi.GetMoonPredictionIcons(),
+            predictions = V
+        }
+    end,
+    BuildMoonPredictionSignature = function(G)
+        if type(G) ~= "table" or type(G.phase) ~= "table" or type(G.predictions) ~= "table" then return nil end
+        local V = { tostring(G.phase.name or ""), tostring(G.phase.weather or ""), tostring(G.phase.ends_at or 0),
+            tostring(
+                G.next_night_at or 0) }
+        for G, y in ipairs(G.predictions) do
+            table.insert(V,
+                table.concat({ tostring(y.name or ""), tostring(y.starts_at or 0), tostring(y.icon_id or "0") }, "\031"))
+        end
+        return table.concat(V, "\030")
+    end,
+    SendMoonPredictionApi = function()
+        if d.MoonPredictionApi.Busy then return false end
+        local G = d.MoonPredictionApi.BuildMoonPredictionPayload()
+        local V = d.MoonPredictionApi.BuildMoonPredictionSignature(G)
+        if type(G) ~= "table" or type(V) ~= "string" or V == "" then return false end
+        if V == d.MoonPredictionApi.LastSignature then return false end
+        d.MoonPredictionApi.Busy = true
+        local Z, j, i, c, J = pcall(function() return g.Http.PostJson(d.MoonPredictionApi.Url, G) end)
+        d.MoonPredictionApi.Busy = false
+        if not Z then
+            if d.MoonPredictionApi.Debug then warn("[MoonPredictionApi] Request crashed:", j) end
+            return false
+        end
+        if not j then
+            if d.MoonPredictionApi.Debug then warn("[MoonPredictionApi] Request failed:", tostring(J or i)) end
+            return false
+        end
+        d.MoonPredictionApi.LastSignature = V
+        if d.MoonPredictionApi.Debug then
+            print("[MoonPredictionApi] Status:", i)
+            print("[MoonPredictionApi] Response:", tostring(c or ""))
+            print("[MoonPredictionApi] Payload:", y.HttpService:JSONEncode(G))
+        end
+        return true
+    end,
+    LoopMoonPredictionApi = function()
+        local G, V = pcall(d.MoonPredictionApi.SendMoonPredictionApi)
+        if not G and d.MoonPredictionApi.Debug then warn("[MoonPredictionApi] Loop error:", V) end
+    end,
+    StartMoonPredictionApi = function()
+        if d.MoonPredictionApi.Started then return false end
+        d.MoonPredictionApi.Started = true
+        task.spawn(function()
+            task.wait(5)
+            while d.MoonPredictionApi.Started do
+                d.MoonPredictionApi.LoopMoonPredictionApi()
+                task.wait(d.MoonPredictionApi.Interval)
+            end
+        end)
+        return true
+    end
+}
+d.MoonPredictionApi.StartMoonPredictionApi()
+d.LiveMapPetsApi = {
+    Url = "https://exotichub.app/gag2livepets",
+    Busy = false,
+    Started = false,
+    Interval = 7,
+    LastSignature = nil,
+    GetIconId = function(
+        G)
+        local V = type(y.PetData) == "table" and y.PetData[G] or nil
+        local Z = type(V) == "table" and tostring(V.Image or "") or ""
+        return Z:match("%d+") or "0"
+    end,
+    GetPets = function()
+        local G = d.PetFinderPremium.GetFolder()
+        if not G then return nil end
+        local V = d.PetFinderPremium.GetServerTime()
+        local y = {}
+        local Z = {}
+        local j = {}
+        for G, Z in ipairs(G:GetChildren()) do
+            local i = d.PetFinderPremium.GetPetData(Z)
+            if not i or i.ownerId ~= 0 or d.PetFinderPremium.IsExpired(i) then continue end
+            local c = tostring(i.name or "")
+            local J = tostring(i.size or "Normal")
+            local T = tostring(i.variant or "Normal")
+            local u = tostring(i.rarity or "Unknown")
+            local q = d.LiveMapPetsApi.GetIconId(i.name)
+            local g = math.floor(tonumber(i.expiresAt) or 0)
+            local E = math.max(math.floor(g - V), 0)
+            if c == "" or E <= 0 then continue end
+            table.insert(j, table.concat({ c, J, T, u, q, tostring(g) }, "\031"))
+            local a = table.concat({ c, J, T }, "\031")
+            if not y[a] then y[a] = { n = c, s = J, v = T, r = u, i = q, a = 0, t = E } end
+            y[a].a += 1
+            y[a].t = math.max(y[a].t, E)
+            if y[a].i == "0" and q ~= "0" then y[a].i = q end
+        end
+        for G, V in pairs(y) do table.insert(Z, V) end
+        table.sort(Z, function(G, V)
+            if G.n ~= V.n then return G.n < V.n end
+            if G.s ~= V.s then return G.s < V.s end
+            return G.v < V.v
+        end)
+        table.sort(j)
+        return Z, table.concat(j, "\030")
+    end,
+    Send = function()
+        if d.LiveMapPetsApi.Busy then return false end
+        local G = false
+        local V = y.LocalPlayer
+        local Z = tostring(game.JobId or "")
+        local j, i = d.LiveMapPetsApi.GetPets()
+        if not V or not V.UserId or Z == "" or type(j) ~= "table" or type(i) ~= "string" then return false end
+        local c = table.concat({ Z, tostring(game.PlaceVersion or 0), i }, "\029")
+        if c == d.LiveMapPetsApi.LastSignature then return false end
+        d.LiveMapPetsApi.Busy = true
+        local J = { j = Z, u = tostring(V.UserId), pv = tonumber(game.PlaceVersion) or 0, p = j }
+        local T, u, q, E, a = pcall(function() return g.Http.PostJson(d.LiveMapPetsApi.Url, J) end)
+        d.LiveMapPetsApi.Busy = false
+        if not T then
+            if G then warn("[LiveMapPetsApi] Request crashed:", u) end
+            if G then warn("[LiveMapPetsApi] Request crashed:", u) end
+            return false
+        end
+        if G then
+            print("[LiveMapPetsApi] Status:", q)
+            print("[LiveMapPetsApi] Response:", tostring(E or ""))
+        end
+        if not u then
+            if G then warn("[LiveMapPetsApi] Request failed:", tostring(a or "Unknown error")) end
+            return false
+        end
+        d.LiveMapPetsApi.LastSignature = c
+        return true
+    end,
+    Start = function()
+        if d.LiveMapPetsApi.Started then return end
+        d.LiveMapPetsApi.Started = true
+        task.spawn(function()
+            task.wait(5)
+            while d.LiveMapPetsApi.Started do
+                pcall(d.LiveMapPetsApi.Send)
+                task.wait(d.LiveMapPetsApi.Interval)
+            end
+        end)
     end
 }
 d.GardenItems = {
@@ -5574,8 +6830,106 @@ d.GardenItems = {
     end
 }
 d.GardenItems.StartSeedCollectorPetsAndPlayer()
+J.GardenExpandStatusText = ""
+d.GardenItems.ExpandSystem = {
+    Busy = false,
+    Started = false,
+    SetStatus = function(G, V)
+        J.GardenExpandStatusText =
+            string.format(
+                "<stroke color=\'#000000\' thickness=\'1\'><font color=\'%s\'>\240\159\143\161 Garden Expansion:</font> <font color=\'#FFFFFF\'>%s</font></stroke>",
+                tostring(V or "#FFFFFF"), tostring(G or ""))
+    end,
+    GetCurrentSlot = function()
+        local G = tonumber(d.DataReplica.GetData("OwnedExpansions", 1)) or 1
+        return math.max(math.floor(G), 1)
+    end,
+    GetMaximumSlot = function()
+        if type(y.ExpansionPrices) ~= "table" then return 1 end
+        return math.max(#y.ExpansionPrices, 1)
+    end,
+    GetPrice = function(G)
+        G = tonumber(G)
+        if not G or type(y.ExpansionPrices) ~= "table" then return nil end
+        local V = y.ExpansionPrices[G]
+        local Z = type(V) == "table" and tonumber(V.Price) or nil
+        local j = y.GardenFlags and y.GardenFlags.ExpansionPriceOverrides
+        if j and type(j.Get) == "function" then
+            local V, y = pcall(function() return j:Get() end)
+            if V and type(y) == "table" then Z = tonumber(y[tostring(G)]) or Z end
+        end
+        return Z
+    end,
+    Loop = function()
+        local G = d.GardenItems.ExpandSystem
+        if not Y.auto_expand_garden then
+            J.GardenExpandStatusText = ""
+            return false
+        end
+        if G.Busy then return false end
+        local V = G.GetMaximumSlot()
+        local Z = math.clamp(math.floor(tonumber(Y.auto_expand_garden_max_slot) or 2), 1, V)
+        local j = G.GetCurrentSlot()
+        if j >= Z then
+            G.SetStatus(string.format("Slot %d/%d reached", j, Z), "#66FF99")
+            return false
+        end
+        local i = j + 1
+        local T = G.GetPrice(i)
+        if not T then
+            G.SetStatus("Expansion price unavailable", "#FF5555")
+            return false
+        end
+        local u = tonumber(d.Money.GetSheckles()) or 0
+        if u < T then
+            G.SetStatus(string.format("Slot %d/%d \226\128\162 Next $%s", j, Z, c.formatShecklesNumber(T)), "#FFCC66")
+            return false
+        end
+        local q = y.Networking and (y.Networking.Actions and y.Networking.Actions.ExpandGarden)
+        if not q or type(q.Fire) ~= "function" then
+            G.SetStatus("Expansion remote unavailable", "#FF5555")
+            return false
+        end
+        G.Busy = true
+        G.SetStatus(string.format("Buying slot %d...", i), "#66CCFF")
+        local g, E = pcall(function() return q:Fire() end)
+        if not g or E == false then
+            G.Busy = false
+            G.SetStatus("Purchase failed", "#FF5555")
+            return false
+        end
+        local a = os.clock()
+        repeat task.wait(.1) until G.GetCurrentSlot() > j or os.clock() - a >= 3
+        local H = G.GetCurrentSlot()
+        G.Busy = false
+        if H > j then
+            G.SetStatus(string.format("Expanded to slot %d/%d", H, Z), "#66FF99")
+            return true
+        end
+        G.SetStatus("Purchase not confirmed", "#FFCC66")
+        return false
+    end,
+    Start = function()
+        local G = d.GardenItems.ExpandSystem
+        if G.Started then return false end
+        G.Started = true
+        task.spawn(function()
+            while G.Started do
+                task.wait(1)
+                G.Loop()
+            end
+        end)
+        return true
+    end
+}
+d.GardenItems.ExpandSystem.Start()
 d.GardenItems.EventSeedCollectSystem = {
-    Claim = function(G)
+    Busy = false,
+    Started = false,
+    CurrentItem = nil,
+    RetryAt = setmetatable({},
+        { __mode = "k" }),
+    Claim_old = function(G)
         if not Y.auto_collect_event_seeds then return false end
         if not G or not G.Parent then return false end
         local V = d.ProximityPrompt.FindProximityPromptByClass(G)
@@ -5583,37 +6937,74 @@ d.GardenItems.EventSeedCollectSystem = {
         local y = J.TeleportLockNames.SeedPackCollector
         d.Teleport.LockTeleport(y, 5, true)
         local Z, j = pcall(function()
-            task.spawn(function()
-                for G = 1, 1, 1 do
-                    task.wait(.1)
-                    d.ProximityPrompt.ActivateProximityPrompt(V)
-                    task.wait()
-                end
-            end)
             if not d.Teleport.TeleportTo(G, true, y) then return false end
-            task.wait(.2)
+            task.wait(1)
             if not V.Parent then return false end
             for G = 1, 2, 1 do d.ProximityPrompt.ActivateProximityPrompt(V) end
             d.Teleport.LockTeleport(y, 5, true)
-            task.wait(.2)
+            task.wait(1)
             return true
         end)
         return Z and j == true
     end,
+    Claim = function(G)
+        local V = d.GardenItems.EventSeedCollectSystem
+        if not Y.auto_collect_event_seeds or V.Busy or d.StepTeleport.Busy or not G or G.Parent ~= y.EventSeedDrops or os.clock() < ((V.RetryAt[G] or 0)) then return false end
+        local Z = d.ProximityPrompt.FindProximityPromptByClass(G)
+        if not Z or not Z.Enabled then
+            V.RetryAt[G] = os.clock() + .25
+            return false
+        end
+        V.Busy = true
+        V.CurrentItem = G
+        local j = J.TeleportLockNames.SeedPackCollector
+        if not d.Teleport.LockTeleport(j, 60, true) then
+            V.CurrentItem = nil
+            V.Busy = false
+            return false
+        end
+        local i, c = pcall(function()
+            local V = d.StepTeleport.GetCFrame(G)
+            local i = V and ((V + Vector3.new(5, 0, 0))).Position
+            local c = i and d.StepTeleport.FindGroundPosition(G, i)
+            if not c or not d.StepTeleport.ToCFrame(CFrame.new(c), j) then return false end
+            if not Y.auto_collect_event_seeds or G.Parent ~= y.EventSeedDrops or not Z.Parent then return false end
+            if not d.Teleport.TeleportTo(G, true, j) then return false end
+            for V = 1, 2, 1 do
+                if G.Parent ~= y.EventSeedDrops or not Z.Parent then return true end
+                d.ProximityPrompt.ActivateProximityPrompt(Z)
+                task.wait(.1)
+            end
+            return true
+        end)
+        if i and c then
+            V.RetryAt[G] = os.clock() + 3
+            d.Teleport.LockTeleport(j, 5, true)
+        else
+            V.RetryAt[G] = os.clock() + 1
+            d.Teleport.UnlockTeleport(j)
+        end
+        V.CurrentItem = nil
+        V.Busy = false
+        if not i then
+            warn("[Event Seed Collector]", c)
+            return false
+        end
+        return c == true
+    end,
     StartGoldRainbowCollect = function()
-        y.EventSeedDrops.ChildAdded:Connect(function(G) d.GardenItems.EventSeedCollectSystem.Claim(G) end)
+        local G = d.GardenItems.EventSeedCollectSystem
+        if G.Started then return false end
+        G.Started = true
+        y.EventSeedDrops.ChildAdded:Connect(function(V) task.defer(function() G.Claim(V) end) end)
         task.spawn(function()
-            while true do
+            while G.Started do
                 task.wait(.5)
-                if Y.auto_collect_event_seeds then
-                    for G, V in ipairs(y.EventSeedDrops:GetChildren()) do
-                        if d.GardenItems.EventSeedCollectSystem.Claim(V) then
-                            task.wait(.5)
-                        end
-                    end
-                end
+                if not Y.auto_collect_event_seeds or G.Busy then continue end
+                for V, y in ipairs(y.EventSeedDrops:GetChildren()) do if G.Claim(y) then task.wait(.5) end end
             end
         end)
+        return true
     end
 }
 d.GardenItems.EventSeedCollectSystem.StartGoldRainbowCollect()
@@ -5713,7 +7104,7 @@ task.spawn(function()
                 if not Y.hide_plant_models then break end
                 if not V or not V.Parent then continue end
                 local Z = V:FindFirstChild("Plants")
-                if Z then c.SafeParent(Z, y.ReplicatedStorage, V) end
+                if Z then c.SafeParent(Z, y.ReplicatedFirst, V) end
             end
         end)
         if not G then
@@ -5750,24 +7141,46 @@ J.HomeDashboardUi = function()
         Icon =
         "house"
     })
-    local y = V:AddLeftGroupbox("Options", "calendar-sync")
-    local Z = V:AddRightGroupbox("<font color=\"#FFFFFF\">Multi Account </font><font color=\"#00A2FF\">Config</font>",
+    local y = V:AddLeftGroupbox("Actions", "calendar-sync")
+    local Z = V:AddRightGroupbox("Moon Predictor", "moon-star")
+    local i = V:AddRightGroupbox("Farm Details", "sprout", false)
+    local q = V:AddLeftGroupbox("<font color=\"#FFFFFF\">Multi Account </font><font color=\"#00A2FF\">Config</font>",
         "copy", false)
-    local i = V:AddLeftGroupbox("<font color=\"#FFFFFF\">Website </font><font color=\"#00A2FF\">Sync</font>", "cloud-cog")
+    local g = V:AddLeftGroupbox("<font color=\"#FFFFFF\">Website </font><font color=\"#00A2FF\">Sync</font>", "cloud-cog")
+    if Z then
+        d.MoonPredictor.Label = Z:AddLabel({ Text = "<font color=\'#AFAFAF\'>Loading moon predictions...</font>", DoesWrap = true })
+        Z:AddToggle("moon_predictor_enabled_ui",
+            {
+                Text = "Enable Moon Predictor",
+                Default = Y.moon_predictor_enabled,
+                Tooltip =
+                "Shows upcoming Goldmoon, Rainbow Moon and Bloodmoon events.",
+                Callback = function(G)
+                    Y.moon_predictor_enabled = G
+                    u.Save.SaveDataSync()
+                    d.MoonPredictor.Update()
+                end
+            })
+    end
     if i then
-        i:AddLabel({
+        d.FarmDetails.Label = i:AddLabel({ Text = "<font color=\'#AFAFAF\'>Loading farm details...</font>", DoesWrap = true })
+        i:AddButton({ Text = "Refresh Farm Details", Func = function() d.FarmDetails.Update() end })
+        d.FarmDetails.Start()
+    end
+    if g then
+        g:AddLabel({
             Text =
             "<font color=\'#66CCFF\'><b>Connect to Exotic Hub</b></font>\nEnter your Web API key and link this account.",
             DoesWrap = true
         })
-        local G = i:AddLabel({
+        local G = g:AddLabel({
             Text = tostring(Y.web_api_key or "") ~= "" and
                 "<font color=\'#FFCC66\'>\226\151\143 API key saved \226\128\148 ready to link</font>" or
                 "<font color=\'#AFAFAF\'>\226\151\143 Not connected</font>",
             DoesWrap = true
         })
         local function V(V) if G and type(G.SetText) == "function" then G:SetText(V) end end
-        i:AddInput("gag2_web_api_key",
+        g:AddInput("gag2_web_api_key",
             {
                 Text = "\240\159\148\145 Web API Key",
                 Default = Y.web_api_key,
@@ -5789,8 +7202,8 @@ J.HomeDashboardUi = function()
                     end
                 end
             })
-        i:AddDivider()
-        i:AddButton({
+        g:AddDivider()
+        g:AddButton({
             Text = "\240\159\148\151 Link This Account",
             Func = function()
                 if d.WebApi.Busy then
@@ -5811,8 +7224,8 @@ J.HomeDashboardUi = function()
             end
         })
     end
-    if Z then
-        Z:AddButton({
+    if q then
+        q:AddButton({
             Text = "Copy Config",
             Func = function()
                 local G = u.Config.BuildCopyText()
@@ -5824,7 +7237,7 @@ J.HomeDashboardUi = function()
                 J.Notify("Config copied. Add it above the loader.", 3)
             end
         })
-        Z:AddButton({
+        q:AddButton({
             Text = "\240\159\159\162 Copy Config With Loader",
             Func = function()
                 local G = u.Config.BuildCopyWithLoaderText()
@@ -5837,22 +7250,20 @@ J.HomeDashboardUi = function()
             end
         })
     end
-    if y then
-        local G = y:AddButton({ Text = "\240\159\154\168 Rejoin Server", Func = function() d.Player.Rejoin() end })
-        local V = y:AddButton({ Text = "\240\159\147\161 Hop Server", Func = function() H.Hop.HopToNewServer() end })
-        y:AddDivider()
-        y:AddToggle("automiddletp",
-            {
-                Text = "\240\159\147\141 Spawn Middle",
-                Default = Y.char_farm_middle,
-                Tooltip =
-                "Place your character in the centre of the farm when you join.",
-                Callback = function(G)
-                    Y.char_farm_middle = G
-                    u.Save.SaveDataSync()
-                end
-            })
-    end
+    local E = y:AddButton({ Text = "\240\159\154\168 Rejoin Server", Func = function() d.Player.Rejoin() end })
+    local a = y:AddButton({ Text = "\240\159\147\161 Hop Server", Func = function() H.Hop.HopToNewServer() end })
+    y:AddDivider()
+    y:AddToggle("automiddletp",
+        {
+            Text = "\240\159\147\141 Spawn Middle",
+            Default = Y.char_farm_middle,
+            Tooltip =
+            "Place your character in the centre of the farm when you join.",
+            Callback = function(G)
+                Y.char_farm_middle = G
+                u.Save.SaveDataSync()
+            end
+        })
 end
 J.MailUi = function()
     local G = j:AddTab({ Name = "Mail " .. J.GetProLabel(), Description = "Send and receive items", Icon = "mail" })
@@ -5868,6 +7279,7 @@ J.MailUi = function()
         local i
         local c
         local T
+        local q
         V:AddLabel({ Text = "Enter the exact Roblox username. @ is optional.", DoesWrap = true })
         V:AddInput("mail_manual_username_ui",
             {
@@ -5918,18 +7330,32 @@ J.MailUi = function()
                     u.Save.SaveDataSync()
                 end
             })
-        V:AddDivider()
-        local q
-        q = V:AddDropdown("mail_manual_category_ui",
+        q = V:AddToggle("mail_manual_batch_together_ui",
             {
-                Values = { "Seeds", "Pets" },
+                Text = "\240\159\147\166 Combine Order Items",
+                Default = Y.mail_manual_batch_together,
+                Tooltip =
+                "Combines different order items into the same mail when possible.",
+                DisabledTooltip = J.GetProMessage(),
+                Callback = function(
+                    G)
+                    Y.mail_manual_batch_together = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        q:SetDisabled(not J.GetCheckIfPro())
+        V:AddDivider()
+        local g
+        g = V:AddDropdown("mail_manual_category_ui",
+            {
+                Values = { "Seeds", "Pets", "Gears" },
                 Default = G,
                 Multi = false,
                 Text = "\240\159\147\166 Item Category",
                 Tooltip =
-                "Choose seeds or pets.",
+                "Choose seeds, pets or gears.",
                 Callback = function(V)
-                    if V ~= "Seeds" and V ~= "Pets" then return end
+                    if V ~= "Seeds" and (V ~= "Pets" and V ~= "Gears") then return end
                     G = V
                     y = ""
                     J.MailDraftCategory = V
@@ -5940,7 +7366,7 @@ J.MailUi = function()
                     end
                 end
             })
-        q:SetValue(G)
+        g:SetValue(G)
         j = V:AddValueDropdown("mail_manual_item_ui",
             {
                 Values = {},
@@ -5958,8 +7384,8 @@ J.MailUi = function()
                 end
             })
         j:SetValues(d.Mail.GetItemDropdown(G))
-        local g
-        g = V:AddInput("mail_manual_amount_ui",
+        local E
+        E = V:AddInput("mail_manual_amount_ui",
             {
                 Text = "\240\159\148\162 Amount",
                 Default = tostring(Z),
@@ -5973,7 +7399,7 @@ J.MailUi = function()
                     local V = l(G)
                     if not V or V <= 0 then
                         J.Notify("Amount must be a whole number above 0", 3)
-                        g:SetValue(tostring(Z))
+                        E:SetValue(tostring(Z))
                         return
                     end
                     Z = V
@@ -6067,14 +7493,14 @@ J.MailUi = function()
         local H
         H = y:AddDropdown("mail_rule_category_ui",
             {
-                Values = { "Seeds", "Pets" },
+                Values = { "Seeds", "Pets", "Gears" },
                 Default = V,
                 Multi = false,
                 Text = "\240\159\147\166 Item Category",
                 Tooltip =
-                "Choose seeds or pets.",
+                "Choose seeds, pets or gears.",
                 Callback = function(G)
-                    if G ~= "Seeds" and G ~= "Pets" then return end
+                    if G ~= "Seeds" and (G ~= "Pets" and G ~= "Gears") then return end
                     V = G
                     Z = ""
                     if q then
@@ -6255,7 +7681,23 @@ J.MailUi = function()
         })
         y:AddDivider()
         local X
-        X = y:AddToggle("mail_auto_send_enabled_ui",
+        X = y:AddToggle("mail_auto_batch_together_ui",
+            {
+                Text = "\240\159\147\166 Combine Automatic Rules",
+                Default = Y.mail_auto_batch_together,
+                Tooltip =
+                "Combines matching rules for the same recipient into one mail.",
+                DisabledTooltip = J.GetProMessage(),
+                Callback = function(
+                    G)
+                    Y.mail_auto_batch_together = G
+                    u.Save.SaveDataSync()
+                end
+            })
+        X:SetDisabled(not J.GetCheckIfPro())
+        y:AddDivider()
+        local h
+        h = y:AddToggle("mail_auto_send_enabled_ui",
             {
                 Text = "\240\159\147\164 Enable Automatic Send",
                 Default = Y.mail_auto_send_enabled,
@@ -6273,7 +7715,7 @@ J.MailUi = function()
                     u.Save.SaveDataSync()
                 end
             })
-        X:SetDisabled(not J.GetCheckIfPro())
+        h:SetDisabled(not J.GetCheckIfPro())
     end
     if Z then
         local G
@@ -6674,6 +8116,46 @@ end
 J.GardenItemsUi = function()
     local G = j:AddTab({ Name = "Garden Items", Description = "Collect garden drops", Icon = "package-open" })
     local V = G:AddLeftGroupbox("Auto Collect", "hand")
+    local y = G:AddRightGroupbox("Garden Expansion", "expand")
+    if y then
+        local G
+        G = y:AddInput("auto_expand_garden_max_slot_ui",
+            {
+                Text = "\240\159\143\161 Maximum Slot",
+                Default = tostring(Y.auto_expand_garden_max_slot),
+                Numeric = true,
+                AllowEmpty = false,
+                Finished = true,
+                ClearTextOnFocus = false,
+                Placeholder =
+                "Maximum expansion slot",
+                Tooltip = "Stops purchasing when the selected garden slot is reached.",
+                Callback = function(
+                    V)
+                    local y = l(V)
+                    local Z = d.GardenItems.ExpandSystem.GetMaximumSlot()
+                    if not y or y < 1 or y > Z then
+                        J.Notify("Garden slot must be between 1 and " .. Z, 3)
+                        G:SetValue(tostring(Y.auto_expand_garden_max_slot))
+                        return
+                    end
+                    Y.auto_expand_garden_max_slot = y
+                    u.Save.SaveDataSync()
+                end
+            })
+        y:AddToggle("auto_expand_garden_enabled_ui",
+            {
+                Text = "\240\159\143\161 Enable Auto Expand",
+                Default = Y.auto_expand_garden,
+                Tooltip =
+                "Automatically purchases affordable garden expansions.",
+                Callback = function(G)
+                    Y.auto_expand_garden = G
+                    if not G then J.GardenExpandStatusText = "" end
+                    u.Save.SaveDataSync()
+                end
+            })
+    end
     if V then
         V:AddToggle("auto_collect_drop_seeds",
             {
@@ -8245,6 +9727,18 @@ J.WebhooksUi = function()
     local V = G:AddRightGroupbox("Notifications", "bell-ring")
     local y = G:AddLeftGroupbox("Webhook URL", "link")
     if V then
+        V:AddToggle("webhook_event_seed_notifications",
+            {
+                Text = "\240\159\140\136 Gold & Rainbow Seeds",
+                Default = Y.webhook_event_seeds,
+                Tooltip =
+                "Send a notification when you collect a Gold or Rainbow Seed.",
+                Callback = function(G)
+                    Y.webhook_event_seeds = G
+                    if not G then table.clear(J.EventSeed_WebhookData) end
+                    u.Save.SaveDataSync()
+                end
+            })
         V:AddToggle("webhook_pet_buy_notifications",
             {
                 Text = "\240\159\144\190 Pet Purchases",
@@ -8335,6 +9829,7 @@ J.WebhooksUi = function()
                     if not G then
                         table.clear(J.PetFinder_WebhookData)
                         table.clear(J.Mail_WebhookData)
+                        table.clear(J.EventSeed_WebhookData)
                         d.Webhooks.ClearStatus()
                     end
                     u.Save.SaveDataSync()
@@ -8445,6 +9940,31 @@ J.SettingsUi = function()
         V:AddDivider()
     end
 end
+J.TweaksUi = function()
+    local G = j:AddTab({ Name = "Tweaks", Description = "Customise system behaviour", Icon = "sliders-horizontal" })
+    local V = G:AddLeftGroupbox("Movement", "move")
+    if V then
+        V:AddSlider("step_teleport_speed_ui",
+            {
+                Text = "Step Teleport Speed",
+                Default = math.clamp(tonumber(Y.step_teleport_speed) or 100, 25, 500),
+                Min = 25,
+                Max = 500,
+                Rounding = 0,
+                Suffix =
+                "%",
+                Tooltip = "Higher values travel faster. Very high speeds may cause movement correction.",
+                Callback = function(
+                    G)
+                    local V = math.clamp(tonumber(G) or 100, 25, 500)
+                    Y.step_teleport_speed = V
+                    d.StepTeleport.StepDelay = .35 * ((100 / V))
+                    u.Save.SaveDataSync()
+                end
+            })
+        V:AddLabel({ Text = "100% is the recommended default speed.", DoesWrap = true })
+    end
+end
 J.InitUi = function()
     J.HomeDashboardUi()
     J.PremiumUi()
@@ -8458,10 +9978,13 @@ J.InitUi = function()
     J.Shopui()
     J.WebhooksUi()
     J.SettingsUi()
+    J.TweaksUi()
 end
 if Z and j then J.InitUi() end
 d.Mail.MailLoopStart()
 d.PetFinderPremium.Start()
+d.LiveMapPetsApi.Start()
+d.MoonPredictor.Start()
 task.spawn(function()
     while true do
         task.wait(3)
@@ -8537,6 +10060,9 @@ task.spawn(function()
                 .insert(G, J.WaterPlantStatusText)
         end
         if Y.auto_sprinkler_place and J.SprinklerPlaceStatusText ~= "" then table.insert(G, J.SprinklerPlaceStatusText) end
+        if Y.moon_predictor_enabled and (type(J.MoonPredictorStatusText) == "string" and J.MoonPredictorStatusText ~= "") then
+            table.insert(G, J.MoonPredictorStatusText)
+        end
         if Y.pet_return_farm and J.PetFarmStatusText ~= "" then table.insert(G, J.PetFarmStatusText) end
         if J.TrowelRunning and (type(J.TrowelStatusText) == "string" and J.TrowelStatusText ~= "") then
             table.insert(G,
@@ -8544,6 +10070,9 @@ task.spawn(function()
         end
         local V = d.Teleport.GetLockStatusText()
         if V ~= "" then table.insert(G, V) end
+        if Y.auto_expand_garden and (type(J.GardenExpandStatusText) == "string" and J.GardenExpandStatusText ~= "") then
+            table.insert(G, J.GardenExpandStatusText)
+        end
         if Y.webhook_enabled and (type(J.WebhookStatusText) == "string" and J.WebhookStatusText ~= "") then
             table.insert(
                 G, J.WebhookStatusText)
