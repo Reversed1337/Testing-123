@@ -101,7 +101,7 @@ pcall(function() Addcantsleep() end)
 local Z = G.Library
 if not Z or type(Z.CreateWindow) ~= "function" then
     -- If G.Library is missing or broken, load Obsidian directly
-    Z = loadstring(game:HttpGet("https://exotichub.app/live_mskmb7a2p8dj.lua"))()
+    Z = loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zetahub_uilib"))()
     if not Z then
         warn("Failed to load Obsidian UI library – UI will not work")
         Z = {}  -- dummy table to avoid crashes
