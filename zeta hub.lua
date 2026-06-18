@@ -101,7 +101,7 @@ pcall(function() Addcantsleep() end)
 local Z = G.Library
 if not Z or type(Z.CreateWindow) ~= "function" then
     -- If G.Library is missing or broken, load Obsidian directly
-    Z = loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zetahub_uilib"))()
+    Z = loadstring(game:HttpGet("https://exotichub.app/live_mskmb7a2p8dj.lua"))()
     if not Z then
         warn("Failed to load Obsidian UI library – UI will not work")
         Z = {}  -- dummy table to avoid crashes
@@ -656,7 +656,7 @@ d.DataReplica = {
 d.Money = { GetSheckles = function() return d.DataReplica.GetData("Sheckles", 0) end }
 if d.DataReplica.Load("PlayerState", 10) then end
 d.GameApi = {
-    Url = "https://exotichub.app/alivestats",
+    Url = "",
     Busy = false,
     Started = false,
     GetInterval = function() return 17 end,
