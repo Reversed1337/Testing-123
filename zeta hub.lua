@@ -116,6 +116,22 @@ if not i then
         end
         G.Window = j
     end
+else
+    -- Headless Mode: Create a dummy "black hole" UI object that safely absorbs all UI building calls without erroring
+    local function getDummy()
+        local dummy = {}
+        setmetatable(dummy, {
+            __index = function(self, key)
+                return function(...) return getDummy() end
+            end
+        })
+        return dummy
+    end
+    
+    Z = getDummy()
+    j = getDummy()
+    G.Library = Z
+    G.Window = j
 end
 y.AppName = "Exotic Hub"
 y.CurentV = "v21"
