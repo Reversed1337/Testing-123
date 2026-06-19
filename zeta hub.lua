@@ -90,48 +90,123 @@ function Addcantsleep()
                     .Disconnect(V) end end end
 end
 
+-- Create a universal "black hole" dummy object that intercepts all method calls natively
+local function getDummy()
+    local dummy = {}
+    setmetatable(dummy, {
+        __index = function(self, key)
+            return function(...) return getDummy() end
+        end,
+        __namecall = function(self, ...)
+            return getDummy()
+        end
+    })
+    return dummy
+end
 local i = type(G.IsHeadless) == "function" and G.IsHeadless() == true
-
 local Z = G.Library
 local j = G.Window
-
 if not i then
     -- Make sure the Obsidian library is loaded
     if not Z or type(Z.CreateWindow) ~= "function" then
-        -- If G.Library is missing or broken, load Obsidian directly
         Z = loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zetahub_uilib"))()
         if not Z then
             warn("Failed to load Obsidian UI library – UI will not work")
-            Z = {}  -- dummy table to avoid crashes
+            Z = getDummy()
         end
         G.Library = Z
     end
-
     -- Create the main window
     if not j or type(j.AddTab) ~= "function" then
         j = Z:CreateWindow("Exotic Hub")
+        
+        -- If the UI loads but doesn't support 'AddTab', safely fall back to the dummy object
         if not j or type(j.AddTab) ~= "function" then
-            warn("Failed to create Obsidian window – UI will not work")
-            j = {}  -- dummy table
+            warn("Failed to create Obsidian window or unsupported library API – falling back to headless")
+            j = getDummy() 
         end
         G.Window = j
     end
 else
-    -- Headless Mode: Create a dummy "black hole" UI object that safely absorbs all UI building calls without erroring
-    local function getDummy()
-        local dummy = {}
-        setmetatable(dummy, {
-            __index = function(self, key)
-                return function(...) return getDummy() end
-            end
-        })
-        return dummy
-    end
-    
+    -- Headless Mode: Force dummy objects to safely absorb all UI calls
     Z = getDummy()
     j = getDummy()
     G.Library = Z
     G.Window = j
+    
+    -- Draw the custom Exo Headless UI
+    task.spawn(function()
+        local sg = Instance.new("ScreenGui")
+        sg.Name = "ExoHeadless"
+        sg.ResetOnSpawn = false
+        local success = pcall(function()
+            sg.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+        end)
+        if not success then
+            sg.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+        end
+        local bg = Instance.new("Frame", sg)
+        bg.Size = UDim2.new(0, 320, 0, 45)
+        bg.Position = UDim2.new(0.5, -160, 0, 20)
+        bg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 6)
+        local title = Instance.new("TextLabel", bg)
+        title.Size = UDim2.new(0, 160, 1, 0)
+        title.Position = UDim2.new(0, 15, 0, 0)
+        title.BackgroundTransparency = 1
+        title.Text = "EXO HEADLESS"
+        title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        title.TextSize = 16
+        title.Font = Enum.Font.GothamMedium
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        local rejoinBtn = Instance.new("TextButton", bg)
+        rejoinBtn.Size = UDim2.new(0, 80, 0, 30)
+        rejoinBtn.Position = UDim2.new(1, -125, 0.5, -15)
+        rejoinBtn.BackgroundColor3 = Color3.fromRGB(45, 105, 190)
+        rejoinBtn.Text = "Rejoin"
+        rejoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        rejoinBtn.TextSize = 14
+        rejoinBtn.Font = Enum.Font.Gotham
+        Instance.new("UICorner", rejoinBtn).CornerRadius = UDim.new(0, 4)
+        local closeBtn = Instance.new("TextButton", bg)
+        closeBtn.Size = UDim2.new(0, 30, 0, 30)
+        closeBtn.Position = UDim2.new(1, -40, 0.5, -15)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(165, 45, 45)
+        closeBtn.Text = "✖"
+        closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        closeBtn.TextSize = 14
+        closeBtn.Font = Enum.Font.GothamBold
+        Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
+        rejoinBtn.MouseButton1Click:Connect(function()
+            local ts = game:GetService("TeleportService")
+            local p = game:GetService("Players").LocalPlayer
+            ts:Teleport(game.PlaceId, p)
+        end)
+        closeBtn.MouseButton1Click:Connect(function()
+            sg:Destroy()
+            if type(J) == "table" then J.is_forced_stop = true end
+        end)
+        
+        -- Make draggable
+        local UIS = game:GetService("UserInputService")
+        local dragging, dragStart, startPos
+        bg.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = bg.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                end)
+            end
+        end)
+        UIS.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - dragStart
+                bg.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end)
+    end)
 end
 y.AppName = "Exotic Hub"
 y.CurentV = "v21"
