@@ -6124,6 +6124,39 @@ function Funcs:AddValueDropdown(Idx, Info)
     local PopupScale = { W = 0.56, H = 0.76 }
     local CurrentRowHeight = 40
     local CurrentOptionTextSize = 14
+    local RenderVirtualRows
+    local VirtualState = {
+        Active = false,
+        Values = {},
+        DisabledLookup = {},
+        Rows = {},
+        RowCount = 0,
+        LastFirstIndex = -1,
+    }
+    local VirtualDropdownThreshold = tonumber(Info.VirtualDropdownThreshold) or 80
+    local VirtualDropdownBuffer = tonumber(Info.VirtualDropdownBuffer) or 8
+    
+    local function ClearDropdownList()
+        VirtualState.Active = false
+        VirtualState.Values = {}
+        VirtualState.DisabledLookup = {}
+        VirtualState.RowCount = 0
+        VirtualState.LastFirstIndex = -1
+
+        for Button, _ in pairs(Buttons) do
+            if Button then
+                Button:Destroy()
+            end
+        end
+
+        table.clear(Buttons)
+        table.clear(VirtualState.Rows)
+
+        ListLayout.Parent = List
+        List.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        List.CanvasSize = UDim2.fromOffset(0, 0)
+        List.CanvasPosition = Vector2.zero
+    end
 
     local function StripRichText(Text)
         return tostring(Text or ""):gsub("<[^<>]->", "")
@@ -6296,6 +6329,10 @@ function Funcs:AddValueDropdown(Idx, Info)
             Entry.Button.Size = UDim2.new(1, -8, 0, CurrentRowHeight)
             Entry.Button.TextSize = CurrentOptionTextSize
         end
+
+        if RenderVirtualRows then
+            RenderVirtualRows(true)
+        end
     end
 
     local function UpdateEntry(Entry)
@@ -6321,6 +6358,8 @@ function Funcs:AddValueDropdown(Idx, Info)
         MenuState.Active = false
         ClickBlocker.Visible = false
         Popup.Visible = false
+        
+        ClearDropdownList()
 
         if UserInputService:GetFocusedTextBox() == SearchInput then
             pcall(function()
@@ -6343,7 +6382,7 @@ function Funcs:AddValueDropdown(Idx, Info)
                     if not SearchText:find(Query, 1, true) then
                         continue
                     end
-                elseif not SearchText:match(Query) then
+                elseif not SearchText:find(Query, 1, true) then
                     continue
                 end
             end
@@ -6392,7 +6431,106 @@ function Funcs:AddValueDropdown(Idx, Info)
         end
     end
 
+    local function CreateDropdownButton(LayoutOrder)
+        local Button = New("TextButton", {
+            BackgroundColor3 = "MainColor",
+            BackgroundTransparency = 1,
+            BorderColor3 = "OutlineColor",
+            BorderSizePixel = 0,
+            LayoutOrder = LayoutOrder or 0,
+            Size = UDim2.new(1, -8, 0, CurrentRowHeight),
+            Text = "",
+            TextSize = CurrentOptionTextSize,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 123,
+            Parent = List,
+        })
+
+        New("UICorner", {
+            CornerRadius = UDim.new(0, Library.CornerRadius + 1),
+            Parent = Button,
+        })
+
+        New("UIPadding", {
+            PaddingLeft = UDim.new(0, 12),
+            PaddingRight = UDim.new(0, 10),
+            Parent = Button,
+        })
+
+        Button.MouseButton1Click:Connect(function()
+            local Entry = Buttons[Button]
+            if not Entry or Entry.Disabled or Dropdown.Disabled then
+                return
+            end
+
+            ApplySelection(Entry.Value)
+        end)
+
+        return Button
+    end
+
+    RenderVirtualRows = function(Force)
+        if not MenuState.Active or not VirtualState.Active then
+            return
+        end
+
+        local values = VirtualState.Values or {}
+        local total = #values
+        local rowHeight = math.max(CurrentRowHeight, 1)
+
+        if total <= 0 then
+            return
+        end
+
+        local firstIndex = math.floor((List.CanvasPosition.Y or 0) / rowHeight) + 1
+        firstIndex = math.clamp(firstIndex, 1, total)
+
+        if not Force and firstIndex == VirtualState.LastFirstIndex then
+            return
+        end
+
+        VirtualState.LastFirstIndex = firstIndex
+
+        for row = 1, VirtualState.RowCount do
+            local button = VirtualState.Rows[row]
+
+            if not button then
+                button = CreateDropdownButton(row)
+                button.AnchorPoint = Vector2.zero
+                VirtualState.Rows[row] = button
+            end
+
+            local index = firstIndex + row - 1
+            local value = values[index]
+
+            if value == nil then
+                Buttons[button] = nil
+                button.Visible = false
+                continue
+            end
+
+            local entry = Buttons[button] or { Button = button }
+            entry.Value = value
+            entry.Disabled = VirtualState.DisabledLookup[value] == true
+            Buttons[button] = entry
+
+            button.Visible = true
+            button.LayoutOrder = index
+            button.Position = UDim2.fromOffset(4, (index - 1) * rowHeight)
+            button.Size = UDim2.new(1, -8, 0, rowHeight)
+            button.TextSize = CurrentOptionTextSize
+
+            UpdateEntry(entry)
+        end
+    end
+
     function Dropdown:BuildDropdownList(PrioritizeSelected)
+        if not MenuState.Active then
+            ClearDropdownList()
+            Dropdown:Display()
+            return
+        end
+
         local query = SearchInput.Visible and (SearchInput.Text or ""):lower() or ""
         local orderedValues = BuildOrderedValues(query, PrioritizeSelected == true)
         local disabledLookup = {}
@@ -6401,57 +6539,41 @@ function Funcs:AddValueDropdown(Idx, Info)
             disabledLookup[ResolveOptionValue(Value)] = true
         end
 
-        for Button, _ in pairs(Buttons) do
-            Button:Destroy()
+        ClearDropdownList()
+
+        if #orderedValues > VirtualDropdownThreshold then
+            ListLayout.Parent = nil
+            List.AutomaticCanvasSize = Enum.AutomaticSize.None
+
+            VirtualState.Active = true
+            VirtualState.Values = orderedValues
+            VirtualState.DisabledLookup = disabledLookup
+            VirtualState.RowCount = math.min(#orderedValues, math.max(8, math.floor((tonumber(Info.MaxVisibleDropdownItems) or 8) + VirtualDropdownBuffer)))
+            VirtualState.LastFirstIndex = -1
+
+            ApplyPopupLayout()
+            List.CanvasSize = UDim2.fromOffset(0, math.ceil(#orderedValues * CurrentRowHeight))
+            List.CanvasPosition = Vector2.zero
+            RenderVirtualRows(true)
+            Dropdown:Display()
+            return
         end
-        table.clear(Buttons)
+
+        ListLayout.Parent = List
+        List.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
         for i = 1, #orderedValues do
             local Value = orderedValues[i]
             local IsDisabled = disabledLookup[Value] == true
-
-            local Button = New("TextButton", {
-                BackgroundColor3 = "MainColor",
-                BackgroundTransparency = 1,
-                BorderColor3 = "OutlineColor",
-                BorderSizePixel = 0,
-                LayoutOrder = i,
-                Size = UDim2.new(1, -8, 0, CurrentRowHeight),
-                Text = "",
-                TextSize = CurrentOptionTextSize,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                ZIndex = 123,
-                Parent = List,
-            })
-
-            New("UICorner", {
-                CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-                Parent = Button,
-            })
-
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 12),
-                PaddingRight = UDim.new(0, 10),
-                Parent = Button,
-            })
-
+            local Button = CreateDropdownButton(i)
             local Entry = {
                 Button = Button,
                 Value = Value,
                 Disabled = IsDisabled,
             }
 
-            if not IsDisabled then
-                Button.MouseButton1Click:Connect(function()
-                    if Dropdown.Disabled then
-                        return
-                    end
-                    ApplySelection(Value)
-                end)
-            end
-
-            UpdateEntry(Entry)
             Buttons[Button] = Entry
+            UpdateEntry(Entry)
         end
 
         List.CanvasPosition = Vector2.zero
@@ -6693,21 +6815,40 @@ function Funcs:AddValueDropdown(Idx, Info)
         Title.Text = Text or "Select"
     end
 
+    -- function MenuState:Open_old()
+    --     if MenuState.Active or Dropdown.Disabled then
+    --         return
+    --     end
+
+    --     MenuState.Active = true
+    --     ClickBlocker.Visible = true
+    --     Popup.Visible = true
+    --     Title.Text = Dropdown.Text or "Select"
+    --     UpdateCloseButtonStyle()
+
+    --     if SearchInput.Visible then
+    --         SearchInput.Text = ""
+    --     end
+
+    --     Dropdown:BuildDropdownList(true)
+    --     Dropdown:UpdateColors()
+    -- end
+    
     function MenuState:Open()
         if MenuState.Active or Dropdown.Disabled then
             return
         end
-
+    
+        if SearchInput.Visible and SearchInput.Text ~= "" then
+            SearchInput.Text = ""
+        end
+    
         MenuState.Active = true
         ClickBlocker.Visible = true
         Popup.Visible = true
         Title.Text = Dropdown.Text or "Select"
         UpdateCloseButtonStyle()
-
-        if SearchInput.Visible then
-            SearchInput.Text = ""
-        end
-
+    
         Dropdown:BuildDropdownList(true)
         Dropdown:UpdateColors()
     end
@@ -6732,6 +6873,12 @@ function Funcs:AddValueDropdown(Idx, Info)
     end)
 
     CloseButton.MouseButton1Click:Connect(ClosePopup)
+
+    Library:GiveSignal(List:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+        if VirtualState.Active and RenderVirtualRows then
+            RenderVirtualRows(false)
+        end
+    end))
 
     if SearchInput.Visible then
         SearchInput:GetPropertyChangedSignal("Text"):Connect(function()
@@ -7090,6 +7237,39 @@ end
         local PopupScale = { W = 0.56, H = 0.76 }
         local CurrentRowHeight = 40
         local CurrentOptionTextSize = 14
+        local RenderVirtualRows
+        local VirtualState = {
+            Active = false,
+            Values = {},
+            DisabledLookup = {},
+            Rows = {},
+            RowCount = 0,
+            LastFirstIndex = -1,
+        }
+        local VirtualDropdownThreshold = tonumber(Info.VirtualDropdownThreshold) or 80
+        local VirtualDropdownBuffer = tonumber(Info.VirtualDropdownBuffer) or 8
+        
+        local function ClearDropdownList()
+            VirtualState.Active = false
+            VirtualState.Values = {}
+            VirtualState.DisabledLookup = {}
+            VirtualState.RowCount = 0
+            VirtualState.LastFirstIndex = -1
+
+            for Button, _ in pairs(Buttons) do
+                if Button then
+                    Button:Destroy()
+                end
+            end
+        
+            table.clear(Buttons)
+            table.clear(VirtualState.Rows)
+
+            ListLayout.Parent = List
+            List.AutomaticCanvasSize = Enum.AutomaticSize.Y
+            List.CanvasSize = UDim2.fromOffset(0, 0)
+            List.CanvasPosition = Vector2.zero
+        end
     
         local function IsSelected(Value)
             if Info.Multi then
@@ -7208,6 +7388,10 @@ end
                 Entry.Button.Size = UDim2.new(1, -8, 0, CurrentRowHeight)
                 Entry.Button.TextSize = CurrentOptionTextSize
             end
+
+            if RenderVirtualRows then
+                RenderVirtualRows(true)
+            end
         end
     
         local function UpdateEntry(Entry)
@@ -7233,6 +7417,8 @@ end
             MenuState.Active = false
             ClickBlocker.Visible = false
             Popup.Visible = false
+            
+            ClearDropdownList()
     
             if UserInputService:GetFocusedTextBox() == SearchInput then
                 pcall(function()
@@ -7248,7 +7434,7 @@ end
             local Unselected = {}
     
             for _, Value in pairs(Dropdown.Values or {}) do
-                if Query ~= "" and not tostring(Value):lower():match(Query) then
+                if Query ~= "" and not tostring(Value):lower():find(Query, 1, true) then
                     continue
                 end
     
@@ -7296,7 +7482,106 @@ end
             end
         end
     
+        local function CreateDropdownButton(LayoutOrder)
+            local Button = New("TextButton", {
+                BackgroundColor3 = "MainColor",
+                BackgroundTransparency = 1,
+                BorderColor3 = "OutlineColor",
+                BorderSizePixel = 0,
+                LayoutOrder = LayoutOrder or 0,
+                Size = UDim2.new(1, -8, 0, CurrentRowHeight),
+                Text = "",
+                TextSize = CurrentOptionTextSize,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 123,
+                Parent = List,
+            })
+
+            New("UICorner", {
+                CornerRadius = UDim.new(0, Library.CornerRadius + 1),
+                Parent = Button,
+            })
+
+            New("UIPadding", {
+                PaddingLeft = UDim.new(0, 12),
+                PaddingRight = UDim.new(0, 10),
+                Parent = Button,
+            })
+
+            Button.MouseButton1Click:Connect(function()
+                local Entry = Buttons[Button]
+                if not Entry or Entry.Disabled or Dropdown.Disabled then
+                    return
+                end
+
+                ApplySelection(Entry.Value)
+            end)
+
+            return Button
+        end
+
+        RenderVirtualRows = function(Force)
+            if not MenuState.Active or not VirtualState.Active then
+                return
+            end
+
+            local values = VirtualState.Values or {}
+            local total = #values
+            local rowHeight = math.max(CurrentRowHeight, 1)
+
+            if total <= 0 then
+                return
+            end
+
+            local firstIndex = math.floor((List.CanvasPosition.Y or 0) / rowHeight) + 1
+            firstIndex = math.clamp(firstIndex, 1, total)
+
+            if not Force and firstIndex == VirtualState.LastFirstIndex then
+                return
+            end
+
+            VirtualState.LastFirstIndex = firstIndex
+
+            for row = 1, VirtualState.RowCount do
+                local button = VirtualState.Rows[row]
+
+                if not button then
+                    button = CreateDropdownButton(row)
+                    button.AnchorPoint = Vector2.zero
+                    VirtualState.Rows[row] = button
+                end
+
+                local index = firstIndex + row - 1
+                local value = values[index]
+
+                if value == nil then
+                    Buttons[button] = nil
+                    button.Visible = false
+                    continue
+                end
+
+                local entry = Buttons[button] or { Button = button }
+                entry.Value = value
+                entry.Disabled = VirtualState.DisabledLookup[value] == true
+                Buttons[button] = entry
+
+                button.Visible = true
+                button.LayoutOrder = index
+                button.Position = UDim2.fromOffset(4, (index - 1) * rowHeight)
+                button.Size = UDim2.new(1, -8, 0, rowHeight)
+                button.TextSize = CurrentOptionTextSize
+
+                UpdateEntry(entry)
+            end
+        end
+
         function Dropdown:BuildDropdownList(PrioritizeSelected)
+            if not MenuState.Active then
+                ClearDropdownList()
+                Dropdown:Display()
+                return
+            end
+
             local query = SearchInput.Visible and (SearchInput.Text or ""):lower() or ""
             local orderedValues = BuildOrderedValues(query, PrioritizeSelected == true)
             local disabledLookup = {}
@@ -7305,57 +7590,41 @@ end
                 disabledLookup[Value] = true
             end
     
-            for Button, _ in pairs(Buttons) do
-                Button:Destroy()
+            ClearDropdownList()
+
+            if #orderedValues > VirtualDropdownThreshold then
+                ListLayout.Parent = nil
+                List.AutomaticCanvasSize = Enum.AutomaticSize.None
+
+                VirtualState.Active = true
+                VirtualState.Values = orderedValues
+                VirtualState.DisabledLookup = disabledLookup
+                VirtualState.RowCount = math.min(#orderedValues, math.max(8, math.floor((tonumber(Info.MaxVisibleDropdownItems) or 8) + VirtualDropdownBuffer)))
+                VirtualState.LastFirstIndex = -1
+
+                ApplyPopupLayout()
+                List.CanvasSize = UDim2.fromOffset(0, math.ceil(#orderedValues * CurrentRowHeight))
+                List.CanvasPosition = Vector2.zero
+                RenderVirtualRows(true)
+                Dropdown:Display()
+                return
             end
-            table.clear(Buttons)
+
+            ListLayout.Parent = List
+            List.AutomaticCanvasSize = Enum.AutomaticSize.Y
     
             for i = 1, #orderedValues do
                 local Value = orderedValues[i]
                 local IsDisabled = disabledLookup[Value] == true
-    
-                local Button = New("TextButton", {
-                    BackgroundColor3 = "MainColor",
-                    BackgroundTransparency = 1,
-                    BorderColor3 = "OutlineColor",
-                    BorderSizePixel = 0,
-                    LayoutOrder = i,
-                    Size = UDim2.new(1, -8, 0, CurrentRowHeight),
-                    Text = "",
-                    TextSize = CurrentOptionTextSize,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 123,
-                    Parent = List,
-                })
-    
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, Library.CornerRadius + 1),
-                    Parent = Button,
-                })
-    
-                New("UIPadding", {
-                    PaddingLeft = UDim.new(0, 12),
-                    PaddingRight = UDim.new(0, 10),
-                    Parent = Button,
-                })
-    
+                local Button = CreateDropdownButton(i)
                 local Entry = {
                     Button = Button,
                     Value = Value,
                     Disabled = IsDisabled,
                 }
     
-                if not IsDisabled then
-                    Button.MouseButton1Click:Connect(function()
-                        if Dropdown.Disabled then
-                            return
-                        end
-                        ApplySelection(Value)
-                    end)
-                end
-    
-                UpdateEntry(Entry)
                 Buttons[Button] = Entry
+                UpdateEntry(Entry)
             end
     
             List.CanvasPosition = Vector2.zero
@@ -7516,21 +7785,40 @@ end
             Title.Text = Text or "Select"
         end
     
+        -- function MenuState:Open_old()
+        --     if MenuState.Active or Dropdown.Disabled then
+        --         return
+        --     end
+    
+        --     MenuState.Active = true
+        --     ClickBlocker.Visible = true
+        --     Popup.Visible = true
+        --     Title.Text = Dropdown.Text or "Select"
+        --     UpdateCloseButtonStyle()
+    
+        --     if SearchInput.Visible then
+        --         SearchInput.Text = ""
+        --     end
+    
+        --     Dropdown:BuildDropdownList(true)
+        --     Dropdown:UpdateColors()
+        -- end
+        
         function MenuState:Open()
             if MenuState.Active or Dropdown.Disabled then
                 return
             end
-    
+        
+            if SearchInput.Visible and SearchInput.Text ~= "" then
+                SearchInput.Text = ""
+            end
+        
             MenuState.Active = true
             ClickBlocker.Visible = true
             Popup.Visible = true
             Title.Text = Dropdown.Text or "Select"
             UpdateCloseButtonStyle()
-    
-            if SearchInput.Visible then
-                SearchInput.Text = ""
-            end
-    
+        
             Dropdown:BuildDropdownList(true)
             Dropdown:UpdateColors()
         end
@@ -7556,6 +7844,12 @@ end
     
         CloseButton.MouseButton1Click:Connect(ClosePopup)
     
+        Library:GiveSignal(List:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+            if VirtualState.Active and RenderVirtualRows then
+                RenderVirtualRows(false)
+            end
+        end))
+
         if SearchInput.Visible then
             SearchInput:GetPropertyChangedSignal("Text"):Connect(function()
                 Dropdown:BuildDropdownList(true)
