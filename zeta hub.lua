@@ -90,27 +90,33 @@ function Addcantsleep()
                     .Disconnect(V) end end end
 end
 
-pcall(function() Addcantsleep() end)
--- Make sure the Obsidian library is loaded
-local Z = G.Library
-if not Z or type(Z.CreateWindow) ~= "function" then
-    -- If G.Library is missing or broken, load Obsidian directly
-    Z = loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zetahub_uilib"))()
-    if not Z then
-        warn("Failed to load Obsidian UI library – UI will not work")
-        Z = {}  -- dummy table to avoid crashes
-    end
-    G.Library = Z
-end
-
--- Create the main window
-local j = Z:CreateWindow("Exotic Hub")
-if not j or type(j.AddTab) ~= "function" then
-    warn("Failed to create Obsidian window – UI will not work")
-    j = {}  -- dummy table
-end
-G.Window = j
 local i = type(G.IsHeadless) == "function" and G.IsHeadless() == true
+
+local Z = G.Library
+local j = G.Window
+
+if not i then
+    -- Make sure the Obsidian library is loaded
+    if not Z or type(Z.CreateWindow) ~= "function" then
+        -- If G.Library is missing or broken, load Obsidian directly
+        Z = loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zetahub_uilib"))()
+        if not Z then
+            warn("Failed to load Obsidian UI library – UI will not work")
+            Z = {}  -- dummy table to avoid crashes
+        end
+        G.Library = Z
+    end
+
+    -- Create the main window
+    if not j or type(j.AddTab) ~= "function" then
+        j = Z:CreateWindow("Exotic Hub")
+        if not j or type(j.AddTab) ~= "function" then
+            warn("Failed to create Obsidian window – UI will not work")
+            j = {}  -- dummy table
+        end
+        G.Window = j
+    end
+end
 y.AppName = "Exotic Hub"
 y.CurentV = "v21"
 y.invite_link_url = "https://exotichub.app/join"
