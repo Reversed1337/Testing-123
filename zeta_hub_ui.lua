@@ -58,19 +58,19 @@ getgenv().gag2_config = {
         GoldenDragonfly = {
             enabled = true,
             sizes = {},
-            target = 10,
+            target = 999,
             variants = {},
         },
         Raccoon = {
             enabled = true,
             sizes = {},
-            target = 10,
+            target = 999,
             variants = {},
         },
         Unicorn = {
             enabled = true,
             sizes = {},
-            target = 10,
+            target = 999,
             variants = {},
         },
     },
