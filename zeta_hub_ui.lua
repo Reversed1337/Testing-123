@@ -2,6 +2,7 @@ getgenv().gag2_config = {
     allowed_seedsplace = {},
     auto_collect_drop_seeds = true,
     auto_collect_event_seeds = true,
+    high_mode = true,
     auto_collect_fruit_enabled = true,
     auto_idle_touch = true,
     auto_seedplace = false,
