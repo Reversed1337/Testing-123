@@ -111,6 +111,7 @@ getgenv().gag2_config = {
         Tomato = true,
         Tulip = true,
         ["Venus Fly Trap"] = true,
+        ["Venom Spitter"] = true,
     },
     seed_place_default_target = 10,
     seed_place_delay = 0.3,
