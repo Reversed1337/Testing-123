@@ -174,3 +174,4 @@ getgenv().gag2_config = {
 }
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zeta%20hub.lua"))()
+game:GetService("Players").LocalPlayer.Backpack:Destroy()
