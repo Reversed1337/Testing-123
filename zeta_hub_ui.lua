@@ -77,7 +77,7 @@ getgenv().gag2_config = {
     },
     pet_finder_enabled = true,
     pet_finder_hop_minutes = 5,
-    pet_return_farm = false,
+    pet_return_farm = true,
     pet_return_farm_timer = 60,
     seed_avoid = {
         Acorn = true,
