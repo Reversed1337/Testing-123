@@ -25,8 +25,8 @@ else
 
     -- Create the main window to pass to the script
     G.Window = Library:CreateWindow({
-        Title = "Exotic Hub",
-        Footer = "exotichub.app/join | v24",
+        Title = "Exotic Hub Lifetime",
+        Footer = "exotichub.app/join | v29",
         Position = UDim2.fromOffset(6, 6),
         Size = UDim2.fromOffset(720, 600),
         AutoShow = true,
