@@ -3,6 +3,7 @@ getgenv().gag2_config = {
     auto_collect_drop_seeds = true,
     auto_collect_event_seeds = true,
     high_mode = true,
+    collect_sort_mode = "Highest Price > Lowest",
     auto_collect_fruit_enabled = true,
     auto_idle_touch = true,
     auto_seedplace = false,
