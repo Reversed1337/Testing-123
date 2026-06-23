@@ -1,6 +1,3 @@
---=========================================================
--- SETUP & BYPASS
---=========================================================
 local G = {}
 G.IsPremium = function() return true end
 G.RegisterReset = function() end
@@ -20,7 +17,7 @@ if isNoui then
 else
     -- Load the real UI library from your link
     local Library = loadstring(game:HttpGet(
-    "https://exotichub.app/auto.lua"))()
+    "https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zetahub_uilib"))()
     G.Library = Library
 
     -- Create the main window to pass to the script
@@ -46,7 +43,7 @@ end
 -- MAIN SCRIPT
 --=========================================================
 local V = game.GameId
-if tostring(V) ~= "10200395747" then
+if tostring(V) ~ ="10200395747"then
     print("Exo: Invalid Game")
     return
 end
@@ -58,92 +55,31 @@ _G.is_running_gag2 = true
 print("exo start > ")
 print("Place Id ", game.PlaceId)
 print("GameId: ", V)
-local y = {}
-y.CollectionService = game:GetService("CollectionService")
-y.LocalizationService = game:GetService("LocalizationService")
-y.UserInputService = game:GetService("UserInputService")
-y.Players = game:GetService("Players")
-y.ReplicatedStorage = game:GetService("ReplicatedStorage")
-y.Workspace = game:GetService("Workspace")
-y.RunService = game:GetService("RunService")
-y.ReplicatedFirst = game:GetService("ReplicatedFirst")
-y.Lighting = game:GetService("Lighting")
-y.Stats = game:GetService("Stats")
-y.HttpService = game:GetService("HttpService")
-y.MarketplaceService = game:GetService("MarketplaceService")
-y.TeleportService = game:GetService("TeleportService")
-y.LocalPlayer = y.Players.LocalPlayer
-y.Backpack = y.LocalPlayer:WaitForChild("Backpack")
-y.PlayerGui = y.LocalPlayer:WaitForChild("PlayerGui")
-y.Character = y.LocalPlayer.Character or y.LocalPlayer.CharacterAdded:Wait()
-y.LocalPlayer.CharacterAdded:Connect(function(G) y.Character = G end)
-y.LocalPlayer.CharacterRemoving:Connect(function(G) if y.Character == G then y.Character = nil end end)
-y.SharedData = y.ReplicatedStorage:FindFirstChild("SharedData")
-y.SharedModules = y.ReplicatedStorage:FindFirstChild("SharedModules")
-y.StockValues = y.ReplicatedStorage:FindFirstChild("StockValues")
-y.CrateShop = y.StockValues:FindFirstChild("CrateShop")
-y.ExclusiveShop = y.StockValues:FindFirstChild("ExclusiveShop")
-y.GearShop = y.StockValues:FindFirstChild("GearShop")
-y.SeedShop = y.StockValues:FindFirstChild("SeedShop")
-y.fails = 0
-function y.safeRequire(G)
-    local V, Z = pcall(require, G)
-    if not V or Z == nil then
-        warn("[SafeRequire] Failed to load:", G)
-        y.fails = y.fails + 1
-        return nil
-    end
-    return Z
+local y = {}y.CollectionService = game:GetService("CollectionService")y.LocalizationService = game:GetService("LocalizationService")y.UserInputService = game:GetService("UserInputService")y.Players = game:GetService("Players")y.ReplicatedStorage = game:GetService("ReplicatedStorage")y.Workspace = game:GetService("Workspace")y.RunService = game:GetService("RunService")y.ReplicatedFirst = game:GetService("ReplicatedFirst")y.Lighting = game:GetService("Lighting")y.Stats = game:GetService("Stats")y.HttpService = game:GetService("HttpService")y.MarketplaceService = game:GetService("MarketplaceService")y.TeleportService = game:GetService("TeleportService")y.LocalPlayer = y.Players.LocalPlayer y.Backpack = y.LocalPlayer:WaitForChild("Backpack")y.PlayerGui = y.LocalPlayer:WaitForChild("PlayerGui")y.Character = y.LocalPlayer.Character or y.LocalPlayer.CharacterAdded:Wait()y.LocalPlayer.CharacterAdded:Connect(function(G)
+y.Character = G
 end
-
-y.Networking = y.safeRequire(y.SharedModules:WaitForChild("Networking"))
-y.SeedData = y.safeRequire(y.SharedModules:WaitForChild("SeedData"))
-y.GearShopData = y.safeRequire(y.SharedModules:WaitForChild("GearShopData"))
-y.PetData = y.safeRequire(y.SharedData:WaitForChild("PetData"))
-y.RarityVisuals = y.safeRequire(y.SharedModules:WaitForChild("RarityVisuals"))
-y.ReplicaClient = y.safeRequire(y.ReplicatedStorage.ClientModules.ReplicaClient)
-y.SeedShopFlags = y.safeRequire(y.SharedModules.Flags.SeedShopFlags)
-y.GearShopFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("GearShopFlags"))
-y.MutationDataModule = y.SharedModules:WaitForChild("MutationData")
-y.MutationData = y.safeRequire(y.MutationDataModule)
-y.PetSizes = y.safeRequire(y.SharedData:WaitForChild("PetSizes"))
-y.PetTypes = y.safeRequire(y.SharedData:WaitForChild("PetTypes"))
-y.FruitVisualizerController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers.FruitVisualizerController)
-y.DroppedItems = y.Workspace:WaitForChild("DroppedItems")
-y.EventSeedDrops = (y.Workspace:WaitForChild("Map")):WaitForChild("SeedPackSpawnServerLocations")
-y.CollectFruitNet = y.Networking and (y.Networking.Garden and y.Networking.Garden.CollectFruit)
-y.WateringcanData = y.safeRequire(y.SharedModules:WaitForChild("WateringcanData"))
-y.GardenSyncController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers:WaitForChild("GardenSyncController"))
-y.PathfindingService = game:GetService("PathfindingService")
-y.TweenService = game:GetService("TweenService")
-y.MailboxItemCatalog = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers.MailboxController:WaitForChild(
-    "MailboxItemCatalog"))
-y.ExpansionPrices = y.safeRequire(y.SharedData:WaitForChild("ExpansionPrices"))
-y.GardenFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("GardenFlags"))
-y.TimeCycleData = y.safeRequire(y.SharedModules:WaitForChild("TimeCycleData"))
-y.PerfFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("PerfFlags"))
-y.PlantVisualizerController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers:WaitForChild(
-    "PlantVisualizerController"))
-y.PlantVisualizerController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers:WaitForChild(
-    "PlantVisualizerController"))
-y.PlantGenerationModulesRoot = y.ReplicatedStorage:WaitForChild("PlantGenerationModules")
-y.FruitGenerationModules = y.PlantGenerationModulesRoot:WaitForChild("Fruits")
-y.PlantGenerationModules = y.PlantGenerationModulesRoot:WaitForChild("Plants")
-y.WeightFormat = y.safeRequire(y.SharedModules:WaitForChild("WeightFormat"))
-y.CalculateOvertimeGrowth = y.safeRequire(y.SharedModules:WaitForChild("CalculateOvertimeGrowth"))
-y.OvertimeGrowthFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("OvertimeGrowthFlags"))
-y.FruitGenerationData = {}
-y.PlantGenerationData = {}
+)y.LocalPlayer.CharacterRemoving:Connect(function(G)
+if y.Character == G then
+    y.Character = nil
+end
+end
+)y.SharedData = y.ReplicatedStorage:FindFirstChild("SharedData")y.SharedModules = y.ReplicatedStorage:FindFirstChild("SharedModules")y.StockValues = y.ReplicatedStorage:FindFirstChild("StockValues")y.CrateShop = y.StockValues:FindFirstChild("CrateShop")y.ExclusiveShop = y.StockValues:FindFirstChild("ExclusiveShop")y.GearShop = y.StockValues:FindFirstChild("GearShop")y.SeedShop = y.StockValues:FindFirstChild("SeedShop")y.fails = 0 function y.safeRequire(G)
+local V, Z = pcall(require, G)
+if not V or Z == nil then
+    warn("[SafeRequire] Failed to load:", G)y.fails = y.fails + 1
+    return nil
+end
+return Z
+end
+y.Networking = y.safeRequire(y.SharedModules:WaitForChild("Networking"))y.SeedData = y.safeRequire(y.SharedModules:WaitForChild("SeedData"))y.GearShopData = y.safeRequire(y.SharedModules:WaitForChild("GearShopData"))y.PetData = y.safeRequire(y.SharedData:WaitForChild("PetData"))y.RarityVisuals = y.safeRequire(y.SharedModules:WaitForChild("RarityVisuals"))y.ReplicaClient = y.safeRequire(y.ReplicatedStorage.ClientModules.ReplicaClient)y.MutationDataModule = y.SharedModules:WaitForChild("MutationData")y.MutationData = y.safeRequire(y.MutationDataModule)y.PetSizes = y.safeRequire(y.SharedData:WaitForChild("PetSizes"))y.PetTypes = y.safeRequire(y.SharedData:WaitForChild("PetTypes"))y.SellValueData = y.safeRequire(y.SharedModules:WaitForChild("SellValueData"))y.SellFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("SellFlags"))y.FruitVisualizerController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers.FruitVisualizerController)y.DroppedItems = y.Workspace:WaitForChild("DroppedItems")y.EventSeedDrops = (y.Workspace:WaitForChild("Map")):WaitForChild("SeedPackSpawnServerLocations")y.CollectFruitNet = y.Networking and(y.Networking.Garden and y.Networking.Garden.CollectFruit)y.WateringcanData = y.safeRequire(y.SharedModules:WaitForChild("WateringcanData"))y.GardenSyncController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers:WaitForChild("GardenSyncController"))y.PathfindingService = game:GetService("PathfindingService")y.TweenService = game:GetService("TweenService")y.PetSlotPrices = y.safeRequire(y.SharedData:WaitForChild("PetSlotPrices"))y.MailboxItemCatalog = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers.MailboxController:WaitForChild("MailboxItemCatalog"))y.ExpansionPrices = y.safeRequire(y.SharedData:WaitForChild("ExpansionPrices"))y.GardenFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("GardenFlags"))y.TimeCycleData = y.safeRequire(y.SharedModules:WaitForChild("TimeCycleData"))y.PerfFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("PerfFlags"))y.PlantVisualizerController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers:WaitForChild("PlantVisualizerController"))y.PlantVisualizerController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers:WaitForChild("PlantVisualizerController"))y.SeedShopFlags = y.safeRequire(y.SharedModules.Flags.SeedShopFlags)y.GearShopFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("GearShopFlags"))y.CrateData = y.safeRequire(y.SharedModules:WaitForChild("CrateData"))y.CrateShopFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("CrateShopFlags"))y.EggData = y.safeRequire(y.SharedModules:WaitForChild("EggData"))y.SeedPackData = y.safeRequire(y.SharedModules:WaitForChild("SeedPackData"))y.PlantGenerationModulesRoot = y.ReplicatedStorage:WaitForChild("PlantGenerationModules")y.FruitGenerationModules = y.PlantGenerationModulesRoot:WaitForChild("Fruits")y.PlantGenerationModules = y.PlantGenerationModulesRoot:WaitForChild("Plants")y.WeightFormat = y.safeRequire(y.SharedModules:WaitForChild("WeightFormat"))y.CalculateOvertimeGrowth = y.safeRequire(y.SharedModules:WaitForChild("CalculateOvertimeGrowth"))y.OvertimeGrowthFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("OvertimeGrowthFlags"))y.FruitValueCalc = y.safeRequire(y.SharedModules:WaitForChild("FruitValueCalc"))y.FruitGenerationData = {}y.PlantGenerationData = {}
 for G, V in ipairs(y.FruitGenerationModules:GetChildren()) do
     if V:IsA("ModuleScript") then
-        y.FruitGenerationData[V.Name] =
-            y.safeRequire(V)
+        y.FruitGenerationData[V.Name] = y.safeRequire(V)
     end
 end
 for G, V in ipairs(y.PlantGenerationModules:GetChildren()) do
     if V:IsA("ModuleScript") then
-        y.PlantGenerationData[V.Name] =
-            y.safeRequire(V)
+        y.PlantGenerationData[V.Name] = y.safeRequire(V)
     end
 end
 function Addcantsleep()
@@ -153,22 +89,18 @@ function Addcantsleep()
             if V.Disable then
                 V.Disable(V)
             elseif V.Disconnect then
-                V
-                    .Disconnect(V)
+                V.Disconnect(V)
             end
         end
     end
 end
-
-pcall(function() Addcantsleep() end)
+pcall(function()
+Addcantsleep()
+end
+)
 local Z = G.Library
 local j = G.Window
-local i = type(G.IsHeadless) == "function" and G.IsHeadless() == true
-y.AppName = "Exotic Hub"
-y.CurentV = "v24"
-y.invite_link_url = "https://exotichub.app/join"
-y.invite_link_short = "exotichub.app/join"
-local c = {}
+local i = type(G.IsHeadless) =="function"and G.IsHeadless() == true y.AppName ="Exotic Hub"y.CurentV ="v29"y.invite_link_url ="https://exotichub.app/join"y.invite_link_short ="exotichub.app/join"local c = {}
 local J = {}
 local T = {}
 local d = {}
@@ -179,15 +111,11 @@ local E = {}
 local a = {}
 local H = {}
 local r = {}
-J.is_forced_stop = false
-
--- PREMIUM CHECKS BYPASSED HERE
-J.is_pro = true
+J.is_forced_stop = false J.BuySelectFruitSelected = {}J.BuySelectFruitUi = J.BuySelectFruitUi or{}J.J.is_pro = true
 J.GetCheckIfPro = function() return true end
 
 -- Modify the reset hook so it resets to true instead of false
 if type(G.RegisterReset) == "function" then G.RegisterReset(function() J.is_pro = true end) end
--- Continue rest of script...
 J.RarityRank = {Common = 1;Uncommon = 2, Rare = 3, Epic = 4;Legendary = 5;Mythic = 6, Super = 7;Secret = 8}J.TeleportLockNames = {SeedPackCollector ="Seed Collection";SeedPlacer ="Seed Placement System", FruitCollector ="Fruit Collector", PetFarmReturn ="Pet Farm Return", EventCollector ="Event Collection";GardenItemCollector ="Garden Item Collector";PremiumFruitCollector ="Premium Fruit Collector";SprinklerPlacer ="Sprinkler Placement";PetFinderPremium ="Pet Finder Premium";WaterPlants ="Water Plants";GiftDropPickup ="Gift Drop Pickup";Other ="Other"}J.GetProMessage = function()
 local G = string.format("\240\159\148\146 <stroke th=\'0.1\' joins=\'round\' sizing=\'fixed\' color=\'#8C1600\'><font color=\'#FA2B00\'> Premium Feature - Join discord server to get Key.</font></stroke>")
 return G
