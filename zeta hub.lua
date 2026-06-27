@@ -1272,7 +1272,7 @@ u.RuntimeStats = {
 }
 u.RuntimeStats.StartRuntimeStats()
 u.GameApi = {
-	Url = "https://exotichub.app/alivestats";
+	Url = "";
 	Busy = false,
 	Started = false,
 	GetInterval = function()
@@ -25985,7 +25985,7 @@ pcall(function()
 	if type(T) == "table" and type(T.GetCheckIfPro) == "function" then
 		G.__exo_guard_claims_pro = T.GetCheckIfPro() == true
 	end;
-	(loadstring(game:HttpGet("https://exotichub.app/f8682dd68b7604300e8eed04f6977710.lua", true)))()
+	(loadstring(game:HttpGet("", true)))()
 end)
 T.ExoAutoTouch = {
 	Enabled = true,
