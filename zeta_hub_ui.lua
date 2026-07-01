@@ -479,6 +479,6 @@ getgenv().gag2_config = {
 }
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zeta%20hub.lua"))()
-setfpscap(5)
+setfpscap(10)
 local RunService = game:GetService("RunService")
 RunService:Set3dRenderingEnabled(false)
