@@ -403,6 +403,7 @@ getgenv().gag2_config = {
         ["Moon Bloom"] = true,
         Mushroom = true,
         Tomato = true,
+        Carrot = true,
     },
     seed_shop_min_sheckles = 0,
     seed_shop_min_sheckles_enabled = false,
