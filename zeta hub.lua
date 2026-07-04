@@ -1071,10 +1071,7 @@ E.SaveSync = {
 		return false
 	end,
 	GuardPremiumSaveSync = function(G)
-		if E.SaveSync.IsPremiumSaveSync() then
-			return true
-		end
-		return E.SaveSync.DisableNonPremiumSaveSync(G)
+		return true
 	end,
 	CleanShareCodeSaveSync = function(G)
 		G = tostring(G or "")
