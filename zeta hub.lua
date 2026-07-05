@@ -214,6 +214,7 @@ q.BuySelectFruitSelected = {}
 q.BuySelectFruitUi = q.BuySelectFruitUi or {}
 q.FruitCollectOverrideUiRefs = q.FruitCollectOverrideUiRefs or {}
 q.SellMultiplierOverrideUiRefs = q.SellMultiplierOverrideUiRefs or {}
+q.SaveSyncPremiumAtStartup = true
 q.is_pro = true
 q.GetCheckIfPro = function()
     return true
