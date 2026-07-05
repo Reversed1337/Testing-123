@@ -469,7 +469,7 @@ getgenv().gag2_config = {
     water_plant_wait_effect = false,
     water_plant_weather_enabled = false,
     water_plant_weather_selected = {},
-    web_api_key = "e0a536e9-2598-453a-af69-7fb5faf4e34e",
+    web_api_key = "",
     webhook_enabled = true,
     webhook_event_seeds = true,
     webhook_mail_auto = true,
@@ -480,7 +480,6 @@ getgenv().gag2_config = {
 }
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zeta%20hub.lua"))()
-game:GetService("Players").LocalPlayer.Backpack:Destroy()
 setfpscap(5)
 local RunService = game:GetService("RunService")
 RunService:Set3dRenderingEnabled(false)
