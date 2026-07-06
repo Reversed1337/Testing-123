@@ -122,7 +122,7 @@ getgenv().gag2_config = {
         ["Super Watering Can"] = true,
         ["Supersize Mushroom"] = true,
         Teleporter = true,
-        Trowel = true,
+        Trowel = false,
         Wheelbarrow = true,
     },
     gear_shop_buy_selected = {
@@ -133,6 +133,7 @@ getgenv().gag2_config = {
         ["Super Sprinkler"] = true,
         ["Super Watering Can"] = true,
         ["Uncommon Sprinkler"] = true,
+        Trowel = true,
     },
     gear_shop_min_sheckles = 0,
     gear_shop_min_sheckles_enabled = false,
