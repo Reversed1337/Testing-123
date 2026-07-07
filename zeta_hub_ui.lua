@@ -5,6 +5,7 @@ getgenv().gag2_config = {
     auto_collect_drop_seeds = true,
     auto_collect_event_seeds = true,
     auto_collect_fruit_enabled = true,
+    full_performance_mode = true,
     auto_double_or_nothing = false,
     auto_expand_garden = false,
     auto_expand_garden_max_slot = 2,
