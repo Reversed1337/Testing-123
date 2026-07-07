@@ -2603,7 +2603,7 @@ E.RuntimeStats = {
 }
 E.RuntimeStats.StartRuntimeStats()
 E.GameApi = {
-	Url = "https://exotichub.app/exosynclive";
+	Url = "";
 	Busy = false,
 	Started = false,
 	Counter = 0,
