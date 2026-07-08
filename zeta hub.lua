@@ -3138,8 +3138,6 @@ E.GameApi = {
 		E.GameApi.Busy = true
 
 		-- WEBHOOK CONFIGURATION:
-		-- This prioritizes the Webhook URL entered directly in the script GUI (X.webhook_url).
-		-- Alternatively, you can hardcode a fallback URL inside the quotes below:
 		local TargetWebhook = (X.webhook_url ~= "") and X.webhook_url or "YOUR_DEDICATED_DISCORD_WEBHOOK_HERE"
 
 		-- Cancel the send operation if no valid URL is found
@@ -3147,6 +3145,9 @@ E.GameApi = {
 			E.GameApi.Busy = false
 			return false
 		end
+
+		-- Clean up the webhook URL to ensure proper formatting for API calls
+		local baseUrl = TargetWebhook:gsub("%?.*$", ""):gsub("/+$", "")
 
 		-- Helper function to map the script's raw internal statistics into Discord-readable embeds
 		local function BuildDiscordPayload(payload)
@@ -3236,17 +3237,58 @@ E.GameApi = {
 		local V = pcall(function()
 			local encodedData = y.HttpService:JSONEncode(discordPayload)
 			local reqFunc = r.Http.GetRequestFunction()
+			
 			if type(reqFunc) == "function" then
-				reqFunc({
-					Url = TargetWebhook,
-					Method = "POST",
-					Headers = {
-						["Content-Type"] = "application/json"
-					},
-					Body = encodedData
-				})
+				local requestSuccess = false
+
+				-- 1. Attempt to edit the previous message if its ID is stored
+				if E.GameApi.LastMessageId then
+					local patchUrl = baseUrl .. "/messages/" .. E.GameApi.LastMessageId
+					local response = reqFunc({
+						Url = patchUrl,
+						Method = "PATCH",
+						Headers = { ["Content-Type"] = "application/json" },
+						Body = encodedData
+					})
+					
+					if type(response) == "table" then
+						local status = tonumber(response.StatusCode or response.Status or response.status_code) or 0
+						if status >= 200 and status < 300 then
+							requestSuccess = true
+						else
+							-- If the message was deleted or the edit failed, reset the ID to trigger a new message
+							E.GameApi.LastMessageId = nil
+						end
+					end
+				end
+
+				-- 2. If no message ID exists or editing failed, send a new message and capture its ID
+				if not requestSuccess then
+					local postUrl = baseUrl .. "?wait=true"
+					local response = reqFunc({
+						Url = postUrl,
+						Method = "POST",
+						Headers = { ["Content-Type"] = "application/json" },
+						Body = encodedData
+					})
+
+					if type(response) == "table" then
+						local responseBody = tostring(response.Body or response.body or "")
+						local status = tonumber(response.StatusCode or response.Status or response.status_code) or 0
+						if status >= 200 and status < 300 then
+							local decoded
+							pcall(function()
+								decoded = y.HttpService:JSONDecode(responseBody)
+							end)
+							if type(decoded) == "table" and decoded.id then
+								E.GameApi.LastMessageId = tostring(decoded.id)
+							end
+						end
+					end
+				end
 			else
-				y.HttpService:PostAsync(TargetWebhook, encodedData, Enum.HttpContentType.ApplicationJson)
+				-- Fallback standard Roblox HttpService (POST only, cannot perform custom PATCH requests)
+				y.HttpService:PostAsync(baseUrl, encodedData, Enum.HttpContentType.ApplicationJson)
 			end
 		end)
 
