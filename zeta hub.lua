@@ -3151,6 +3151,43 @@ E.GameApi = {
 
 		-- Helper function to map the stats into a clean, compact Discord layout
 		local function BuildDiscordPayload(payload)
+			
+			-- Standard UI Emojis (Defaults can still be edited here if desired)
+			local Emojis = {
+				Title       = "📊", 
+				Player      = "👤", 
+				Money       = "💰", 
+				Script      = "🤖", 
+				Performance = "⚙️", 
+				Atmosphere  = "🌤️", 
+				Pets        = "🐾", 
+				Seeds       = "🌱", 
+				Gear        = "🎒"  
+			}
+
+			-- Custom Seed Emoji Mapping Table
+			local SeedEmojis = {
+				["Hypno Bloom"] = "<:hypnobloom:1520651941351526500>",
+				["Dragon's Breath"] = "<:dragonsbreath:1520341335780098160>",
+				["Moon Bloom"] = "<:moonbloom:1520341284546547813>"
+			}
+
+			-- Custom Moon & Weather Emoji Formatting Helper
+			local function formatWorldValue(val)
+				if not val or val == "" then return "None" end
+				local lowerVal = val:lower():gsub("%s+", "")
+				if lowerVal == "megamoon" or lowerVal == "megaphase" then
+					return "<:megamoon:1520395637017935993> **" .. val .. "**"
+				elseif lowerVal == "goldmoon" or lowerVal == "gold" then
+					return "<:goldmoon:1520347271798063114> **" .. val .. "**"
+				elseif lowerVal == "rainbowmoon" or lowerVal == "rainbow" then
+					return "<:rainbow:1520347453566750810> **" .. val .. "**"
+				elseif lowerVal == "bloodmoon" or lowerVal == "blood" then
+					return "<:bloodmoon:1520347227095175209> **" .. val .. "**"
+				end
+				return "**" .. val .. "**"
+			end
+
 			local username = payload.username or "Unknown"
 			local userid = payload.userid or "Unknown"
 			local sheckles = payload.sheckles or "0"
@@ -3176,14 +3213,18 @@ E.GameApi = {
 			local minutes = math.floor((uptime % 3600) / 60)
 			local uptimeStr = string.format("%dh %dm", hours, minutes)
 
-			-- Compact Description Block (Replaces 5 bulky fields)
+			-- Format the World indicators using the custom Moon/Weather mapping function
+			local formattedWeather = formatWorldValue(weather)
+			local formattedPhase = formatWorldValue(phase)
+
+			-- Compact Description Block with Custom Emoji mapping
 			local description = table.concat({
-				string.format("> **👤 Player:** %s (`%s`)", username, userid),
-				string.format("> **💰 Money:** **$%s**", formattedSheckles),
-				string.format("> **🤖 Script:** Version `%s`", sc_v),
+				string.format("> %s **Player:** %s (`%s`)", Emojis.Player, username, userid),
+				string.format("> %s **Money:** **$%s**", Emojis.Money, formattedSheckles),
+				string.format("> %s **Script:** Version `%s`", Emojis.Script, sc_v),
 				"> ",
-				string.format("> **⏱️ Client:** `%s` uptime • `%d` FPS • `%dms` Ping • `%.1fMB` RAM", uptimeStr, fps, ping, ram),
-				string.format("> **🌤️ World:** **%s** (%s Phase)", weather, phase)
+				string.format("> %s **Client:** `%s` uptime • `%d` FPS • `%dms` Ping • `%.1fMB` RAM", Emojis.Performance, uptimeStr, fps, ping, ram),
+				string.format("> %s **World:** %s (%s Phase)", Emojis.Atmosphere, formattedWeather, formattedPhase)
 			}, "\n")
 
 			-- Inline Formatter to convert bullet points into compact tag lines
@@ -3200,22 +3241,29 @@ E.GameApi = {
 				return result
 			end
 
-			-- Compile Pets
+			-- Compile Pets (appends custom rainbow emoji if variant matches)
 			local petsList = {}
 			if type(payload.pets_data) == "table" then
 				for _, pet in ipairs(payload.pets_data) do
 					local sizeStr = (pet.size and pet.size ~= "Normal") and (pet.size .. " ") or ""
-					local varStr = (pet.variant and pet.variant ~= "Normal") and (pet.variant .. " ") or ""
+					local varStr = ""
+					if pet.variant == "Rainbow" then
+						varStr = "<:rainbow:1520347453566750810> "
+					elseif pet.variant and pet.variant ~= "Normal" then
+						varStr = pet.variant .. " "
+					end
 					table.insert(petsList, string.format("**x%d** %s%s%s", pet.amount or 1, sizeStr, varStr, pet.name))
 				end
 			end
-			local petsStr = formatCompactList(petsList, 8) -- Shows up to 8 unique pet types per update
+			local petsStr = formatCompactList(petsList, 8)
 
-			-- Compile Seeds
+			-- Compile Seeds (appends custom seed/plant emojis if matches found)
 			local seedsList = {}
 			if type(payload.seeds_data) == "table" then
 				for _, seed in ipairs(payload.seeds_data) do
-					table.insert(seedsList, string.format("**x%d** %s", seed.count or 1, seed.name))
+					local seedEmoji = SeedEmojis[seed.name] or ""
+					local prefix = seedEmoji ~= "" and (seedEmoji .. " ") or ""
+					table.insert(seedsList, string.format("%s**x%d** %s", prefix, seed.count or 1, seed.name))
 				end
 			end
 			local seedsStr = formatCompactList(seedsList, 8)
@@ -3229,25 +3277,25 @@ E.GameApi = {
 			end
 			local gearStr = formatCompactList(gearList, 8)
 
-			-- Add sections as fields only if items are actually owned
+			-- Add sections as fields dynamically
 			local fields = {}
 			if petsStr then
-				table.insert(fields, { name = "🐾 Pets In Inventory", value = petsStr, inline = false })
+				table.insert(fields, { name = Emojis.Pets .. " Pets In Inventory", value = petsStr, inline = false })
 			end
 			if seedsStr then
-				table.insert(fields, { name = "🌱 Seeds In Inventory", value = seedsStr, inline = false })
+				table.insert(fields, { name = Emojis.Seeds .. " Seeds In Inventory", value = seedsStr, inline = false })
 			end
 			if gearStr then
-				table.insert(fields, { name = "🎒 Gear & Tools", value = gearStr, inline = false })
+				table.insert(fields, { name = Emojis.Gear .. " Gear & Tools", value = gearStr, inline = false })
 			end
 
 			return {
 				username = "Exotic Hub Monitor",
 				embeds = {
 					{
-						title = "📊 Game Telemetry Update",
+						title = Emojis.Title .. " Game Telemetry Update",
 						description = description,
-						color = 3092790, -- Clean Dark Slate Grey Theme
+						color = 3092790, -- Dark Theme
 						fields = fields,
 						timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 					}
