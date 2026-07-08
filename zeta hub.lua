@@ -3356,13 +3356,13 @@ E.GameApi = {
 			-- Add sections as fields dynamically (only shows up if there is at least one match)
 			local fields = {}
 			if petsStr then
-				table.insert(fields, { name = Emojis.Pets .. " High-Tier Pets In Inventory", value = petsStr, inline = false })
+				table.insert(fields, { name = Emojis.Pets .. "Pets In Inventory", value = petsStr, inline = false })
 			end
 			if seedsStr then
-				table.insert(fields, { name = Emojis.Seeds .. " High-Tier Seeds In Inventory", value = seedsStr, inline = false })
+				table.insert(fields, { name = Emojis.Seeds .. "Seeds In Inventory", value = seedsStr, inline = false })
 			end
 			if gearStr then
-				table.insert(fields, { name = Emojis.Gear .. " High-Tier Gear & Tools", value = gearStr, inline = false })
+				table.insert(fields, { name = Emojis.Gear .. "Gear & Tools", value = gearStr, inline = false })
 			end
 
 			return {
