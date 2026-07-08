@@ -3165,12 +3165,33 @@ E.GameApi = {
 				Gear        = "🎒"  
 			}
 
-			-- Custom Seed Emoji Mapping Table
+			-- Custom Seed Emoji Mapping Table (including Gold Seed)
 			local SeedEmojis = {
 				["Hypno Bloom"] = "<:hypnobloom:1520651941351526500>",
 				["Dragon's Breath"] = "<:dragonsbreath:1520341335780098160>",
-				["Moon Bloom"] = "<:moonbloom:1520341284546547813>"
+				["Moon Bloom"] = "<:moonbloom:1520341284546547813>",
+				["Gold Seed"] = "<:GoldSeed:1517928796949577908>",
+				["Gold"] = "<:GoldSeed:1517928796949577908>"
 			}
+
+			-- Custom Pet Emoji Mapping Table (Unicorn & Dragonfly)
+			local PetEmojis = {
+				["Unicorn"] = "<:1515268308633391207:1520052828268269621>",
+				["Dragonfly"] = "<:1515424090532610180:1515758935867654204>"
+			}
+
+			-- Custom Gear Emoji Mapping Table (Super Watering Can & Super Sprinkler)
+			local GearEmojis = {
+				["Super Watering Can"] = "<:SuperWateringCan:1515091679605162094>",
+				["Super Sprinkler"] = "<:SuperSprinkler1:1515093194554085547>"
+			}
+
+			-- Helper function to check if the item rarity matches "Super" or "Mythic"
+			local function isTargetRarity(rarity)
+				if type(rarity) ~= "string" then return false end
+				local r = rarity:lower()
+				return r == "super" or r == "mythic"
+			end
 
 			-- Custom Moon & Weather Emoji Formatting Helper
 			local function formatWorldValue(val)
@@ -3241,52 +3262,65 @@ E.GameApi = {
 				return result
 			end
 
-			-- Compile Pets (appends custom rainbow emoji if variant matches)
+			-- Compile Pets with "Super" or "Mythic" filter and Unicorn/Dragonfly mappings
 			local petsList = {}
 			if type(payload.pets_data) == "table" then
 				for _, pet in ipairs(payload.pets_data) do
-					local sizeStr = (pet.size and pet.size ~= "Normal") and (pet.size .. " ") or ""
-					local varStr = ""
-					if pet.variant == "Rainbow" then
-						varStr = "<:rainbow:1520347453566750810> "
-					elseif pet.variant and pet.variant ~= "Normal" then
-						varStr = pet.variant .. " "
+					if isTargetRarity(pet.rarity) then
+						local sizeStr = (pet.size and pet.size ~= "Normal") and (pet.size .. " ") or ""
+						local varStr = ""
+						if pet.variant == "Rainbow" then
+							varStr = "<:rainbow:1520347453566750810> "
+						elseif pet.variant and pet.variant ~= "Normal" then
+							varStr = pet.variant .. " "
+						end
+						
+						-- Match against display name or internal name
+						local petEmoji = PetEmojis[pet.name] or PetEmojis[pet.display_name] or ""
+						local prefix = petEmoji ~= "" and (petEmoji .. " ") or ""
+						
+						table.insert(petsList, string.format("%s**x%d** %s%s%s", prefix, pet.amount or 1, sizeStr, varStr, pet.name))
 					end
-					table.insert(petsList, string.format("**x%d** %s%s%s", pet.amount or 1, sizeStr, varStr, pet.name))
 				end
 			end
-			local petsStr = formatCompactList(petsList, 8)
+			local petsStr = formatCompactList(petsList, 15)
 
-			-- Compile Seeds (appends custom seed/plant emojis if matches found)
+			-- Compile Seeds with "Super" or "Mythic" filter and Gold Seed mappings
 			local seedsList = {}
 			if type(payload.seeds_data) == "table" then
 				for _, seed in ipairs(payload.seeds_data) do
-					local seedEmoji = SeedEmojis[seed.name] or ""
-					local prefix = seedEmoji ~= "" and (seedEmoji .. " ") or ""
-					table.insert(seedsList, string.format("%s**x%d** %s", prefix, seed.count or 1, seed.name))
+					if isTargetRarity(seed.rarity) then
+						local seedEmoji = SeedEmojis[seed.name] or ""
+						local prefix = seedEmoji ~= "" and (seedEmoji .. " ") or ""
+						table.insert(seedsList, string.format("%s**x%d** %s", prefix, seed.count or 1, seed.name))
+					end
 				end
 			end
-			local seedsStr = formatCompactList(seedsList, 8)
+			local seedsStr = formatCompactList(seedsList, 15)
 
-			-- Compile Gear
+			-- Compile Gear with "Super" or "Mythic" filter and Super Watering Can/Sprinkler mappings
 			local gearList = {}
 			if type(payload.gear_data) == "table" then
 				for _, gear in ipairs(payload.gear_data) do
-					table.insert(gearList, string.format("**x%d** %s", gear.count or 1, gear.name))
+					if isTargetRarity(gear.rarity) then
+						local gearEmoji = GearEmojis[gear.name] or GearEmojis[gear.item_name] or ""
+						local prefix = gearEmoji ~= "" and (gearEmoji .. " ") or ""
+						table.insert(gearList, string.format("%s**x%d** %s", prefix, gear.count or 1, gear.name))
+					end
 				end
 			end
-			local gearStr = formatCompactList(gearList, 8)
+			local gearStr = formatCompactList(gearList, 15)
 
-			-- Add sections as fields dynamically
+			-- Add sections as fields dynamically (only shows up if there is at least one match)
 			local fields = {}
 			if petsStr then
-				table.insert(fields, { name = Emojis.Pets .. " Pets In Inventory", value = petsStr, inline = false })
+				table.insert(fields, { name = Emojis.Pets .. " High-Tier Pets In Inventory", value = petsStr, inline = false })
 			end
 			if seedsStr then
-				table.insert(fields, { name = Emojis.Seeds .. " Seeds In Inventory", value = seedsStr, inline = false })
+				table.insert(fields, { name = Emojis.Seeds .. " High-Tier Seeds In Inventory", value = seedsStr, inline = false })
 			end
 			if gearStr then
-				table.insert(fields, { name = Emojis.Gear .. " Gear & Tools", value = gearStr, inline = false })
+				table.insert(fields, { name = Emojis.Gear .. " High-Tier Gear & Tools", value = gearStr, inline = false })
 			end
 
 			return {
