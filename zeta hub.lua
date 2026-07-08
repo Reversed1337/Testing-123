@@ -3183,7 +3183,7 @@ E.GameApi = {
 				Money       = "💰", 
 				Script      = "🤖", 
 				Performance = "⚙️", 
-				Atmosphere  = "🌤️", 
+				Atmosphere  = "🌍", 
 				Pets        = "🐾", 
 				Seeds       = "🌱", 
 				Gear        = "🎒"  
@@ -3243,6 +3243,12 @@ E.GameApi = {
 					return "<:rainbow:1520347453566750810> **" .. val .. "**"
 				elseif lowerVal == "bloodmoon" or lowerVal == "blood" then
 					return "<:bloodmoon:1520347227095175209> **" .. val .. "**"
+				elseif lowerVal == "day" or lowerVal == "dayweather" then
+					return "<:DayWeather:1524414445424611368> **" .. val .. "**"
+				elseif lowerVal == "sunset" or lowerVal == "sunsetweather" then
+					return "<:SunsetWeather:1524414424918655126> **" .. val .. "**"
+				elseif lowerVal == "night" or lowerVal == "moon" or lowerVal == "normalmoon" or lowerVal == "nightweather" then
+					return "<:NightWeather:1524414406505795704> **" .. val .. "**"
 				end
 				return "**" .. val .. "**"
 			end
