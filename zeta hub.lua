@@ -3189,7 +3189,7 @@ E.GameApi = {
 				Gear        = "🎒"  
 			}
 
-			-- Custom Seed Emoji Mapping Table (including Gold and Rainbow Seeds)
+			-- Custom Seed Emoji Mapping Table (including Gold, Rainbow, Mega, and custom high-value seeds)
 			local SeedEmojis = {
 				["Hypno Bloom"] = "<:hypnobloom:1520651941351526500>",
 				["Dragon's Breath"] = "<:dragonsbreath:1520341335780098160>",
@@ -3286,16 +3286,16 @@ E.GameApi = {
 				string.format("> %s **World:** %s (%s Phase)", Emojis.Atmosphere, formattedWeather, formattedPhase)
 			}, "\n")
 
-			-- Inline Formatter to convert bullet points into compact tag lines
-			local function formatCompactList(rawList, maxVisible)
+			-- Formatter to display lists vertically, one item per line
+			local function formatVerticalList(rawList, maxVisible)
 				if #rawList == 0 then return nil end
 				local visible = {}
 				for i = 1, math.min(#rawList, maxVisible) do
-					table.insert(visible, rawList[i])
+					table.insert(visible, "• " .. rawList[i])
 				end
-				local result = table.concat(visible, "  •  ")
+				local result = table.concat(visible, "\n")
 				if #rawList > maxVisible then
-					result = result .. string.format(" *(+%d more)*", #rawList - maxVisible)
+					result = result .. string.format("\n• *...and %d more items*", #rawList - maxVisible)
 				end
 				return result
 			end
@@ -3317,11 +3317,11 @@ E.GameApi = {
 						local petEmoji = PetEmojis[pet.name] or PetEmojis[pet.display_name] or ""
 						local prefix = petEmoji ~= "" and (petEmoji .. " ") or ""
 						
-						table.insert(petsList, string.format("%s**x%d** %s%s%s", prefix, pet.amount or 1, sizeStr, varStr, pet.name))
+						table.insert(petsList, string.format("%s**x%d** %s%s%s (%s)", prefix, pet.amount or 1, sizeStr, varStr, pet.name, pet.rarity))
 					end
 				end
 			end
-			local petsStr = formatCompactList(petsList, 15)
+			local petsStr = formatVerticalList(petsList, 15)
 
 			-- Compile Seeds (Accepts "Super", "Mythic", or name patterns containing Gold, Rainbow, or Mega)
 			local seedsList = {}
@@ -3334,11 +3334,11 @@ E.GameApi = {
 					if isTargetRarity(sRarity) or lowerName:find("gold") or lowerName:find("rainbow") or lowerName:find("mega") then
 						local seedEmoji = SeedEmojis[sName] or ""
 						local prefix = seedEmoji ~= "" and (seedEmoji .. " ") or ""
-						table.insert(seedsList, string.format("%s**x%d** %s", prefix, seed.count or 1, sName))
+						table.insert(seedsList, string.format("%s**x%d** %s (%s)", prefix, seed.count or 1, sName, sRarity))
 					end
 				end
 			end
-			local seedsStr = formatCompactList(seedsList, 15)
+			local seedsStr = formatVerticalList(seedsList, 15)
 
 			-- Compile Gear with "Super" or "Mythic" filter and Super Watering Can/Sprinkler mappings
 			local gearList = {}
@@ -3347,22 +3347,22 @@ E.GameApi = {
 					if isTargetRarity(gear.rarity) then
 						local gearEmoji = GearEmojis[gear.name] or GearEmojis[gear.item_name] or ""
 						local prefix = gearEmoji ~= "" and (gearEmoji .. " ") or ""
-						table.insert(gearList, string.format("%s**x%d** %s", prefix, gear.count or 1, gear.name))
+						table.insert(gearList, string.format("%s**x%d** %s (%s)", prefix, gear.count or 1, gear.name, gear.rarity))
 					end
 				end
 			end
-			local gearStr = formatCompactList(gearList, 15)
+			local gearStr = formatVerticalList(gearList, 15)
 
 			-- Add sections as fields dynamically (only shows up if there is at least one match)
 			local fields = {}
 			if petsStr then
-				table.insert(fields, { name = Emojis.Pets .. "Pets In Inventory", value = petsStr, inline = false })
+				table.insert(fields, { name = Emojis.Pets .. " High-Tier Pets In Inventory", value = petsStr, inline = false })
 			end
 			if seedsStr then
-				table.insert(fields, { name = Emojis.Seeds .. "Seeds In Inventory", value = seedsStr, inline = false })
+				table.insert(fields, { name = Emojis.Seeds .. " High-Tier Seeds In Inventory", value = seedsStr, inline = false })
 			end
 			if gearStr then
-				table.insert(fields, { name = Emojis.Gear .. "Gear & Tools", value = gearStr, inline = false })
+				table.insert(fields, { name = Emojis.Gear .. " High-Tier Gear & Tools", value = gearStr, inline = false })
 			end
 
 			return {
@@ -3371,7 +3371,7 @@ E.GameApi = {
 					{
 						title = Emojis.Title .. " Account Stats",
 						description = description,
-						color = 3092790,
+						color = 3092790, -- Dark Theme
 						fields = fields,
 						timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 					}
