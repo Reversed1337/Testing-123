@@ -9771,9 +9771,6 @@ E.SellManager = {
 		local V = E.TotalControl
 		local y = V and (type(V.ResolveSellWhenBackpackFullTotalControl) == "function" and V.ResolveSellWhenBackpackFullTotalControl()) or nil
 		local Z = y == nil and X.sell_when_backpack_full or y == true
-		if X.total_control_enabled == true or V and (type(V.IsEnabledTotalControl) == "function" and V.IsEnabledTotalControl() == true) then
-			Z = false
-		end
 		if Z and not G then
 			return false, "waiting_full"
 		end
@@ -9892,9 +9889,6 @@ E.SellManager = {
 		end
 		local g = G and (type(G.ResolveSellWhenBackpackFullTotalControl) == "function" and G.ResolveSellWhenBackpackFullTotalControl()) or nil
 		local a = g == nil and X.sell_when_backpack_full or g == true
-		if X.total_control_enabled == true or G and (type(G.IsEnabledTotalControl) == "function" and G.IsEnabledTotalControl() == true) then
-			a = false
-		end
 		if a and not j then
 			return false, "waiting_full"
 		end
@@ -10262,7 +10256,7 @@ E.SellMultiplierOverrides = {
 			return true, G, V
 		end
 		if X.auto_sell_sellallinventory == true then
-			if X.total_control_enabled ~= true and (X.sell_when_backpack_full and not G) then
+			if (X.sell_when_backpack_full and not G) then
 				E.SellMultiplierOverrides.SetStatusSellMultiplierOverrides("Waiting for full backpack", "#FFCC66")
 				return true, false, "waiting_full"
 			end
@@ -21328,8 +21322,8 @@ E.TotalControl = {
 		if not E.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
-		return false
-	end;
+		return X.sell_when_backpack_full
+	end,
 	ResolveSprinklerPlacerEnabledTotalControl = function()
 		if not E.TotalControl.IsEnabledTotalControl() then
 			return nil
