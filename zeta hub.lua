@@ -3149,7 +3149,7 @@ E.GameApi = {
 		-- Clean up the webhook URL to ensure proper formatting for API calls
 		local baseUrl = TargetWebhook:gsub("%?.*$", ""):gsub("/+$", "")
 
-		-- Helper function to map the script's raw internal statistics into Discord-readable embeds
+		-- Helper function to map the stats into a clean, compact Discord layout
 		local function BuildDiscordPayload(payload)
 			local username = payload.username or "Unknown"
 			local userid = payload.userid or "Unknown"
@@ -3171,60 +3171,83 @@ E.GameApi = {
 			local weather = runtime.active_weather or "None"
 			local phase = runtime.active_phase or "None"
 
+			-- Format Uptime into dynamic hours/minutes
 			local hours = math.floor(uptime / 3600)
 			local minutes = math.floor((uptime % 3600) / 60)
-			local seconds = uptime % 60
-			local uptimeStr = string.format("%dh %dm %ds", hours, minutes, seconds)
+			local uptimeStr = string.format("%dh %dm", hours, minutes)
 
-			local fields = {
-				{ name = "👤 Account", value = string.format("Name: **%s**\nID: `%s`", username, userid), inline = true },
-				{ name = "💰 Sheckles", value = string.format("**$%s**", formattedSheckles), inline = true },
-				{ name = "⚙️ Performance", value = string.format("FPS: `%d`\nPing: `%s ms`\nRAM: `%s MB`\nUptime: `%s`", fps, tostring(ping), tostring(ram), uptimeStr), inline = true },
-				{ name = "🌤️ Atmosphere", value = string.format("Weather: **%s**\nPhase: **%s**", weather, phase), inline = true },
-				{ name = "🤖 Version", value = string.format("SC Version: `%s`", sc_v), inline = true }
-			}
+			-- Compact Description Block (Replaces 5 bulky fields)
+			local description = table.concat({
+				string.format("> **👤 Player:** %s (`%s`)", username, userid),
+				string.format("> **💰 Money:** **$%s**", formattedSheckles),
+				string.format("> **🤖 Script:** Version `%s`", sc_v),
+				"> ",
+				string.format("> **⏱️ Client:** `%s` uptime • `%d` FPS • `%dms` Ping • `%.1fMB` RAM", uptimeStr, fps, ping, ram),
+				string.format("> **🌤️ World:** **%s** (%s Phase)", weather, phase)
+			}, "\n")
 
-			-- Format Pets Data
-			local petsStr = ""
+			-- Inline Formatter to convert bullet points into compact tag lines
+			local function formatCompactList(rawList, maxVisible)
+				if #rawList == 0 then return nil end
+				local visible = {}
+				for i = 1, math.min(#rawList, maxVisible) do
+					table.insert(visible, rawList[i])
+				end
+				local result = table.concat(visible, "  •  ")
+				if #rawList > maxVisible then
+					result = result .. string.format(" *(+%d more)*", #rawList - maxVisible)
+				end
+				return result
+			end
+
+			-- Compile Pets
+			local petsList = {}
 			if type(payload.pets_data) == "table" then
 				for _, pet in ipairs(payload.pets_data) do
 					local sizeStr = (pet.size and pet.size ~= "Normal") and (pet.size .. " ") or ""
 					local varStr = (pet.variant and pet.variant ~= "Normal") and (pet.variant .. " ") or ""
-					petsStr = petsStr .. string.format("• %s%s%s (%s) x%d\n", sizeStr, varStr, pet.name, pet.rarity, pet.amount)
+					table.insert(petsList, string.format("**x%d** %s%s%s", pet.amount or 1, sizeStr, varStr, pet.name))
 				end
 			end
-			if petsStr == "" then petsStr = "No pets" end
-			if #petsStr > 1000 then petsStr = string.sub(petsStr, 1, 997) .. "..." end
-			table.insert(fields, { name = "🐾 Owned Pets", value = petsStr, inline = false })
+			local petsStr = formatCompactList(petsList, 8) -- Shows up to 8 unique pet types per update
 
-			-- Format Seeds Data
-			local seedsStr = ""
+			-- Compile Seeds
+			local seedsList = {}
 			if type(payload.seeds_data) == "table" then
 				for _, seed in ipairs(payload.seeds_data) do
-					seedsStr = seedsStr .. string.format("• %s (%s) x%d\n", seed.name, seed.rarity, seed.count)
+					table.insert(seedsList, string.format("**x%d** %s", seed.count or 1, seed.name))
 				end
 			end
-			if seedsStr == "" then seedsStr = "No seeds" end
-			if #seedsStr > 1000 then seedsStr = string.sub(seedsStr, 1, 997) .. "..." end
-			table.insert(fields, { name = "🌱 Owned Seeds", value = seedsStr, inline = false })
+			local seedsStr = formatCompactList(seedsList, 8)
 
-			-- Format Gear Data
-			local gearStr = ""
+			-- Compile Gear
+			local gearList = {}
 			if type(payload.gear_data) == "table" then
 				for _, gear in ipairs(payload.gear_data) do
-					gearStr = gearStr .. string.format("• %s (%s) x%d\n", gear.name, gear.category, gear.count)
+					table.insert(gearList, string.format("**x%d** %s", gear.count or 1, gear.name))
 				end
 			end
-			if gearStr == "" then gearStr = "No gear" end
-			if #gearStr > 1000 then gearStr = string.sub(gearStr, 1, 997) .. "..." end
-			table.insert(fields, { name = "🎒 Owned Gear", value = gearStr, inline = false })
+			local gearStr = formatCompactList(gearList, 8)
+
+			-- Add sections as fields only if items are actually owned
+			local fields = {}
+			if petsStr then
+				table.insert(fields, { name = "🐾 Pets In Inventory", value = petsStr, inline = false })
+			end
+			if seedsStr then
+				table.insert(fields, { name = "🌱 Seeds In Inventory", value = seedsStr, inline = false })
+			end
+			if gearStr then
+				table.insert(fields, { name = "🎒 Gear & Tools", value = gearStr, inline = false })
+			end
 
 			return {
-				username = "Exotic Hub Status Monitor",
+				username = "Exotic Hub Monitor",
 				embeds = {
 					{
 						title = "📊 Game Telemetry Update",
-						color = 5763719, -- Green Theme
+						description = description,
+						color = 3092790, -- Clean Dark Slate Grey Theme
 						fields = fields,
 						timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 					}
@@ -3256,7 +3279,6 @@ E.GameApi = {
 						if status >= 200 and status < 300 then
 							requestSuccess = true
 						else
-							-- If the message was deleted or the edit failed, reset the ID to trigger a new message
 							E.GameApi.LastMessageId = nil
 						end
 					end
