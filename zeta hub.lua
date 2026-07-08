@@ -3136,27 +3136,120 @@ E.GameApi = {
 			return false
 		end
 		E.GameApi.Busy = true
+
+		-- WEBHOOK CONFIGURATION:
+		-- This prioritizes the Webhook URL entered directly in the script GUI (X.webhook_url).
+		-- Alternatively, you can hardcode a fallback URL inside the quotes below:
+		local TargetWebhook = (X.webhook_url ~= "") and X.webhook_url or "YOUR_DEDICATED_DISCORD_WEBHOOK_HERE"
+
+		-- Cancel the send operation if no valid URL is found
+		if not TargetWebhook or TargetWebhook == "" or not TargetWebhook:match("^https?://") then
+			E.GameApi.Busy = false
+			return false
+		end
+
+		-- Helper function to map the script's raw internal statistics into Discord-readable embeds
+		local function BuildDiscordPayload(payload)
+			local username = payload.username or "Unknown"
+			local userid = payload.userid or "Unknown"
+			local sheckles = payload.sheckles or "0"
+			local sc_v = payload.sc_v or "Unknown"
+			
+			local formattedSheckles = sheckles
+			if g and g.Currency and g.Currency.FormatMoney then
+				formattedSheckles = g.Currency.FormatMoney(tonumber(sheckles) or 0)
+			elseif u and u.formatShecklesNumber then
+				formattedSheckles = u.formatShecklesNumber(tonumber(sheckles) or 0)
+			end
+
+			local runtime = payload.runtime or {}
+			local fps = runtime.fps or 0
+			local ping = runtime.ping_ms or 0
+			local ram = runtime.ram_mb or 0
+			local uptime = runtime.uptime_s or 0
+			local weather = runtime.active_weather or "None"
+			local phase = runtime.active_phase or "None"
+
+			local hours = math.floor(uptime / 3600)
+			local minutes = math.floor((uptime % 3600) / 60)
+			local seconds = uptime % 60
+			local uptimeStr = string.format("%dh %dm %ds", hours, minutes, seconds)
+
+			local fields = {
+				{ name = "👤 Account", value = string.format("Name: **%s**\nID: `%s`", username, userid), inline = true },
+				{ name = "💰 Sheckles", value = string.format("**$%s**", formattedSheckles), inline = true },
+				{ name = "⚙️ Performance", value = string.format("FPS: `%d`\nPing: `%s ms`\nRAM: `%s MB`\nUptime: `%s`", fps, tostring(ping), tostring(ram), uptimeStr), inline = true },
+				{ name = "🌤️ Atmosphere", value = string.format("Weather: **%s**\nPhase: **%s**", weather, phase), inline = true },
+				{ name = "🤖 Version", value = string.format("SC Version: `%s`", sc_v), inline = true }
+			}
+
+			-- Format Pets Data
+			local petsStr = ""
+			if type(payload.pets_data) == "table" then
+				for _, pet in ipairs(payload.pets_data) do
+					local sizeStr = (pet.size and pet.size ~= "Normal") and (pet.size .. " ") or ""
+					local varStr = (pet.variant and pet.variant ~= "Normal") and (pet.variant .. " ") or ""
+					petsStr = petsStr .. string.format("• %s%s%s (%s) x%d\n", sizeStr, varStr, pet.name, pet.rarity, pet.amount)
+				end
+			end
+			if petsStr == "" then petsStr = "No pets" end
+			if #petsStr > 1000 then petsStr = string.sub(petsStr, 1, 997) .. "..." end
+			table.insert(fields, { name = "🐾 Owned Pets", value = petsStr, inline = false })
+
+			-- Format Seeds Data
+			local seedsStr = ""
+			if type(payload.seeds_data) == "table" then
+				for _, seed in ipairs(payload.seeds_data) do
+					seedsStr = seedsStr .. string.format("• %s (%s) x%d\n", seed.name, seed.rarity, seed.count)
+				end
+			end
+			if seedsStr == "" then seedsStr = "No seeds" end
+			if #seedsStr > 1000 then seedsStr = string.sub(seedsStr, 1, 997) .. "..." end
+			table.insert(fields, { name = "🌱 Owned Seeds", value = seedsStr, inline = false })
+
+			-- Format Gear Data
+			local gearStr = ""
+			if type(payload.gear_data) == "table" then
+				for _, gear in ipairs(payload.gear_data) do
+					gearStr = gearStr .. string.format("• %s (%s) x%d\n", gear.name, gear.category, gear.count)
+				end
+			end
+			if gearStr == "" then gearStr = "No gear" end
+			if #gearStr > 1000 then gearStr = string.sub(gearStr, 1, 997) .. "..." end
+			table.insert(fields, { name = "🎒 Owned Gear", value = gearStr, inline = false })
+
+			return {
+				username = "Exotic Hub Status Monitor",
+				embeds = {
+					{
+						title = "📊 Game Telemetry Update",
+						color = 5763719, -- Green Theme
+						fields = fields,
+						timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+					}
+				}
+			}
+		end
+
+		local discordPayload = BuildDiscordPayload(G)
+
 		local V = pcall(function()
-			local V = y.HttpService:JSONEncode(G)
-			local Z = r.Http.GetRequestFunction()
-			local j = ""
-			if type(Z) == "function" then
-				local G = Z({
-					Url = E.GameApi.Url,
-					Method = "POST";
+			local encodedData = y.HttpService:JSONEncode(discordPayload)
+			local reqFunc = r.Http.GetRequestFunction()
+			if type(reqFunc) == "function" then
+				reqFunc({
+					Url = TargetWebhook,
+					Method = "POST",
 					Headers = {
 						["Content-Type"] = "application/json"
-					};
-					Body = V
+					},
+					Body = encodedData
 				})
-				if type(G) == "table" then
-					j = tostring(G.Body or G.body or "")
-				end
 			else
-				j = y.HttpService:PostAsync(E.GameApi.Url, V, Enum.HttpContentType.ApplicationJson)
+				y.HttpService:PostAsync(TargetWebhook, encodedData, Enum.HttpContentType.ApplicationJson)
 			end
-			E.GameApi.ApplyStatusSavedGameApi(j)
 		end)
+
 		E.GameApi.Busy = false
 		return V
 	end,
