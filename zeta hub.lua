@@ -3369,7 +3369,7 @@ E.GameApi = {
 				username = "I see you.",
 				embeds = {
 					{
-						title = Emojis.Title .. "Account",
+						title = Emojis.Title .. " Account Stats",
 						description = description,
 						color = 3092790,
 						fields = fields,
