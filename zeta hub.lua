@@ -16,8 +16,7 @@ if isNoui then
     G.IsHeadless = function() return true end
 else
     -- Load the real UI library from your link
-    local Library = loadstring(game:HttpGet(
-        "https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zetahub_uilib"))()
+    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Reversed1337/Testing-123/refs/heads/main/zetahub_uilib"))()
     G.Library = Library
 
     -- Create the main window to pass to the script
