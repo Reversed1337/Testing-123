@@ -3149,6 +3149,31 @@ E.GameApi = {
 		-- Clean up the webhook URL to ensure proper formatting for API calls
 		local baseUrl = TargetWebhook:gsub("%?.*$", ""):gsub("/+$", "")
 
+		-- Local Storage Helpers for persisting the Message ID across rejoins
+		local storageFile = "exotichub99/msg_" .. tostring(q.player_userid or "global") .. ".txt"
+		
+		local function saveMessageId(msgId)
+			if type(writefile) == "function" then
+				pcall(writefile, storageFile, tostring(msgId or ""))
+			end
+		end
+
+		local function loadMessageId()
+			if type(readfile) == "function" and type(isfile) == "function" and isfile(storageFile) then
+				local success, content = pcall(readfile, storageFile)
+				if success and type(content) == "string" then
+					content = content:match("^%s*(.-)%s*$")
+					return content ~= "" and content or nil
+				end
+			end
+			return nil
+		end
+
+		-- Initialize the session variable from local disk if it's currently empty
+		if not E.GameApi.LastMessageId then
+			E.GameApi.LastMessageId = loadMessageId()
+		end
+
 		-- Helper function to map the stats into a clean, compact Discord layout
 		local function BuildDiscordPayload(payload)
 			
@@ -3173,15 +3198,13 @@ E.GameApi = {
 				["Gold Seed"] = "<:GoldSeed:1517928796949577908>",
 				["Gold"] = "<:GoldSeed:1517928796949577908>",
 				["Rainbow Seed"] = "<:RainbowSeed:1517928781455560714>",
-				["Rainbow"] = "<:RainbowSeed:1517928781455560714>",
-				["Mega Seed"] = "<:MegaSeed:1524387446803009658>",
-				["Mega"] = "<:MegaSeed:1524387446803009658>"
+				["Rainbow"] = "<:RainbowSeed:1517928781455560714>"
 			}
 
-			-- Custom Pet Emoji Mapping Table (including Raccoon, Ice Serpent, Black Dragon, Bear, and Bald Eagle)
+			-- Custom Pet Emoji Mapping Table (including Unicorn, Dragonfly, Raccoon, Ice Serpent, Black Dragon, Bear, and Bald Eagle)
 			local PetEmojis = {
 				["Unicorn"] = "<:1515268308633391207:1520052828268269621>",
-				["Golden Dragonfly"] = "<:1515424090532610180:1515758935867654204>",
+				["Dragonfly"] = "<:1515424090532610180:1515758935867654204>",
 				["Raccoon"] = "<:raccoon:1373885770774876224>",
 				["Ice Serpent"] = "<:iceserpent:1524382567099269294>",
 				["Black Dragon"] = "<:blackdragon:1524382547532972246>",
@@ -3327,13 +3350,13 @@ E.GameApi = {
 			-- Add sections as fields dynamically (only shows up if there is at least one match)
 			local fields = {}
 			if petsStr then
-				table.insert(fields, { name = Emojis.Pets .. "Pets In Inventory", value = petsStr, inline = false })
+				table.insert(fields, { name = Emojis.Pets .. " High-Tier Pets In Inventory", value = petsStr, inline = false })
 			end
 			if seedsStr then
-				table.insert(fields, { name = Emojis.Seeds .. "Seeds In Inventory", value = seedsStr, inline = false })
+				table.insert(fields, { name = Emojis.Seeds .. " High-Tier Seeds In Inventory", value = seedsStr, inline = false })
 			end
 			if gearStr then
-				table.insert(fields, { name = Emojis.Gear .. "Gear & Tools", value = gearStr, inline = false })
+				table.insert(fields, { name = Emojis.Gear .. " High-Tier Gear & Tools", value = gearStr, inline = false })
 			end
 
 			return {
@@ -3374,7 +3397,9 @@ E.GameApi = {
 						if status >= 200 and status < 300 then
 							requestSuccess = true
 						else
+							-- If the edit fails (e.g., message was manually deleted on Discord), reset local variables & storage
 							E.GameApi.LastMessageId = nil
+							saveMessageId("")
 						end
 					end
 				end
@@ -3398,7 +3423,9 @@ E.GameApi = {
 								decoded = y.HttpService:JSONDecode(responseBody)
 							end)
 							if type(decoded) == "table" and decoded.id then
-								E.GameApi.LastMessageId = tostring(decoded.id)
+								local newId = tostring(decoded.id)
+								E.GameApi.LastMessageId = newId
+								saveMessageId(newId) -- Save to local disk for persistence
 							end
 						end
 					end
