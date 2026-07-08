@@ -3165,19 +3165,26 @@ E.GameApi = {
 				Gear        = "🎒"  
 			}
 
-			-- Custom Seed Emoji Mapping Table (including Gold Seed)
+			-- Custom Seed Emoji Mapping Table (including Gold and Rainbow Seeds)
 			local SeedEmojis = {
 				["Hypno Bloom"] = "<:hypnobloom:1520651941351526500>",
 				["Dragon's Breath"] = "<:dragonsbreath:1520341335780098160>",
 				["Moon Bloom"] = "<:moonbloom:1520341284546547813>",
 				["Gold Seed"] = "<:GoldSeed:1517928796949577908>",
-				["Gold"] = "<:GoldSeed:1517928796949577908>"
+				["Gold"] = "<:GoldSeed:1517928796949577908>",
+				["Rainbow Seed"] = "<:RainbowSeed:1517928781455560714>",
+				["Rainbow"] = "<:RainbowSeed:1517928781455560714>"
 			}
 
-			-- Custom Pet Emoji Mapping Table (Unicorn & Dragonfly)
+			-- Custom Pet Emoji Mapping Table (including Raccoon, Ice Serpent, Black Dragon, Bear, and Bald Eagle)
 			local PetEmojis = {
 				["Unicorn"] = "<:1515268308633391207:1520052828268269621>",
-				["Dragonfly"] = "<:1515424090532610180:1515758935867654204>"
+				["Dragonfly"] = "<:1515424090532610180:1515758935867654204>",
+				["Raccoon"] = "<:raccoon:1373885770774876224>",
+				["Ice Serpent"] = "<:iceserpent:1524382567099269294>",
+				["Black Dragon"] = "<:blackdragon:1524382547532972246>",
+				["Bear"] = "<:bear:1524382526905258146>",
+				["Bald Eagle"] = "<:baldeagle:1524382505422028800>"
 			}
 
 			-- Custom Gear Emoji Mapping Table (Super Watering Can & Super Sprinkler)
@@ -3262,7 +3269,7 @@ E.GameApi = {
 				return result
 			end
 
-			-- Compile Pets with "Super" or "Mythic" filter and Unicorn/Dragonfly mappings
+			-- Compile Pets with "Super" or "Mythic" filter and expanded PetEmojis mappings
 			local petsList = {}
 			if type(payload.pets_data) == "table" then
 				for _, pet in ipairs(payload.pets_data) do
@@ -3285,14 +3292,18 @@ E.GameApi = {
 			end
 			local petsStr = formatCompactList(petsList, 15)
 
-			-- Compile Seeds with "Super" or "Mythic" filter and Gold Seed mappings
+			-- Compile Seeds (Accepts "Super", "Mythic", or name patterns containing Gold, Rainbow, or Mega)
 			local seedsList = {}
 			if type(payload.seeds_data) == "table" then
 				for _, seed in ipairs(payload.seeds_data) do
-					if isTargetRarity(seed.rarity) then
-						local seedEmoji = SeedEmojis[seed.name] or ""
+					local sName = seed.name or ""
+					local sRarity = seed.rarity or "Unknown"
+					local lowerName = sName:lower()
+
+					if isTargetRarity(sRarity) or lowerName:find("gold") or lowerName:find("rainbow") or lowerName:find("mega") then
+						local seedEmoji = SeedEmojis[sName] or ""
 						local prefix = seedEmoji ~= "" and (seedEmoji .. " ") or ""
-						table.insert(seedsList, string.format("%s**x%d** %s", prefix, seed.count or 1, seed.name))
+						table.insert(seedsList, string.format("%s**x%d** %s", prefix, seed.count or 1, sName))
 					end
 				end
 			end
