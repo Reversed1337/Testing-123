@@ -3307,11 +3307,12 @@ Z.GameApi = {
 			local sheckles = payload.sheckles or "0"
 			local sc_v = payload.sc_v or "Unknown"
 			
+			-- CORRECTED CODE
 			local formattedSheckles = sheckles
-			if g and g.Currency and g.Currency.FormatMoney then
-				formattedSheckles = g.Currency.FormatMoney(tonumber(sheckles) or 0)
-			elseif u and u.formatShecklesNumber then
-				formattedSheckles = u.formatShecklesNumber(tonumber(sheckles) or 0)
+			if E and E.Currency and E.Currency.FormatMoney then
+				formattedSheckles = E.Currency.FormatMoney(tonumber(sheckles) or 0)
+			elseif q and q.formatShecklesNumber then
+				formattedSheckles = q.formatShecklesNumber(tonumber(sheckles) or 0)
 			end
 
 			local runtime = payload.runtime or {}
