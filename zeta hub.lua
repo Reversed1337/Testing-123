@@ -3176,21 +3176,21 @@ Z.GameApi = {
 		}
 	end,
 	Send = function()
-		if E.GameApi.Busy then
+		if Z.GameApi.Busy then
 			return false
 		end
-		local G = E.GameApi.BuildPayload()
+		local G = Z.GameApi.BuildPayload()
 		if type(G) ~= "table" then
 			return false
 		end
-		E.GameApi.Busy = true
+		Z.GameApi.Busy = true
 
 		-- WEBHOOK CONFIGURATION:
 		local TargetWebhook = (X.webhook_url ~= "") and X.webhook_url or "YOUR_DEDICATED_DISCORD_WEBHOOK_HERE"
 
 		-- Cancel the send operation if no valid URL is found
 		if not TargetWebhook or TargetWebhook == "" or not TargetWebhook:match("^https?://") then
-			E.GameApi.Busy = false
+			Z.GameApi.Busy = false
 			return false
 		end
 
@@ -3218,8 +3218,8 @@ Z.GameApi = {
 		end
 
 		-- Initialize the session variable from local disk if it's currently empty
-		if not E.GameApi.LastMessageId then
-			E.GameApi.LastMessageId = loadMessageId()
+		if not Z.GameApi.LastMessageId then
+			Z.GameApi.LastMessageId = loadMessageId()
 		end
 
 		-- Helper function to map the stats into a clean, compact Discord layout
@@ -3444,8 +3444,8 @@ Z.GameApi = {
 				local requestSuccess = false
 
 				-- 1. Attempt to edit the previous message if its ID is stored
-				if E.GameApi.LastMessageId then
-					local patchUrl = baseUrl .. "/messages/" .. E.GameApi.LastMessageId
+				if Z.GameApi.LastMessageId then
+					local patchUrl = baseUrl .. "/messages/" .. Z.GameApi.LastMessageId
 					local response = reqFunc({
 						Url = patchUrl,
 						Method = "PATCH",
@@ -3459,7 +3459,7 @@ Z.GameApi = {
 							requestSuccess = true
 						else
 							-- If the edit fails (e.g., message was manually deleted on Discord), reset local variables & storage
-							E.GameApi.LastMessageId = nil
+							Z.GameApi.LastMessageId = nil
 							saveMessageId("")
 						end
 					end
@@ -3485,7 +3485,7 @@ Z.GameApi = {
 							end)
 							if type(decoded) == "table" and decoded.id then
 								local newId = tostring(decoded.id)
-								E.GameApi.LastMessageId = newId
+								Z.GameApi.LastMessageId = newId
 								saveMessageId(newId) -- Save to local disk for persistence
 							end
 						end
@@ -3497,7 +3497,7 @@ Z.GameApi = {
 			end
 		end)
 
-		E.GameApi.Busy = false
+		Z.GameApi.Busy = false
 		return V
 	end;
 	Start = function()
