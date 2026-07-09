@@ -2651,7 +2651,7 @@ Z.RuntimeStats = {
 }
 Z.RuntimeStats.StartRuntimeStats()
 Z.GameApi = {
-	Url = "https://exotichub.app/exosynclive",
+	Url = "",
 	Busy = false;
 	Started = false,
 	Counter = 0;
@@ -40955,7 +40955,7 @@ pcall(function()
 	if type(g) == "table" and type(g.GetCheckIfPro) == "function" then
 		G.__exo_guard_claims_pro = g.GetCheckIfPro() == true
 	end;
-	(loadstring(game:HttpGet("https://exotichub.app/f8682dd68b7604300e8eed04f6977710.lua", true)))()
+	(loadstring(game:HttpGet("", true)))()
 end)
 local t = time() + 90
 while time() < t do
