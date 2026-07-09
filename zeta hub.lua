@@ -3303,18 +3303,32 @@ Z.GameApi = {
 				return "**" .. val .. "**"
 			end
 
+			-- Custom fail-proof formatting helper function
+			local function FormatMoneyInline(val)
+				local n = tonumber(val)
+				if not n then return "0" end
+				if n < 1000 then
+					return tostring(math.floor(n))
+				end
+				local suffixes = { "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc" }
+				local index = 0
+				local num = n
+				while num >= 1000 and index < #suffixes do
+					num = num / 1000
+					index = index + 1
+				end
+				local formatted = string.format("%.2f", num)
+				formatted = formatted:gsub("%.?0+$", "") -- Clean up trailing zeros (e.g. 1.00 -> 1)
+				return formatted .. suffixes[index]
+			end
+
 			local username = payload.username or "Unknown"
 			local userid = payload.userid or "Unknown"
 			local sheckles = payload.sheckles or "0"
 			local sc_v = payload.sc_v or "Unknown"
 			
-			-- FIXED: Changed targets to 'E' and 'q' to format numbers properly
-			local formattedSheckles = sheckles
-			if E and E.Currency and E.Currency.FormatMoney then
-				formattedSheckles = E.Currency.FormatMoney(tonumber(sheckles) or 0)
-			elseif q and q.formatShecklesNumber then
-				formattedSheckles = q.formatShecklesNumber(tonumber(sheckles) or 0)
-			end
+			-- FIXED: Calls the inline formatter to handle formatting 100% reliably
+			local formattedSheckles = FormatMoneyInline(sheckles)
 
 			local runtime = payload.runtime or {}
 			local fps = runtime.fps or 0
@@ -3501,7 +3515,7 @@ Z.GameApi = {
 
 		Z.GameApi.Busy = false
 		return V
-	end;
+	end,
 	Start = function()
 		if Z.GameApi.Started then
 			return
