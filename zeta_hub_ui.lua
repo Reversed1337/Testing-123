@@ -359,7 +359,7 @@ getgenv().gag2_config = {
         Coconut = false,   -- Older pref preserved
         Corn = true,
         ["Dragon Fruit"] = true,
-        ["Dragon's Breath"] = true,
+        ["Dragon's Breath"] = false,
         ["Ghost Pepper"] = true,
         ["Glow Mushroom"] = true,
         Gold = true,
@@ -406,6 +406,8 @@ getgenv().gag2_config = {
         Mushroom = true,
         Tomato = true,
         Carrot = true,
+        ["Hypno Bloom"] = true,
+        ["Dragon's Breath"] = true,
     },
     seed_shop_min_sheckles = 0,
     seed_shop_min_sheckles_enabled = false,
