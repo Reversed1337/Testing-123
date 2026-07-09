@@ -3198,7 +3198,8 @@ Z.GameApi = {
 		local baseUrl = TargetWebhook:gsub("%?.*$", ""):gsub("/+$", "")
 
 		-- Local Storage Helpers for persisting the Message ID across rejoins
-		local storageFile = "exotichub99/msg_" .. tostring(q.player_userid or "global") .. ".txt"
+		-- FIXED: Changed 'q.player_userid' to 'g.player_userid' so each account gets its own file
+		local storageFile = "exotichub99/msg_" .. tostring(g.player_userid or "global") .. ".txt"
 		
 		local function saveMessageId(msgId)
 			if type(writefile) == "function" then
@@ -3307,7 +3308,7 @@ Z.GameApi = {
 			local sheckles = payload.sheckles or "0"
 			local sc_v = payload.sc_v or "Unknown"
 			
-			-- CORRECTED CODE
+			-- FIXED: Changed targets to 'E' and 'q' to format numbers properly
 			local formattedSheckles = sheckles
 			if E and E.Currency and E.Currency.FormatMoney then
 				formattedSheckles = E.Currency.FormatMoney(tonumber(sheckles) or 0)
