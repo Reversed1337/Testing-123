@@ -1472,9 +1472,10 @@ for i, tdata in ipairs(tabs) do
                         break
                     end
                     
-                    -- A standard pause between network calls is applied to prevent server congestion
+                    -- A 10-second pause is applied after sending a batch, if there are more remaining.
                     if index < totalBatches then
-                        task.wait(0.8)
+                        showToast("Waiting 10s cooldown before next batch...", true)
+                        task.wait(10)
                     end
                 end
 
