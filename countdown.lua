@@ -6,8 +6,37 @@ local fontRegular = Enum.Font.Montserrat
 local fontBold = Enum.Font.MontserratBold
 
 local p = game:GetService("Players").LocalPlayer or game:GetService("Players").PlayerAdded:Wait()
+local ts = game:GetService("TweenService")
 local hs = game:GetService("HttpService")
 local uis = game:GetService("UserInputService")
+local u, col = UDim2.new, Color3.fromRGB
+
+-- Helper to instantiate standard components
+local function c(cl, pr, prp)
+    local o = Instance.new(cl)
+    for k, v in pairs(prp or {}) do o[k] = v end
+    o.Parent = pr
+    return o
+end
+
+local accentColor = col(127, 90, 240) -- Violet Theme
+
+-- Theme Registry
+local themeElements = {}
+local function registerThemeElement(elem, prop)
+    table.insert(themeElements, { elem = elem, prop = prop })
+    if elem[prop] then elem[prop] = accentColor end
+end
+
+-- Helper to safely lighten color without non-native methods
+local function lightenColor(cl, pct)
+    local amount = pct / 100
+    return Color3.new(
+        math.clamp(cl.R + amount, 0, 1),
+        math.clamp(cl.G + amount, 0, 1),
+        math.clamp(cl.B + amount, 0, 1)
+    )
+end
 
 -- Globals Persistence Logic
 local cfName, savedG = "script_hub_config.json", {}
@@ -52,6 +81,7 @@ local sellFlags = safeRequire("SellFlags")
 
 local currentMultiplierMode = "live"
 local stockSnapshot = {}
+local totalValueLabel = nil
 
 local function fetchStock()
     return stockSnapshot
@@ -196,6 +226,207 @@ E.Mail.SendFruitBatch = function(recipient, fruits, note)
     return true, "Successfully sent!"
 end
 
+-- Initialize the Orion window structure
+local Window = OrionLib:MakeWindow({Name = "Onyx Mailer", HidePremium = true, SaveConfig = false})
+
+local MailerTab = Window:MakeTab({
+    Name = "Mailer",
+    Icon = "rbxassetid://10734885430",
+    PremiumOnly = false
+})
+
+-- Dynamic Retrieval of Orion Elements
+local orionGui = game:GetService("CoreGui"):WaitForChild("Orion", 15) or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Orion", 15)
+local orionMain = orionGui:WaitForChild("Main", 15)
+orionMain.ClipsDescendants = false -- Required to let the side panel show outside bounds
+
+local function showToast(msg, isSuccess)
+    OrionLib:MakeNotification({
+        Name = isSuccess and "Onyx Mailer" or "Mailer Error",
+        Content = msg,
+        Time = 3,
+        Image = "rbxassetid://10734885430"
+    })
+end
+
+-- Re-create the Sliding Selection Panel inside Orion's Main Window
+local selectionPanel = c("Frame", orionMain, {
+    Size = u(0, 200, 1, 0),
+    Position = u(0.5, -100, 0, 0), -- Slides right relatively
+    BackgroundColor3 = col(23, 23, 23),
+    BorderSizePixel = 0,
+    Visible = false,
+    ClipsDescendants = true,
+    ZIndex = 0
+})
+c("UICorner", selectionPanel, { CornerRadius = UDim.new(0, 8) })
+local panelStroke = c("UIStroke", selectionPanel, { Color = col(40, 40, 40), Thickness = 1, Transparency = 0.5 })
+registerThemeElement(panelStroke, "Color")
+
+local panelTitle = c("TextLabel", selectionPanel, {
+    Size = u(1, 0, 0, 24),
+    Position = u(0, 0, 0, 8),
+    BackgroundTransparency = 1,
+    Text = "Select Fruits",
+    TextColor3 = col(240, 240, 240),
+    Font = fontBold,
+    TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 1
+})
+
+-- Multiplier Toggle Button
+local multToggleBtn = c("TextButton", selectionPanel, {
+    Size = u(1, -24, 0, 20),
+    Position = u(0, 12, 0, 32),
+    BackgroundColor3 = col(35, 35, 38),
+    Text = "Mode: LIVE X",
+    TextColor3 = col(220, 220, 220),
+    Font = fontBold,
+    TextSize = 9,
+    AutoButtonColor = false,
+    ZIndex = 1
+})
+c("UICorner", multToggleBtn, { CornerRadius = UDim.new(0, 4) })
+
+local function applyHoverEffect(btn, baseCol, hoverCol)
+    btn.MouseEnter:Connect(function()
+        ts:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = hoverCol }):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        ts:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = baseCol }):Play()
+    end)
+end
+applyHoverEffect(multToggleBtn, col(35, 35, 38), col(45, 45, 48))
+
+totalValueLabel = c("TextLabel", selectionPanel, {
+    Size = u(1, -24, 0, 16),
+    Position = u(0, 12, 0, 54),
+    BackgroundTransparency = 1,
+    Text = "Total Value: $0",
+    TextColor3 = col(46, 196, 182),
+    Font = fontBold,
+    TextSize = 11,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    ZIndex = 1
+})
+
+local gridScroller = c("ScrollingFrame", selectionPanel, {
+    Size = u(1, -20, 1, -88),
+    Position = u(0, 10, 0, 78),
+    BackgroundTransparency = 1,
+    CanvasSize = u(0, 0, 0, 0),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ScrollBarThickness = 2,
+    ScrollBarImageColor3 = col(60, 60, 60),
+    CanvasPosition = Vector2.new(0, 0),
+    ZIndex = 1
+})
+local gridLayout = c("UIGridLayout", gridScroller, {
+    CellSize = u(0, 52, 0, 68),
+    CellPadding = u(0, 8, 0, 8),
+    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+    SortOrder = Enum.SortOrder.LayoutOrder
+})
+
+-- Fruit Image URL Map (from growagardencalculator.com)
+local FRUIT_IMAGE_BASE = "https://www.growagardencalculator.com/grow-a-garden-2/images/seeds/"
+local FRUIT_IMAGE_MAP = {
+    ["Acorn"] = "acorn", ["Apple"] = "apple", ["Baby Cactus"] = "babycactus", ["Bamboo"] = "bamboo",
+    ["Banana"] = "banana", ["Blueberry"] = "blueberry", ["Cactus"] = "cactus", ["Carrot"] = "carrot",
+    ["Cherry"] = "cherry", ["Coconut"] = "coconut", ["Corn"] = "corn", ["Dragon Fruit"] = "dragonfruit",
+    ["Dragonfruit"] = "dragonfruit", ["Dragons Breath"] = "dragonsbreath", ["Dragon's Breath"] = "dragonsbreath",
+    ["Dragonsbreath"] = "dragonsbreath", ["Fire Fern"] = "firefern", ["Firefern"] = "firefern",
+    ["Ghost Pepper"] = "ghostpepper", ["Ghostpepper"] = "ghostpepper", ["Glow Mushroom"] = "glowmushroom",
+    ["Glowmushroom"] = "glowmushroom", ["Grape"] = "grape", ["Green Bean"] = "greenbean",
+    ["Greenbean"] = "greenbean", ["Horned Melon"] = "hornedmelon", ["Hornedmelon"] = "hornedmelon",
+    ["Hypno Bloom"] = "hypnobloom", ["Hypnobloom"] = "hypnobloom", ["Mango"] = "mango",
+    ["Moon Bloom"] = "moonbloom", ["Moonbloom"] = "moonbloom", ["Mushroom"] = "mushroom",
+    ["Pineapple"] = "pineapple", ["Poison Apple"] = "poisonapple", ["Poisonapple"] = "poisonapple",
+    ["Poison Ivy"] = "poisonivy", ["Poisonivy"] = "poisonivy", ["Pomegranate"] = "pomegranate",
+    ["Rocket Pop"] = "rocketpop", ["Rocketpop"] = "rocketpop", ["Strawberry"] = "strawberry",
+    ["Sunflower"] = "sunflower", ["Tomato"] = "tomato", ["Tulip"] = "tulip", ["Venom Spitter"] = "venomspitter",
+    ["Venomspitter"] = "venomspitter", ["Venus Fly Trap"] = "venusflytrap", ["Venus Flytrap"] = "venusflytrap",
+    ["Venusflytrap"] = "venusflytrap"
+}
+
+local fruitAssetCache = {}
+local function downloadFruitImage(fruitName)
+    if fruitAssetCache[fruitName] then return fruitAssetCache[fruitName] end
+    local slug = FRUIT_IMAGE_MAP[fruitName]
+    if not slug then
+        local lower = fruitName:lower()
+        for key, val in pairs(FRUIT_IMAGE_MAP) do
+            if key:lower() == lower then slug = val break end
+        end
+    end
+    if not slug then slug = fruitName:lower():gsub("%s+", "") end
+    local url = FRUIT_IMAGE_BASE .. slug .. ".webp"
+    local fileName = "fruit_cache_" .. slug .. ".webp"
+
+    local ok, asset = pcall(function()
+        if isfile and isfile(fileName) and getcustomasset then
+            return getcustomasset(fileName)
+        end
+        local imageData = game:HttpGet(url)
+        if not imageData or #imageData < 100 then return nil end
+        if writefile then writefile(fileName, imageData) end
+        if getcustomasset then return getcustomasset(fileName) end
+        return nil
+    end)
+    if ok and asset and asset ~= "" then
+        fruitAssetCache[fruitName] = asset
+        return asset
+    end
+    return nil
+end
+
+local trackerCache = nil
+local function findPhotographyTracker()
+    if trackerCache and trackerCache.Parent then return trackerCache end
+    local targetServices = { game:GetService("ReplicatedStorage"), game:GetService("ReplicatedFirst") }
+    for _, parent in ipairs(targetServices) do
+        local foundObj = parent:FindFirstChild("INTERNAL_PhotographyTracker", true)
+        if foundObj then trackerCache = foundObj return foundObj end
+    end
+    return nil
+end
+
+local function getFruitIcon(fruitName, toolInstance, cachedImage)
+    local webAsset = downloadFruitImage(fruitName)
+    if webAsset then return webAsset end
+    if cachedImage and cachedImage ~= "" then
+        local rawId = tostring(cachedImage):match("%d+")
+        if rawId then return "rbxassetid://" .. rawId end
+        if tostring(cachedImage):find("rbxassetid://") or tostring(cachedImage):find("rbxthumb://") then
+            return tostring(cachedImage)
+        end
+    end
+    if toolInstance then
+        pcall(function()
+            if toolInstance:IsA("Tool") and toolInstance.TextureId ~= "" then
+                cachedImage = toolInstance.TextureId
+            end
+        end)
+        if cachedImage and cachedImage ~= "" then return cachedImage end
+        local imgChild = toolInstance:FindFirstChildWhichIsA("Decal", true) or toolInstance:FindFirstChildWhichIsA("ImageLabel", true)
+        if imgChild then
+            local img = imgChild:IsA("Decal") and imgChild.Texture or imgChild.Image
+            if img and img ~= "" then return img end
+        end
+    end
+    local tracker = findPhotographyTracker()
+    if tracker then
+        local formattedName = "fruit_" .. tostring(fruitName):gsub("%s+", "_")
+        local valueObj = tracker:FindFirstChild(formattedName)
+        if valueObj and valueObj.Value then
+            local rawId = tostring(valueObj.Value):match("%d+")
+            if rawId then return "rbxassetid://" .. rawId end
+        end
+    end
+    return ""
+end
+
 local function scanFruits()
     local fruits = {}
     local backpack = p:FindFirstChild("Backpack")
@@ -206,8 +437,7 @@ local function scanFruits()
             local name = item:GetAttribute("FruitName") or item:GetAttribute("Fruit")
             local id = item:GetAttribute("Id")
             if name and id then
-                local weightAttr = item:GetAttribute("weight") or item:GetAttribute("Weight") or item:GetAttribute("KG") or
-                    item:GetAttribute("Kg") or 0
+                local weightAttr = item:GetAttribute("weight") or item:GetAttribute("Weight") or item:GetAttribute("KG") or item:GetAttribute("Kg") or 0
                 local mutationAttr = item:GetAttribute("Mutation") or item:GetAttribute("Mutations") or "None"
                 local numWeight = tonumber(weightAttr) or 0
                 local roundedWeight = math.floor(numWeight * 100 + 0.5) / 100
@@ -228,40 +458,327 @@ local function scanFruits()
         end
     end
 
-    if backpack then
-        for _, item in ipairs(backpack:GetChildren()) do
-            processItem(item)
-        end
-    end
-    if char then
-        for _, item in ipairs(char:GetChildren()) do
-            processItem(item)
-        end
-    end
+    if backpack then for _, item in ipairs(backpack:GetChildren()) do processItem(item) end end
+    if char then for _, item in ipairs(char:GetChildren()) do processItem(item) end end
     return fruits
 end
 
 -- Global Fruit Selection Maps
 local selectedFruitsMap = {}
 local currentScannedFruits = {}
+local selectedCounter = nil
 
--- UI Elements Hook Setup
-local Window = OrionLib:MakeWindow({Name = "Onyx Mailer", HidePremium = true, SaveConfig = false})
-local MailerTab = Window:MakeTab({
-    Name = "Mailer",
-    Icon = "rbxassetid://10734885430",
-    PremiumOnly = false
-})
+local function updateSelectedCounter()
+    if not selectedCounter then return end
+    local count = 0
+    local totalVal = 0
+    local scannedIds = {}
+    for _, fruit in ipairs(currentScannedFruits) do
+        scannedIds[fruit.id] = true
+        if selectedFruitsMap[fruit.id] then
+            count = count + 1
+            totalVal = totalVal + getFruitPrice(fruit.name, fruit.instance, currentMultiplierMode)
+        end
+    end
+    for id in pairs(selectedFruitsMap) do
+        if not scannedIds[id] then
+            selectedFruitsMap[id] = nil
+        end
+    end
+    
+    local batches = math.ceil(count / 20)
+    selectedCounter:Set("Fruits selected: " .. count .. " (" .. batches .. " batch" .. (batches == 1 and "" or "es") .. ")")
+    
+    if totalValueLabel then
+        totalValueLabel.Text = "Total Value: $" .. formatPrice(totalVal)
+    end
+end
 
-local function showToast(msg, isSuccess)
-    OrionLib:MakeNotification({
-        Name = isSuccess and "Success" or "Error",
-        Content = msg,
-        Time = 3
+-- Cell caching limits layout overhead
+local cellCache = {}
+
+local function populateSelectionGrid()
+    currentScannedFruits = scanFruits()
+
+    for _, cell in pairs(cellCache) do
+        cell.Visible = false
+    end
+
+    local emptyLbl = gridScroller:FindFirstChild("EmptyLabel")
+    if #currentScannedFruits == 0 then
+        if not emptyLbl then
+            emptyLbl = c("TextLabel", gridScroller, {
+                Name = "EmptyLabel", Size = u(1, 0, 1, 0), BackgroundTransparency = 1,
+                Text = "No fruits found", TextColor3 = col(140, 140, 140),
+                Font = fontRegular, TextSize = 11, ZIndex = 2
+            })
+        end
+        emptyLbl.Visible = true
+        return
+    else
+        if emptyLbl then emptyLbl.Visible = false end
+    end
+
+    for _, fruit in ipairs(currentScannedFruits) do
+        local cell = cellCache[fruit.id]
+        local isSelected = selectedFruitsMap[fruit.id] == true
+        local price = getFruitPrice(fruit.name, fruit.instance, currentMultiplierMode)
+
+        if not cell or not cell.Parent then
+            cell = c("TextButton", gridScroller, {
+                Size = u(0, 52, 0, 68), BackgroundColor3 = col(28, 28, 30),
+                Text = "", AutoButtonColor = false, Name = fruit.id, ZIndex = 2
+            })
+            c("UICorner", cell, { CornerRadius = UDim.new(0, 6) })
+            
+            local cellStroke = c("UIStroke", cell, {
+                Color = isSelected and accentColor or col(40, 40, 40),
+                Thickness = isSelected and 2 or 1,
+                ZIndex = 2
+            })
+            if isSelected then registerThemeElement(cellStroke, "Color") end
+
+            local imgId = getFruitIcon(fruit.name, fruit.instance, fruit.image)
+            local imgLabel = c("ImageLabel", cell, {
+                Size = u(0, 36, 0, 36), Position = u(0.5, -18, 0, 6),
+                BackgroundTransparency = 1, Image = imgId, ScaleType = Enum.ScaleType.Fit, ZIndex = 3
+            })
+            if imgId == "" then
+                imgLabel.Visible = false
+                c("TextLabel", cell, {
+                    Size = u(0, 36, 0, 36), Position = u(0.5, -18, 0, 6),
+                    BackgroundTransparency = 1, Text = string.sub(fruit.name, 1, 2):upper(),
+                    TextColor3 = accentColor, Font = fontBold, TextSize = 16, ZIndex = 3
+                })
+            end
+
+            local cellLbl = c("TextLabel", cell, {
+                Size = u(1, -4, 0, 20), Position = u(0, 2, 1, -22),
+                BackgroundTransparency = 1,
+                Text = string.format("%s\n%.1fkg • $%s", fruit.name, fruit.weight, formatPrice(price)),
+                TextColor3 = isSelected and col(255, 255, 255) or col(140, 140, 140),
+                Font = fontRegular, TextSize = 8, ZIndex = 3, LineHeight = 0.95
+            })
+
+            cell.MouseEnter:Connect(function()
+                if not selectedFruitsMap[fruit.id] then
+                    ts:Create(cellStroke, TweenInfo.new(0.2), { Color = lightenColor(accentColor, -30) }):Play()
+                end
+            end)
+            cell.MouseLeave:Connect(function()
+                if not selectedFruitsMap[fruit.id] then
+                    ts:Create(cellStroke, TweenInfo.new(0.2), { Color = col(40, 40, 40) }):Play()
+                end
+            end)
+
+            cell.MouseButton1Click:Connect(function()
+                local nowSelected = not selectedFruitsMap[fruit.id]
+                if nowSelected then
+                    selectedFruitsMap[fruit.id] = true
+                    cellStroke.Color = accentColor
+                    cellStroke.Thickness = 2
+                    registerThemeElement(cellStroke, "Color")
+                    cellLbl.TextColor3 = col(255, 255, 255)
+                else
+                    selectedFruitsMap[fruit.id] = nil
+                    cellStroke.Color = col(40, 40, 40)
+                    cellStroke.Thickness = 1
+                    cellLbl.TextColor3 = col(140, 140, 140)
+                end
+                updateSelectedCounter()
+            end)
+
+            cellCache[fruit.id] = cell
+        else
+            local cellStroke = cell:FindFirstChildOfClass("UIStroke")
+            if cellStroke then
+                cellStroke.Color = isSelected and accentColor or col(40, 40, 40)
+                cellStroke.Thickness = isSelected and 2 or 1
+            end
+            local cellLbl = cell:FindFirstChildOfClass("TextLabel")
+            if cellLbl then
+                cellLbl.Text = string.format("%s\n%.1fkg • $%s", fruit.name, fruit.weight, formatPrice(price))
+                cellLbl.TextColor3 = isSelected and col(255, 255, 255) or col(140, 140, 140)
+            end
+        end
+        cell.Visible = true
+    end
+end
+
+multToggleBtn.MouseButton1Click:Connect(function()
+    if currentMultiplierMode == "live" then
+        currentMultiplierMode = "1x"
+    else
+        currentMultiplierMode = "live"
+    end
+    multToggleBtn.Text = "Mode: " .. currentMultiplierMode:upper()
+    populateSelectionGrid()
+    updateSelectedCounter()
+end)
+
+-- Sliding Logic (Binds relatively to Orion's frame coordinates)
+local isPanelOpen = false
+local function closeSelectionPanelInstant()
+    isPanelOpen = false
+    selectionPanel.Position = u(0.5, -100, 0, 0)
+    selectionPanel.Visible = false
+end
+
+local function toggleSelectionPanel()
+    isPanelOpen = not isPanelOpen
+    if isPanelOpen then
+        populateSelectionGrid()
+        selectionPanel.Visible = true
+        ts:Create(selectionPanel, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Position = u(1, 10, 0, 0) -- Slides outside Orion frame borders cleanly
+        }):Play()
+    else
+        local tween = ts:Create(selectionPanel, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+            Position = u(0.5, -100, 0, 0)
+        })
+        tween:Play()
+        tween.Completed:Connect(function()
+            if not isPanelOpen then
+                selectionPanel.Visible = false
+            end
+        end)
+    end
+end
+
+-- Inject Custom Avatar Profile Card at the bottom left of Orion Sidebar
+local navigation = orionMain:FindFirstChild("Navigation") or orionMain:FindFirstChildWhichIsA("Frame")
+if navigation then
+    local profile = c("Frame", navigation, {
+        Size = u(1, -20, 0, 48),
+        Position = u(0, 10, 1, -58),
+        BackgroundColor3 = col(28, 28, 30),
+        BorderSizePixel = 0,
+        ZIndex = 5
+    })
+    c("UICorner", profile, { CornerRadius = UDim.new(0, 6) })
+
+    local avatar = c("ImageLabel", profile, {
+        Size = u(0, 32, 0, 32),
+        Position = u(0, 8, 0.5, -16),
+        BackgroundTransparency = 1,
+        Image = "rbxassetid://16823376787",
+        ZIndex = 6
+    })
+    pcall(function()
+        avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. p.UserId .. "&w=150&h=150"
+    end)
+    c("UICorner", avatar, { CornerRadius = UDim.new(1, 0) })
+    c("UIStroke", avatar, { Color = col(50, 50, 50), Thickness = 1, ZIndex = 6 })
+
+    local textLabel = c("TextLabel", profile, {
+        Size = u(1, -48, 0, 14),
+        Position = u(0, 46, 0, 10),
+        BackgroundTransparency = 1,
+        Text = p.DisplayName or p.Name,
+        TextColor3 = col(220, 220, 220),
+        Font = fontBold,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        ZIndex = 6
+    })
+
+    local execTextLabel = c("TextLabel", profile, {
+        Size = u(1, -48, 0, 12),
+        Position = u(0, 46, 0, 26),
+        BackgroundTransparency = 1,
+        Text = execName,
+        TextColor3 = col(140, 140, 140),
+        Font = fontRegular,
+        TextSize = 10,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        ZIndex = 6
     })
 end
 
--- Target Recipient Variables
+-- Floating Restore Toggle Button
+local floatBtn = c("ImageButton", orionGui, {
+    Size = u(0, 40, 0, 40),
+    Position = u(0.02, 0, 0.4, 0),
+    BackgroundColor3 = col(23, 23, 23),
+    BorderSizePixel = 0,
+    Image = "rbxassetid://10734885430",
+    ImageColor3 = col(255, 255, 255),
+    Visible = false,
+    ZIndex = 10
+})
+c("UICorner", floatBtn, { CornerRadius = UDim.new(1, 0) })
+
+local fDragging, fDragInput, fDragStart, fStartPos
+floatBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        fDragging = true
+        fDragStart = input.Position
+        fStartPos = floatBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then fDragging = false end
+        end)
+    end
+end)
+floatBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        fDragInput = input
+    end
+end)
+uis.InputChanged:Connect(function(input)
+    if input == fDragInput and fDragging then
+        local delta = input.Position - fDragStart
+        floatBtn.Position = u(fStartPos.X.Scale, fStartPos.X.Offset + delta.X, fStartPos.Y.Scale, fStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+applyHoverEffect(floatBtn, col(23, 23, 23), col(28, 28, 30))
+
+local isUIOpen = true
+local normalPosition = u(0.5, -260, 0.5, -170)
+local offscreenPosition = u(0.5, -260, 1.5, 0)
+
+local function toggleUI(forceState)
+    if forceState ~= nil then
+        isUIOpen = forceState
+    else
+        isUIOpen = not isUIOpen
+    end
+    if isUIOpen then
+        floatBtn.Visible = false
+        orionMain.Visible = true
+        ts:Create(orionMain, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = normalPosition }):Play()
+    else
+        closeSelectionPanelInstant()
+        local hideTween = ts:Create(orionMain, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), { Position = offscreenPosition })
+        hideTween:Play()
+        hideTween.Completed:Connect(function()
+            if not isUIOpen then
+                orionMain.Visible = false
+                floatBtn.Visible = true
+            end
+        end)
+    end
+end
+
+floatBtn.MouseButton1Click:Connect(function() toggleUI(true) end)
+
+uis.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.RightControl then toggleUI() end
+end)
+
+-- Override standard Orion close transitions safely
+local closeBtn = orionMain:FindFirstChild("Close", true) or orionMain:FindFirstChild("Exit", true)
+if closeBtn and closeBtn:IsA("TextButton") then
+    closeBtn.MouseButton1Click:Connect(function()
+        closeSelectionPanelInstant()
+        task.wait(0.1)
+        orionGui:Destroy()
+    end)
+end
+
+-- Re-implement input fields and actions natively inside Orion's Tab structure
 local recipientUsername = ""
 local mailMessage = ""
 
@@ -285,116 +802,36 @@ MailerTab:AddTextbox({
     end
 })
 
-MailerTab:AddSection({ Name = "Multiplier Settings" })
-
-local modeDropdown = MailerTab:AddDropdown({
-    Name = "Pricing Mode",
-    Default = "LIVE",
-    Options = {"LIVE", "1X"},
-    Callback = function(Value)
-        currentMultiplierMode = Value:lower()
-        showToast("Multiplier Mode updated to: " .. Value, true)
-    end
-})
-
-MailerTab:AddSection({ Name = "Fruit Selection" })
-
-local statusLabel = MailerTab:AddLabel("Selected: 0 fruits | Total Value: $0")
-
-local function updateSelectedCounter()
-    local count = 0
-    local totalVal = 0
-    local scannedIds = {}
-    
-    for _, fruit in ipairs(currentScannedFruits) do
-        scannedIds[fruit.id] = true
-        if selectedFruitsMap[fruit.id] then
-            count = count + 1
-            totalVal = totalVal + getFruitPrice(fruit.name, fruit.instance, currentMultiplierMode)
-        end
-    end
-    
-    for id in pairs(selectedFruitsMap) do
-        if not scannedIds[id] then
-            selectedFruitsMap[id] = nil
-        end
-    end
-    
-    local batches = math.ceil(count / 20)
-    local statusText = string.format("Selected: %d (%d batches) | Value: $%s", count, batches, formatPrice(totalVal))
-    statusLabel:Set(statusText)
-end
-
--- Dynamic list mapping
-local fruitDropdownOptions = {}
-local fruitDropdownMap = {}
-
-local fruitSelectionDropdown = MailerTab:AddDropdown({
-    Name = "Click to Toggle Selection",
-    Default = "None",
-    Options = {"Refresh to load"},
-    Callback = function(Value)
-        local fruit = fruitDropdownMap[Value]
-        if fruit then
-            if selectedFruitsMap[fruit.id] then
-                selectedFruitsMap[fruit.id] = nil
-                showToast("Removed " .. fruit.name .. " from selection", false)
-            else
-                selectedFruitsMap[fruit.id] = true
-                showToast("Added " .. fruit.name .. " to selection", true)
-            end
-            updateSelectedCounter()
-        end
-    end
-})
-
-local function refreshInventoryDropdown()
-    currentScannedFruits = scanFruits()
-    fruitDropdownOptions = {}
-    fruitDropdownMap = {}
-    
-    for _, fruit in ipairs(currentScannedFruits) do
-        local price = getFruitPrice(fruit.name, fruit.instance, currentMultiplierMode)
-        local displayString = string.format("%s (%.1fkg) - $%s", fruit.name, fruit.weight, formatPrice(price))
-        table.insert(fruitDropdownOptions, displayString)
-        fruitDropdownMap[displayString] = fruit
-    end
-    
-    if #fruitDropdownOptions == 0 then
-        table.insert(fruitDropdownOptions, "No fruits in inventory")
-    end
-    
-    fruitSelectionDropdown:Refresh(fruitDropdownOptions, true)
-    updateSelectedCounter()
-end
+MailerTab:AddSection({ Name = "Fruit Selection Options" })
 
 MailerTab:AddButton({
-    Name = "Refresh Inventory List",
-    Callback = function()
-        refreshInventoryDropdown()
-        showToast("Inventory list updated.", true)
-    end
+    Name = "Select Fruits",
+    Callback = toggleSelectionPanel
 })
 
 MailerTab:AddButton({
-    Name = "Select All Fruits",
+    Name = "Select All",
     Callback = function()
         for _, fruit in ipairs(currentScannedFruits) do
             selectedFruitsMap[fruit.id] = true
         end
+        populateSelectionGrid()
         updateSelectedCounter()
         showToast("Selected all fruits", true)
     end
 })
 
 MailerTab:AddButton({
-    Name = "Clear Selection",
+    Name = "Clear All",
     Callback = function()
         table.clear(selectedFruitsMap)
+        populateSelectionGrid()
         updateSelectedCounter()
         showToast("Selection cleared", false)
     end
 })
+
+selectedCounter = MailerTab:AddLabel("Fruits selected: 0")
 
 MailerTab:AddSection({ Name = "Transmission" })
 
@@ -462,7 +899,7 @@ MailerTab:AddButton({
                 end
                 
                 if index < totalBatches then
-                    showToast("Waiting 10s cooldown before next batch...", true)
+                    showToast("Waiting 10s cooldown...", true)
                     task.wait(10)
                 end
             end
@@ -472,21 +909,26 @@ MailerTab:AddButton({
             end
 
             task.wait(0.2)
-            refreshInventoryDropdown()
+            populateSelectionGrid()
+            updateSelectedCounter()
         end)
     end
 })
 
--- Background Sync Loop (Auto refreshes selections to stay accurate)
+-- Background Sync Loop (Keeps lists and counters accurately updated)
 task.spawn(function()
     while task.wait(1) do
         pcall(function()
             currentScannedFruits = scanFruits()
             updateSelectedCounter()
+            if isPanelOpen then
+                populateSelectionGrid()
+            end
         end)
     end
 end)
 
--- Initial run setup
-refreshInventoryDropdown()
+-- Initialize selection elements
+populateSelectionGrid()
+updateSelectedCounter()
 OrionLib:Init()
