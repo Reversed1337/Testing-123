@@ -81,7 +81,6 @@ local sellFlags = safeRequire("SellFlags")
 
 local currentMultiplierMode = "live"
 local stockSnapshot = {}
-local totalValueLabel = nil
 
 local function fetchStock()
     return stockSnapshot
@@ -226,19 +225,56 @@ E.Mail.SendFruitBatch = function(recipient, fruits, note)
     return true, "Successfully sent!"
 end
 
--- Initialize the Orion window structure
-local Window = OrionLib:MakeWindow({Name = "Onyx Mailer", HidePremium = true, SaveConfig = false})
+local function scanFruits()
+    local fruits = {}
+    local backpack = p:FindFirstChild("Backpack")
+    local char = p.Character
 
-local MailerTab = Window:MakeTab({
-    Name = "Mailer",
-    Icon = "rbxassetid://10734885430",
-    PremiumOnly = false
-})
+    local function processItem(item)
+        if typeof(item) == "Instance" then
+            local name = item:GetAttribute("FruitName") or item:GetAttribute("Fruit")
+            local id = item:GetAttribute("Id")
+            if name and id then
+                local weightAttr = item:GetAttribute("weight") or item:GetAttribute("Weight") or item:GetAttribute("KG") or item:GetAttribute("Kg") or 0
+                local mutationAttr = item:GetAttribute("Mutation") or item:GetAttribute("Mutations") or "None"
+                local numWeight = tonumber(weightAttr) or 0
+                local roundedWeight = math.floor(numWeight * 100 + 0.5) / 100
 
--- Dynamic Retrieval of Orion Elements
-local orionGui = game:GetService("CoreGui"):WaitForChild("Orion", 15) or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Orion", 15)
-local orionMain = orionGui:WaitForChild("Main", 15)
-orionMain.ClipsDescendants = false -- Required to let the side panel show outside bounds
+                local imageAttr = item:GetAttribute("Image") or item:GetAttribute("Icon")
+                    or item:GetAttribute("FruitImage") or item:GetAttribute("TextureId")
+                    or item:GetAttribute("Texture") or item:GetAttribute("SeedImage")
+
+                table.insert(fruits, {
+                    instance = item,
+                    id = tostring(id),
+                    name = tostring(name),
+                    weight = roundedWeight,
+                    mutation = tostring(mutationAttr),
+                    image = imageAttr and tostring(imageAttr) or nil
+                })
+            end
+        end
+    end
+
+    if backpack then for _, item in ipairs(backpack:GetChildren()) do processItem(item) end end
+    if char then for _, item in ipairs(char:GetChildren()) do processItem(item) end end
+    return fruits
+end
+
+-- Custom Selection Panel References
+local orionGui = nil
+local orionMain = nil
+local selectionPanel = nil
+local gridScroller = nil
+local panelTitle = nil
+local multToggleBtn = nil
+local totalValueLabel = nil
+local gridLayout = nil
+local floatBtn = nil
+
+local selectedFruitsMap = {}
+local currentScannedFruits = {}
+local selectedCounter = nil
 
 local function showToast(msg, isSuccess)
     OrionLib:MakeNotification({
@@ -249,85 +285,34 @@ local function showToast(msg, isSuccess)
     })
 end
 
--- Re-create the Sliding Selection Panel inside Orion's Main Window
-local selectionPanel = c("Frame", orionMain, {
-    Size = u(0, 200, 1, 0),
-    Position = u(0.5, -100, 0, 0), -- Slides right relatively
-    BackgroundColor3 = col(23, 23, 23),
-    BorderSizePixel = 0,
-    Visible = false,
-    ClipsDescendants = true,
-    ZIndex = 0
-})
-c("UICorner", selectionPanel, { CornerRadius = UDim.new(0, 8) })
-local panelStroke = c("UIStroke", selectionPanel, { Color = col(40, 40, 40), Thickness = 1, Transparency = 0.5 })
-registerThemeElement(panelStroke, "Color")
-
-local panelTitle = c("TextLabel", selectionPanel, {
-    Size = u(1, 0, 0, 24),
-    Position = u(0, 0, 0, 8),
-    BackgroundTransparency = 1,
-    Text = "Select Fruits",
-    TextColor3 = col(240, 240, 240),
-    Font = fontBold,
-    TextSize = 13,
-    TextXAlignment = Enum.TextXAlignment.Center,
-    ZIndex = 1
-})
-
--- Multiplier Toggle Button
-local multToggleBtn = c("TextButton", selectionPanel, {
-    Size = u(1, -24, 0, 20),
-    Position = u(0, 12, 0, 32),
-    BackgroundColor3 = col(35, 35, 38),
-    Text = "Mode: LIVE X",
-    TextColor3 = col(220, 220, 220),
-    Font = fontBold,
-    TextSize = 9,
-    AutoButtonColor = false,
-    ZIndex = 1
-})
-c("UICorner", multToggleBtn, { CornerRadius = UDim.new(0, 4) })
-
-local function applyHoverEffect(btn, baseCol, hoverCol)
-    btn.MouseEnter:Connect(function()
-        ts:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = hoverCol }):Play()
-    end)
-    btn.MouseLeave:Connect(function()
-        ts:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = baseCol }):Play()
-    end)
+local function updateSelectedCounter()
+    if not selectedCounter then return end
+    local count = 0
+    local totalVal = 0
+    local scannedIds = {}
+    for _, fruit in ipairs(currentScannedFruits) do
+        scannedIds[fruit.id] = true
+        if selectedFruitsMap[fruit.id] then
+            count = count + 1
+            totalVal = totalVal + getFruitPrice(fruit.name, fruit.instance, currentMultiplierMode)
+        end
+    end
+    for id in pairs(selectedFruitsMap) do
+        if not scannedIds[id] then
+            selectedFruitsMap[id] = nil
+        end
+    end
+    
+    local batches = math.ceil(count / 20)
+    selectedCounter:Set("Fruits selected: " .. count .. " (" .. batches .. " batch" .. (batches == 1 and "" or "es") .. ")")
+    
+    if totalValueLabel then
+        totalValueLabel.Text = "Total Value: $" .. formatPrice(totalVal)
+    end
 end
-applyHoverEffect(multToggleBtn, col(35, 35, 38), col(45, 45, 48))
 
-totalValueLabel = c("TextLabel", selectionPanel, {
-    Size = u(1, -24, 0, 16),
-    Position = u(0, 12, 0, 54),
-    BackgroundTransparency = 1,
-    Text = "Total Value: $0",
-    TextColor3 = col(46, 196, 182),
-    Font = fontBold,
-    TextSize = 11,
-    TextXAlignment = Enum.TextXAlignment.Center,
-    ZIndex = 1
-})
-
-local gridScroller = c("ScrollingFrame", selectionPanel, {
-    Size = u(1, -20, 1, -88),
-    Position = u(0, 10, 0, 78),
-    BackgroundTransparency = 1,
-    CanvasSize = u(0, 0, 0, 0),
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    ScrollBarThickness = 2,
-    ScrollBarImageColor3 = col(60, 60, 60),
-    CanvasPosition = Vector2.new(0, 0),
-    ZIndex = 1
-})
-local gridLayout = c("UIGridLayout", gridScroller, {
-    CellSize = u(0, 52, 0, 68),
-    CellPadding = u(0, 8, 0, 8),
-    HorizontalAlignment = Enum.HorizontalAlignment.Center,
-    SortOrder = Enum.SortOrder.LayoutOrder
-})
+-- Cell caching limits layout overhead
+local cellCache = {}
 
 -- Fruit Image URL Map (from growagardencalculator.com)
 local FRUIT_IMAGE_BASE = "https://www.growagardencalculator.com/grow-a-garden-2/images/seeds/"
@@ -427,77 +412,8 @@ local function getFruitIcon(fruitName, toolInstance, cachedImage)
     return ""
 end
 
-local function scanFruits()
-    local fruits = {}
-    local backpack = p:FindFirstChild("Backpack")
-    local char = p.Character
-
-    local function processItem(item)
-        if typeof(item) == "Instance" then
-            local name = item:GetAttribute("FruitName") or item:GetAttribute("Fruit")
-            local id = item:GetAttribute("Id")
-            if name and id then
-                local weightAttr = item:GetAttribute("weight") or item:GetAttribute("Weight") or item:GetAttribute("KG") or item:GetAttribute("Kg") or 0
-                local mutationAttr = item:GetAttribute("Mutation") or item:GetAttribute("Mutations") or "None"
-                local numWeight = tonumber(weightAttr) or 0
-                local roundedWeight = math.floor(numWeight * 100 + 0.5) / 100
-
-                local imageAttr = item:GetAttribute("Image") or item:GetAttribute("Icon")
-                    or item:GetAttribute("FruitImage") or item:GetAttribute("TextureId")
-                    or item:GetAttribute("Texture") or item:GetAttribute("SeedImage")
-
-                table.insert(fruits, {
-                    instance = item,
-                    id = tostring(id),
-                    name = tostring(name),
-                    weight = roundedWeight,
-                    mutation = tostring(mutationAttr),
-                    image = imageAttr and tostring(imageAttr) or nil
-                })
-            end
-        end
-    end
-
-    if backpack then for _, item in ipairs(backpack:GetChildren()) do processItem(item) end end
-    if char then for _, item in ipairs(char:GetChildren()) do processItem(item) end end
-    return fruits
-end
-
--- Global Fruit Selection Maps
-local selectedFruitsMap = {}
-local currentScannedFruits = {}
-local selectedCounter = nil
-
-local function updateSelectedCounter()
-    if not selectedCounter then return end
-    local count = 0
-    local totalVal = 0
-    local scannedIds = {}
-    for _, fruit in ipairs(currentScannedFruits) do
-        scannedIds[fruit.id] = true
-        if selectedFruitsMap[fruit.id] then
-            count = count + 1
-            totalVal = totalVal + getFruitPrice(fruit.name, fruit.instance, currentMultiplierMode)
-        end
-    end
-    for id in pairs(selectedFruitsMap) do
-        if not scannedIds[id] then
-            selectedFruitsMap[id] = nil
-        end
-    end
-    
-    local batches = math.ceil(count / 20)
-    selectedCounter:Set("Fruits selected: " .. count .. " (" .. batches .. " batch" .. (batches == 1 and "" or "es") .. ")")
-    
-    if totalValueLabel then
-        totalValueLabel.Text = "Total Value: $" .. formatPrice(totalVal)
-    end
-end
-
--- Cell caching limits layout overhead
-local cellCache = {}
-
 local function populateSelectionGrid()
+    if not gridScroller then return end
     currentScannedFruits = scanFruits()
 
     for _, cell in pairs(cellCache) do
@@ -560,6 +476,15 @@ local function populateSelectionGrid()
                 Font = fontRegular, TextSize = 8, ZIndex = 3, LineHeight = 0.95
             })
 
+            local function applyHoverEffect(btn, baseCol, hoverCol)
+                btn.MouseEnter:Connect(function()
+                    ts:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = hoverCol }):Play()
+                end)
+                btn.MouseLeave:Connect(function()
+                    ts:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = baseCol }):Play()
+                end)
+            end
+
             cell.MouseEnter:Connect(function()
                 if not selectedFruitsMap[fruit.id] then
                     ts:Create(cellStroke, TweenInfo.new(0.2), { Color = lightenColor(accentColor, -30) }):Play()
@@ -605,26 +530,18 @@ local function populateSelectionGrid()
     end
 end
 
-multToggleBtn.MouseButton1Click:Connect(function()
-    if currentMultiplierMode == "live" then
-        currentMultiplierMode = "1x"
-    else
-        currentMultiplierMode = "live"
-    end
-    multToggleBtn.Text = "Mode: " .. currentMultiplierMode:upper()
-    populateSelectionGrid()
-    updateSelectedCounter()
-end)
-
--- Sliding Logic (Binds relatively to Orion's frame coordinates)
+-- Sliding Panel Animation Controls
 local isPanelOpen = false
 local function closeSelectionPanelInstant()
     isPanelOpen = false
-    selectionPanel.Position = u(0.5, -100, 0, 0)
-    selectionPanel.Visible = false
+    if selectionPanel then
+        selectionPanel.Position = u(0.5, -100, 0, 0)
+        selectionPanel.Visible = false
+    end
 end
 
 local function toggleSelectionPanel()
+    if not selectionPanel then return end
     isPanelOpen = not isPanelOpen
     if isPanelOpen then
         populateSelectionGrid()
@@ -645,138 +562,14 @@ local function toggleSelectionPanel()
     end
 end
 
--- Inject Custom Avatar Profile Card at the bottom left of Orion Sidebar
-local navigation = orionMain:FindFirstChild("Navigation") or orionMain:FindFirstChildWhichIsA("Frame")
-if navigation then
-    local profile = c("Frame", navigation, {
-        Size = u(1, -20, 0, 48),
-        Position = u(0, 10, 1, -58),
-        BackgroundColor3 = col(28, 28, 30),
-        BorderSizePixel = 0,
-        ZIndex = 5
-    })
-    c("UICorner", profile, { CornerRadius = UDim.new(0, 6) })
+-- Initialize the Orion UI Window & Elements FIRST
+local Window = OrionLib:MakeWindow({Name = "Onyx Mailer", HidePremium = true, SaveConfig = false})
 
-    local avatar = c("ImageLabel", profile, {
-        Size = u(0, 32, 0, 32),
-        Position = u(0, 8, 0.5, -16),
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://16823376787",
-        ZIndex = 6
-    })
-    pcall(function()
-        avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. p.UserId .. "&w=150&h=150"
-    end)
-    c("UICorner", avatar, { CornerRadius = UDim.new(1, 0) })
-    c("UIStroke", avatar, { Color = col(50, 50, 50), Thickness = 1, ZIndex = 6 })
-
-    local textLabel = c("TextLabel", profile, {
-        Size = u(1, -48, 0, 14),
-        Position = u(0, 46, 0, 10),
-        BackgroundTransparency = 1,
-        Text = p.DisplayName or p.Name,
-        TextColor3 = col(220, 220, 220),
-        Font = fontBold,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        ZIndex = 6
-    })
-
-    local execTextLabel = c("TextLabel", profile, {
-        Size = u(1, -48, 0, 12),
-        Position = u(0, 46, 0, 26),
-        BackgroundTransparency = 1,
-        Text = execName,
-        TextColor3 = col(140, 140, 140),
-        Font = fontRegular,
-        TextSize = 10,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        ZIndex = 6
-    })
-end
-
--- Floating Restore Toggle Button
-local floatBtn = c("ImageButton", orionGui, {
-    Size = u(0, 40, 0, 40),
-    Position = u(0.02, 0, 0.4, 0),
-    BackgroundColor3 = col(23, 23, 23),
-    BorderSizePixel = 0,
-    Image = "rbxassetid://10734885430",
-    ImageColor3 = col(255, 255, 255),
-    Visible = false,
-    ZIndex = 10
+local MailerTab = Window:MakeTab({
+    Name = "Mailer",
+    Icon = "rbxassetid://10734885430",
+    PremiumOnly = false
 })
-c("UICorner", floatBtn, { CornerRadius = UDim.new(1, 0) })
-
-local fDragging, fDragInput, fDragStart, fStartPos
-floatBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        fDragging = true
-        fDragStart = input.Position
-        fStartPos = floatBtn.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then fDragging = false end
-        end)
-    end
-end)
-floatBtn.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        fDragInput = input
-    end
-end)
-uis.InputChanged:Connect(function(input)
-    if input == fDragInput and fDragging then
-        local delta = input.Position - fDragStart
-        floatBtn.Position = u(fStartPos.X.Scale, fStartPos.X.Offset + delta.X, fStartPos.Y.Scale, fStartPos.Y.Offset + delta.Y)
-    end
-end)
-
-applyHoverEffect(floatBtn, col(23, 23, 23), col(28, 28, 30))
-
-local isUIOpen = true
-local normalPosition = u(0.5, -260, 0.5, -170)
-local offscreenPosition = u(0.5, -260, 1.5, 0)
-
-local function toggleUI(forceState)
-    if forceState ~= nil then
-        isUIOpen = forceState
-    else
-        isUIOpen = not isUIOpen
-    end
-    if isUIOpen then
-        floatBtn.Visible = false
-        orionMain.Visible = true
-        ts:Create(orionMain, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = normalPosition }):Play()
-    else
-        closeSelectionPanelInstant()
-        local hideTween = ts:Create(orionMain, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), { Position = offscreenPosition })
-        hideTween:Play()
-        hideTween.Completed:Connect(function()
-            if not isUIOpen then
-                orionMain.Visible = false
-                floatBtn.Visible = true
-            end
-        end)
-    end
-end
-
-floatBtn.MouseButton1Click:Connect(function() toggleUI(true) end)
-
-uis.InputBegan:Connect(function(input, gpe)
-    if not gpe and input.KeyCode == Enum.KeyCode.RightControl then toggleUI() end
-end)
-
--- Override standard Orion close transitions safely
-local closeBtn = orionMain:FindFirstChild("Close", true) or orionMain:FindFirstChild("Exit", true)
-if closeBtn and closeBtn:IsA("TextButton") then
-    closeBtn.MouseButton1Click:Connect(function()
-        closeSelectionPanelInstant()
-        task.wait(0.1)
-        orionGui:Destroy()
-    end)
-end
 
 -- Re-implement input fields and actions natively inside Orion's Tab structure
 local recipientUsername = ""
@@ -915,6 +708,246 @@ MailerTab:AddButton({
     end
 })
 
+-- Initialize the Orion Framework
+OrionLib:Init()
+
+-- ASYNCHRONOUS INJECTION LOGIC (Starts after window initialized to avoid thread yields)
+task.spawn(function()
+    orionGui = game:GetService("CoreGui"):WaitForChild("Orion", 15) or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Orion", 15)
+    if not orionGui then return end
+
+    orionMain = orionGui:WaitForChild("Main", 15)
+    if not orionMain then return end
+
+    orionMain.ClipsDescendants = false
+
+    -- Re-create the sliding fruit list panel as a child of Orion Main
+    selectionPanel = c("Frame", orionMain, {
+        Size = u(0, 200, 1, 0),
+        Position = u(0.5, -100, 0, 0),
+        BackgroundColor3 = col(23, 23, 23),
+        BorderSizePixel = 0,
+        Visible = false,
+        ClipsDescendants = true,
+        ZIndex = 0
+    })
+    c("UICorner", selectionPanel, { CornerRadius = UDim.new(0, 8) })
+    local panelStroke = c("UIStroke", selectionPanel, { Color = col(40, 40, 40), Thickness = 1, Transparency = 0.5 })
+    registerThemeElement(panelStroke, "Color")
+
+    panelTitle = c("TextLabel", selectionPanel, {
+        Size = u(1, 0, 0, 24),
+        Position = u(0, 0, 0, 8),
+        BackgroundTransparency = 1,
+        Text = "Select Fruits",
+        TextColor3 = col(240, 240, 240),
+        Font = fontBold,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 1
+    })
+
+    multToggleBtn = c("TextButton", selectionPanel, {
+        Size = u(1, -24, 0, 20),
+        Position = u(0, 12, 0, 32),
+        BackgroundColor3 = col(35, 35, 38),
+        Text = "Mode: LIVE X",
+        TextColor3 = col(220, 220, 220),
+        Font = fontBold,
+        TextSize = 9,
+        AutoButtonColor = false,
+        ZIndex = 1
+    })
+    c("UICorner", multToggleBtn, { CornerRadius = UDim.new(0, 4) })
+    
+    local function applyHoverEffect(btn, baseCol, hoverCol)
+        btn.MouseEnter:Connect(function()
+            ts:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = hoverCol }):Play()
+        end)
+        btn.MouseLeave:Connect(function()
+            ts:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = baseCol }):Play()
+        end)
+    end
+    applyHoverEffect(multToggleBtn, col(35, 35, 38), col(45, 45, 48))
+
+    multToggleBtn.MouseButton1Click:Connect(function()
+        if currentMultiplierMode == "live" then
+            currentMultiplierMode = "1x"
+        else
+            currentMultiplierMode = "live"
+        end
+        multToggleBtn.Text = "Mode: " .. currentMultiplierMode:upper()
+        populateSelectionGrid()
+        updateSelectedCounter()
+    end)
+
+    totalValueLabel = c("TextLabel", selectionPanel, {
+        Size = u(1, -24, 0, 16),
+        Position = u(0, 12, 0, 54),
+        BackgroundTransparency = 1,
+        Text = "Total Value: $0",
+        TextColor3 = col(46, 196, 182),
+        Font = fontBold,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 1
+    })
+
+    gridScroller = c("ScrollingFrame", selectionPanel, {
+        Size = u(1, -20, 1, -88),
+        Position = u(0, 10, 0, 78),
+        BackgroundTransparency = 1,
+        CanvasSize = u(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ScrollBarThickness = 2,
+        ScrollBarImageColor3 = col(60, 60, 60),
+        CanvasPosition = Vector2.new(0, 0),
+        ZIndex = 1
+    })
+    gridLayout = c("UIGridLayout", gridScroller, {
+        CellSize = u(0, 52, 0, 68),
+        CellPadding = u(0, 8, 0, 8),
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        SortOrder = Enum.SortOrder.LayoutOrder
+    })
+
+    -- Inject Avatar Profile Card at the bottom left of Orion Sidebar
+    local navigation = orionMain:FindFirstChild("Navigation") or orionMain:FindFirstChildWhichIsA("Frame")
+    if navigation then
+        local profile = c("Frame", navigation, {
+            Size = u(1, -20, 0, 48),
+            Position = u(0, 10, 1, -58),
+            BackgroundColor3 = col(28, 28, 30),
+            BorderSizePixel = 0,
+            ZIndex = 5
+        })
+        c("UICorner", profile, { CornerRadius = UDim.new(0, 6) })
+
+        local avatar = c("ImageLabel", profile, {
+            Size = u(0, 32, 0, 32),
+            Position = u(0, 8, 0.5, -16),
+            BackgroundTransparency = 1,
+            Image = "rbxassetid://16823376787",
+            ZIndex = 6
+        })
+        pcall(function()
+            avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. p.UserId .. "&w=150&h=150"
+        end)
+        c("UICorner", avatar, { CornerRadius = UDim.new(1, 0) })
+        c("UIStroke", avatar, { Color = col(50, 50, 50), Thickness = 1, ZIndex = 6 })
+
+        local textLabel = c("TextLabel", profile, {
+            Size = u(1, -48, 0, 14),
+            Position = u(0, 46, 0, 10),
+            BackgroundTransparency = 1,
+            Text = p.DisplayName or p.Name,
+            TextColor3 = col(220, 220, 220),
+            Font = fontBold,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextTruncate = Enum.TextTruncate.AtEnd,
+            ZIndex = 6
+        })
+
+        local execTextLabel = c("TextLabel", profile, {
+            Size = u(1, -48, 0, 12),
+            Position = u(0, 46, 0, 26),
+            BackgroundTransparency = 1,
+            Text = execName,
+            TextColor3 = col(140, 140, 140),
+            Font = fontRegular,
+            TextSize = 10,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextTruncate = Enum.TextTruncate.AtEnd,
+            ZIndex = 6
+        })
+    end
+
+    -- Floating Restore Toggle Button
+    floatBtn = c("ImageButton", orionGui, {
+        Size = u(0, 40, 0, 40),
+        Position = u(0.02, 0, 0.4, 0),
+        BackgroundColor3 = col(23, 23, 23),
+        BorderSizePixel = 0,
+        Image = "rbxassetid://10734885430",
+        ImageColor3 = col(255, 255, 255),
+        Visible = false,
+        ZIndex = 10
+    })
+    c("UICorner", floatBtn, { CornerRadius = UDim.new(1, 0) })
+
+    local fDragging, fDragInput, fDragStart, fStartPos
+    floatBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            fDragging = true
+            fDragStart = input.Position
+            fStartPos = floatBtn.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then fDragging = false end
+            end)
+        end
+    end)
+    floatBtn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            fDragInput = input
+        end
+    end)
+    uis.InputChanged:Connect(function(input)
+        if input == fDragInput and fDragging then
+            local delta = input.Position - fDragStart
+            floatBtn.Position = u(fStartPos.X.Scale, fStartPos.X.Offset + delta.X, fStartPos.Y.Scale, fStartPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    applyHoverEffect(floatBtn, col(23, 23, 23), col(28, 28, 30))
+
+    local isUIOpen = true
+    local normalPosition = u(0.5, -260, 0.5, -170)
+    local offscreenPosition = u(0.5, -260, 1.5, 0)
+
+    local function toggleUI(forceState)
+        if forceState ~= nil then
+            isUIOpen = forceState
+        else
+            isUIOpen = not isUIOpen
+        end
+        if isUIOpen then
+            floatBtn.Visible = false
+            orionMain.Visible = true
+            ts:Create(orionMain, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Position = normalPosition }):Play()
+        else
+            closeSelectionPanelInstant()
+            local hideTween = ts:Create(orionMain, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), { Position = offscreenPosition })
+            hideTween:Play()
+            hideTween.Completed:Connect(function()
+                if not isUIOpen then
+                    orionMain.Visible = false
+                    floatBtn.Visible = true
+                end
+            end)
+        end
+    end
+
+    floatBtn.MouseButton1Click:Connect(function() toggleUI(true) end)
+
+    uis.InputBegan:Connect(function(input, gpe)
+        if not gpe and input.KeyCode == Enum.KeyCode.RightControl then toggleUI() end
+    end)
+
+    -- Override standard Orion close transitions safely
+    local closeBtn = orionMain:FindFirstChild("Close", true) or orionMain:FindFirstChild("Exit", true)
+    if closeBtn and closeBtn:IsA("TextButton") then
+        closeBtn.MouseButton1Click:Connect(function()
+            closeSelectionPanelInstant()
+            task.wait(0.1)
+            orionGui:Destroy()
+        end)
+    end
+
+    populateSelectionGrid()
+    updateSelectedCounter()
+end)
+
 -- Background Sync Loop (Keeps lists and counters accurately updated)
 task.spawn(function()
     while task.wait(1) do
@@ -927,8 +960,3 @@ task.spawn(function()
         end)
     end
 end)
-
--- Initialize selection elements
-populateSelectionGrid()
-updateSelectedCounter()
-OrionLib:Init()
