@@ -31,6 +31,7 @@ local rarities = {
 
 local selectedFruit = "Werewolf"
 local selectedMutation = "Normal"
+local claimingFruits = false  -- State variable for auto-claiming fruits
 local collectingSlots = false -- State variable for auto-collect
 local upgradingSlots = false  -- State variable for auto-upgrade
 
@@ -61,28 +62,46 @@ ClaimTab:AddDropdown({
     end    
 })
 
--- Claim Button
-ClaimTab:AddButton({
-    Name = "Claim Fruit",
-    Callback = function()
-        local targetRarity = rarities[selectedFruit] or "Exclusive"
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local Event = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("RewardEscape")
+-- Auto Claim Fruit Toggle
+ClaimTab:AddToggle({
+    Name = "Auto Claim Fruit",
+    Default = false,
+    Callback = function(Value)
+        claimingFruits = Value
         
-        if Event then
-            Event:FireServer(selectedFruit, selectedMutation, targetRarity)
-            OrionLib:MakeNotification({
-                Name = "Success",
-                Content = "Fired remote for " .. selectedFruit .. " (" .. selectedMutation .. ")",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
+        if claimingFruits then
+            task.spawn(function()
+                OrionLib:MakeNotification({
+                    Name = "Auto Claim",
+                    Content = "Started claiming fruit every 3 seconds.",
+                    Image = "rbxassetid://4483345998",
+                    Time = 2
+                })
+                
+                while claimingFruits do
+                    local targetRarity = rarities[selectedFruit] or "Exclusive"
+                    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                    local Event = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("RewardEscape")
+                    
+                    if Event then
+                        Event:FireServer(selectedFruit, selectedMutation, targetRarity)
+                    else
+                        OrionLib:MakeNotification({
+                            Name = "Error",
+                            Content = "RewardEscape RemoteEvent not found!",
+                            Image = "rbxassetid://4483345998",
+                            Time = 3
+                        })
+                    end
+                    task.wait(3) -- Delay of 3 seconds between each send
+                end
+            end)
         else
             OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "RewardEscape RemoteEvent not found!",
+                Name = "Auto Claim",
+                Content = "Stopped claiming fruit.",
                 Image = "rbxassetid://4483345998",
-                Time = 3
+                Time = 2
             })
         end
     end    
