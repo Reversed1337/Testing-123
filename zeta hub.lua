@@ -21,7 +21,7 @@ else
 
     -- Create the main window to pass to the script
     G.Window = Library:CreateWindow({
-        Title = "Exotic Hub Lifetime",
+        Title = "Exotic Hub Pro",
         Footer = "exotichub.app/join | Hello World!",
         Position = UDim2.fromOffset(6, 6),
         Size = UDim2.fromOffset(720, 600),
@@ -205,6 +205,7 @@ y.PetSizes = y.safeRequire(y.SharedData:WaitForChild("PetSizes"))
 y.PetTypes = y.safeRequire(y.SharedData:WaitForChild("PetTypes"))
 y.SellValueData = y.safeRequire(y.SharedModules:WaitForChild("SellValueData"))
 y.SellFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("SellFlags"))
+y.MergeFlags = y.safeRequire(y.SharedModules.Flags:WaitForChild("MergeFlags"))
 y.FruitVisualizerController = y.safeRequire(y.LocalPlayer.PlayerScripts.Controllers.FruitVisualizerController)
 y.DroppedItems = y.Workspace:WaitForChild("DroppedItems")
 y.EventSeedDrops = (y.Workspace:WaitForChild("Map")):WaitForChild("SeedPackSpawnServerLocations")
@@ -284,7 +285,7 @@ local T = G.Library
 local d = G.Window
 local u = type(G.IsHeadless) == "function" and G.IsHeadless() == true
 y.AppName = "Exotic Hub"
-y.CurentV = "v93"
+y.CurentV = "v95"
 y.invite_link_url = "https://exotichub.app/join"
 y.invite_link_short = "exotichub.app/join"
 local q = {}
@@ -22633,8 +22634,7 @@ Z.AdvancedIncomeFarm = {
 				UpgradeRank = 1
 			};
 			Apple = {
-				Limit = 99,
-				FillOnly = true
+				Limit = 200
 			},
 			Bamboo = {
 				RequiresSprinkler = true,
@@ -22646,23 +22646,23 @@ Z.AdvancedIncomeFarm = {
 			},
 			Cactus = {
 				Limit = 1
-			},
+			};
 			Pineapple = {
 				Limit = 3
-			};
+			},
 			["Green Bean"] = {
 				Limit = 1
-			},
+			};
 			Banana = {
 				Limit = 30
 			},
 			Grape = {
 				Limit = 30
-			};
-			Coconut = {
-				Limit = 800;
-				UpgradeRank = 2
 			},
+			Coconut = {
+				Limit = 800,
+				UpgradeRank = 2
+			};
 			Mango = {
 				Limit = 30
 			},
@@ -22672,66 +22672,66 @@ Z.AdvancedIncomeFarm = {
 			};
 			["Dragon Fruit"] = {
 				Limit = 3
-			};
+			},
 			Acorn = {
 				Limit = 20
-			};
+			},
 			Cherry = {
-				Limit = 800;
+				Limit = 800,
 				UpgradeRank = 3
 			}
 		}
-	},
+	};
 	StageSettingsAdvancedIncomeFarm = {
 		Recovery = {
-			EvaluationWindow = 300,
-			FoundationMultiRatio = .5;
+			EvaluationWindow = 300;
+			FoundationMultiRatio = .5,
 			InvestmentRatio = .05;
 			MatureMultiFloorRatio = .15;
-			GoodSingleLimit = 0,
-			ShortWeight = .85;
-			LongWeight = .1,
-			MutationWeight = .05;
+			GoodSingleLimit = 0;
+			ShortWeight = .85,
+			LongWeight = .1;
+			MutationWeight = .05,
 			SlowFactor = .15;
 			FruitReserveRatio = 0
 		};
 		Building = {
-			EvaluationWindow = 900;
-			FoundationMultiRatio = .6,
-			InvestmentRatio = .1;
-			MatureMultiFloorRatio = .4,
-			GoodSingleLimit = 12;
-			ShortWeight = .55,
+			EvaluationWindow = 900,
+			FoundationMultiRatio = .6;
+			InvestmentRatio = .1,
+			MatureMultiFloorRatio = .4;
+			GoodSingleLimit = 12,
+			ShortWeight = .55;
 			LongWeight = .35,
 			MutationWeight = .1,
-			SlowFactor = .45;
+			SlowFactor = .45,
 			FruitReserveRatio = .05
-		},
+		};
 		Compounding = {
 			EvaluationWindow = 1800;
 			FoundationMultiRatio = .75;
 			InvestmentRatio = .2;
-			MatureMultiFloorRatio = .5,
+			MatureMultiFloorRatio = .5;
 			GoodSingleLimit = 24,
-			ShortWeight = .35;
-			LongWeight = .5,
+			ShortWeight = .35,
+			LongWeight = .5;
 			MutationWeight = .15,
-			SlowFactor = .75;
+			SlowFactor = .75,
 			FruitReserveRatio = .1
 		};
 		Rich = {
 			EvaluationWindow = 3600;
-			FoundationMultiRatio = .85,
+			FoundationMultiRatio = .85;
 			InvestmentRatio = .35,
 			MatureMultiFloorRatio = .55,
 			GoodSingleLimit = 30,
-			ShortWeight = .2;
+			ShortWeight = .2,
 			LongWeight = .55;
 			MutationWeight = .25;
 			SlowFactor = 1;
 			FruitReserveRatio = .2
 		}
-	},
+	};
 	IsEnabledAdvancedIncomeFarm = function()
 		if Z.TotalControl and (type(Z.TotalControl.IsEnabledTotalControl) == "function" and Z.TotalControl.IsEnabledTotalControl() == true) then
 			return true
@@ -22748,13 +22748,13 @@ Z.AdvancedIncomeFarm = {
 			return tonumber(G[V]) or 0
 		end
 		return ((((tonumber(G[V]) or 0)) + ((tonumber(G[V + 1]) or 0)))) / 2
-	end;
+	end,
 	GetNumberRangeAverageAdvancedIncomeFarm = function(G)
 		if typeof(G) ~= "NumberRange" then
 			return 0
 		end
 		return ((G.Min + G.Max)) / 2
-	end,
+	end;
 	GetStageSettingsAdvancedIncomeFarm = function(G)
 		local V = Z.AdvancedIncomeFarm.StageSettingsAdvancedIncomeFarm[tostring(G or "")]
 		if type(V) == "table" then
@@ -22810,18 +22810,18 @@ Z.AdvancedIncomeFarm = {
 			end
 			local s = tostring(J.rarity or g.SeedRarity[c] or "Unknown")
 			local N = {
-				name = c,
-				rarity = s;
-				rarityRank = g.RarityRank[s] or 0,
+				name = c;
+				rarity = s,
+				rarityRank = g.RarityRank[s] or 0;
 				single = u,
 				mutationSeed = d,
-				cleanValue = math.max(tonumber(H) or 0, 0);
-				growRate = q,
+				cleanValue = math.max(tonumber(H) or 0, 0),
+				growRate = q;
 				fruitGrowRate = E,
 				fruitSpawnDelay = a,
-				plantTime = r;
-				fruitCycleTime = Y,
-				firstPayoutTime = e;
+				plantTime = r,
+				fruitCycleTime = Y;
+				firstPayoutTime = e,
 				valid = d or (H > 0 and (q > 0 and e < math.huge))
 			}
 			G[c] = N
@@ -22865,20 +22865,20 @@ Z.AdvancedIncomeFarm = {
 			return true
 		end
 		return Z.AdvancedIncomeFarm.BuildCatalogAdvancedIncomeFarm()
-	end,
+	end;
 	GetCatalogInfoAdvancedIncomeFarm = function(G)
 		if type(Z.AdvancedIncomeFarm.CatalogAdvancedIncomeFarm) ~= "table" and not Z.AdvancedIncomeFarm.EnsureCatalogAdvancedIncomeFarm() then
 			return nil
 		end
 		return Z.AdvancedIncomeFarm.CatalogAdvancedIncomeFarm[tostring(G or "")]
-	end;
+	end,
 	IsMutationSeedAllowedAdvancedIncomeFarm = function()
 		local G = Z.TotalControl.ResolveMutationSeedsAllowedTotalControl()
 		if G ~= nil then
 			return G == true
 		end
 		return h.smart_seed_progression_mutation_seeds_enabled == true
-	end,
+	end;
 	GetSeedRuleAdvancedIncomeFarm = function(G)
 		local V = Z.AdvancedIncomeFarm.PlantRulesAdvancedIncomeFarm
 		local y = nil
@@ -22900,7 +22900,7 @@ Z.AdvancedIncomeFarm = {
 			return 0
 		end
 		return math.max(math.floor(tonumber(V.UpgradeRank) or 0), 0)
-	end;
+	end,
 	RequiresSprinklerAdvancedIncomeFarm = function(G)
 		if type(G) ~= "table" then
 			return false
@@ -22910,7 +22910,7 @@ Z.AdvancedIncomeFarm = {
 		end
 		local V = Z.AdvancedIncomeFarm.GetSeedRuleAdvancedIncomeFarm(G.name)
 		return type(V) == "table" and V.RequiresSprinkler == true
-	end,
+	end;
 	ResolvePlantLimitAdvancedIncomeFarm = function(G)
 		if type(G) == "string" and G:lower() == "all" then
 			return math.huge
@@ -22920,7 +22920,7 @@ Z.AdvancedIncomeFarm = {
 			return 0
 		end
 		return math.max(math.floor(V), 0)
-	end;
+	end,
 	GetConfiguredRarityLimitAdvancedIncomeFarm = function(G)
 		G = tostring(G or "")
 		local V = l.total_control_advanced_plant_limits
@@ -22960,7 +22960,7 @@ Z.AdvancedIncomeFarm = {
 			return Z.AdvancedIncomeFarm.ResolvePlantLimitAdvancedIncomeFarm(V.Limit)
 		end
 		return Z.AdvancedIncomeFarm.GetConfiguredRarityLimitAdvancedIncomeFarm(G.rarity)
-	end,
+	end;
 	GetSprinklerDataLookupAdvancedIncomeFarm = function()
 		local G = {}
 		local V = nil
@@ -23025,11 +23025,11 @@ Z.AdvancedIncomeFarm = {
 				continue
 			end
 			table.insert(G, {
-				name = Z;
-				position = j.CFrame:PointToWorldSpace(Vector3.new(d, u, q)),
+				name = Z,
+				position = j.CFrame:PointToWorldSpace(Vector3.new(d, u, q));
 				radius = math.max(tonumber(i.Radius) or 0, 0),
 				growSpeed = math.max(tonumber(i.GrowSpeedBonus) or 1, 1),
-				sizeLuck = math.max(tonumber(i.SizeLuckBonus) or 0, 0);
+				sizeLuck = math.max(tonumber(i.SizeLuckBonus) or 0, 0),
 				remaining = a
 			})
 		end
@@ -23040,7 +23040,7 @@ Z.AdvancedIncomeFarm = {
 			return G.remaining > V.remaining
 		end)
 		return G
-	end,
+	end;
 	IsGrowthWeatherActiveAdvancedIncomeFarm = function()
 		return Z.WeatherTriggers and (type(Z.WeatherTriggers.IsTriggerActiveWeatherTriggers) == "function" and Z.WeatherTriggers.IsTriggerActiveWeatherTriggers("Rain") == true)
 	end,
@@ -23059,18 +23059,18 @@ Z.AdvancedIncomeFarm = {
 			end
 		end
 		local V = (table.concat({
-			tostring(y.Workspace:GetAttribute("ActiveWeather") or ""),
+			tostring(y.Workspace:GetAttribute("ActiveWeather") or "");
 			tostring(y.Workspace:GetAttribute("ActivePhase") or "")
 		}, " ")):lower()
 		for G, y in ipairs({
-			"gold",
-			"rainbow";
+			"gold";
+			"rainbow",
 			"mega";
-			"moon",
-			"lightning";
-			"snow",
-			"star";
-			"aurora",
+			"moon";
+			"lightning",
+			"snow";
+			"star",
+			"aurora";
 			"sunburst"
 		}) do
 			if V:find(y, 1, true) then
@@ -23093,7 +23093,7 @@ Z.AdvancedIncomeFarm = {
 		local y = tonumber(V:GetAttribute("Age") or V:GetAttribute("CurrentAge")) or 0
 		local j = tonumber(V:GetAttribute("MaxAge")) or 0
 		return j > 0 and y >= j
-	end;
+	end,
 	GetPlantFruitSlotsAdvancedIncomeFarm = function(G, V)
 		if type(V) == "table" and V.single == true then
 			return 1, true
@@ -23205,7 +23205,7 @@ Z.AdvancedIncomeFarm = {
 			s *= c.SlowFactor
 		end
 		return s + (((tonumber(G.rarityRank) or 0)) * 2), a, H
-	end,
+	end;
 	GetStageAdvancedIncomeFarm = function(G, V, y)
 		V = math.max(math.floor(tonumber(V) or 0), 1)
 		G = math.max(math.floor(tonumber(G) or 0), 0)
@@ -23311,28 +23311,28 @@ Z.AdvancedIncomeFarm = {
 			end
 		end
 		local e = {
-			plants = G,
+			plants = G;
 			capacity = V,
 			totalCount = E,
 			countsByName = y,
-			fruitSlotStatsByName = j;
+			fruitSlotStatsByName = j,
 			multiCount = i;
-			matureMultiCount = c,
+			matureMultiCount = c;
 			unfinishedSlowCount = J,
 			goodSingleCount = T,
 			starterSingleCount = d,
 			commonCount = u,
-			uncommonCount = q;
-			stageName = a,
+			uncommonCount = q,
+			stageName = a;
 			stageSettings = Z.AdvancedIncomeFarm.GetStageSettingsAdvancedIncomeFarm(a),
 			growthMultiplier = H,
-			mutationWeatherActive = r;
+			mutationWeatherActive = r,
 			medianPlantScore = Z.AdvancedIncomeFarm.GetMedianAdvancedIncomeFarm(Y)
 		}
 		Z.AdvancedIncomeFarm.LastSnapshotAdvancedIncomeFarm = e
 		Z.AdvancedIncomeFarm.LastSnapshotAtAdvancedIncomeFarm = os.clock()
 		return e
-	end,
+	end;
 	GetUsableSprinklersAdvancedIncomeFarm = function(G, V, y)
 		local j = {}
 		if type(G) ~= "table" then
@@ -23350,7 +23350,7 @@ Z.AdvancedIncomeFarm = {
 			end
 		end
 		return j
-	end;
+	end,
 	GetOwnedSeedsAdvancedIncomeFarm = function()
 		local G = {}
 		local V = {}
@@ -23374,9 +23374,9 @@ Z.AdvancedIncomeFarm = {
 			local d = G[c]
 			if not d then
 				d = {
-					name = c,
+					name = c;
 					count = 0,
-					tool = i;
+					tool = i,
 					info = J
 				}
 				G[c] = d
@@ -23388,7 +23388,7 @@ Z.AdvancedIncomeFarm = {
 			end
 		end
 		return V
-	end,
+	end;
 	IsCandidateEligibleAdvancedIncomeFarm = function(G, V, y, j)
 		if type(G) ~= "table" or type(V) ~= "table" then
 			return false, nil
@@ -23497,17 +23497,17 @@ Z.AdvancedIncomeFarm = {
 			end
 			local X = Z.AdvancedIncomeFarm.RequiresSprinklerAdvancedIncomeFarm(q)
 			table.insert(W, {
-				name = q.name;
-				count = T.count,
-				info = q;
+				name = q.name,
+				count = T.count;
+				info = q,
 				score = H;
-				sprinklers = u,
-				requiresSprinkler = X;
+				sprinklers = u;
+				requiresSprinkler = X,
 				expectedFruitSlots = E;
-				fruitSlotsKnown = a,
+				fruitSlotsKnown = a;
 				fruitOutputPerMinute = r,
 				incomePerMinute = Y,
-				lowOutput = e;
+				lowOutput = e,
 				fruitPriority = s
 			})
 		end
@@ -23553,7 +23553,7 @@ Z.AdvancedIncomeFarm = {
 			return G.name < V.name
 		end)
 		return y, J
-	end,
+	end;
 	GetGoodSinglePositionAdvancedIncomeFarm = function(G, V)
 		local y = nil
 		if type(G) == "table" then
@@ -23589,7 +23589,7 @@ Z.AdvancedIncomeFarm = {
 			return y
 		end
 		return Z.SmartSeedProgression.GetGridPositionSmartSeedProgression(V)
-	end;
+	end,
 	PlantCandidatesAdvancedIncomeFarm = function(G, V)
 		if type(G) ~= "table" or # G == 0 then
 			return false
@@ -23619,7 +23619,7 @@ Z.AdvancedIncomeFarm = {
 		end
 		Z.SmartSeedProgression.SetStatusSmartSeedProgression(i, "#FF6666")
 		return false
-	end,
+	end;
 	GetReplacementTargetBlockReasonAdvancedIncomeFarm = function(G)
 		if type(G) ~= "table" then
 			return "invalid", nil, 0
@@ -23649,7 +23649,7 @@ Z.AdvancedIncomeFarm = {
 			return "high tier protected", V, y
 		end
 		return nil, V, y
-	end;
+	end,
 	GetReplacementTargetPriorityAdvancedIncomeFarm = function(G, V)
 		local y = Z.AdvancedIncomeFarm.GetCatalogInfoAdvancedIncomeFarm(G.name)
 		local j = type(y) == "table" and ((tonumber(y.rarityRank) or 0)) or 0
@@ -23662,7 +23662,7 @@ Z.AdvancedIncomeFarm = {
 			end
 		end
 		return (j * 2) + i
-	end,
+	end;
 	IsBetterReplacementCandidateAdvancedIncomeFarm = function(G, V)
 		if type(G) ~= "table" or type(G.info) ~= "table" then
 			return false
@@ -23684,7 +23684,7 @@ Z.AdvancedIncomeFarm = {
 			return i > c
 		end
 		return false
-	end;
+	end,
 	CanReplacePlantAdvancedIncomeFarm = function(G, V, y)
 		if type(G) ~= "table" or type(V) ~= "table" or type(y) ~= "table" then
 			return false, "invalid"
@@ -23917,13 +23917,13 @@ Z.AdvancedIncomeFarm = {
 		return Z.AdvancedIncomeFarm.PlantCandidatesAdvancedIncomeFarm({
 			X
 		}, N)
-	end,
+	end;
 	GetLiveSnapshotAdvancedIncomeFarm = function()
 		if type(Z.AdvancedIncomeFarm.LastSnapshotAdvancedIncomeFarm) == "table" and os.clock() - Z.AdvancedIncomeFarm.LastSnapshotAtAdvancedIncomeFarm <= 1.5 then
 			return Z.AdvancedIncomeFarm.LastSnapshotAdvancedIncomeFarm
 		end
 		return Z.AdvancedIncomeFarm.BuildSnapshotAdvancedIncomeFarm()
-	end;
+	end,
 	BuildFruitReserveLookupAdvancedIncomeFarm = function(G)
 		local V = {}
 		local y = type(G) == "table" and tostring(G.stageName or "Recovery") or "Recovery"
@@ -24078,9 +24078,9 @@ g.GiftSystemStatusText = ""
 g.GiftSystemUi = g.GiftSystemUi or {}
 Z.GiftSystem = {
 	StartedGiftSystem = false,
-	SenderBusyGiftSystem = false;
+	SenderBusyGiftSystem = false,
 	DropBusyGiftSystem = false;
-	LastSendAtGiftSystem = 0,
+	LastSendAtGiftSystem = 0;
 	PlayerConnectionsGiftSystem = {},
 	SetStatusGiftSystem = function(G, V)
 		if type(G) ~= "string" or G == "" then
@@ -24095,48 +24095,48 @@ Z.GiftSystem = {
 	end,
 	GetModeValuesGiftSystem = function()
 		return {
-			"Trusted Only",
+			"Trusted Only";
 			"Anyone"
 		}
 	end,
 	GetSendOrderValuesGiftSystem = function()
 		return {
-			"Lowest Weight First",
+			"Lowest Weight First";
 			"Highest Weight First",
-			"Name A-Z";
-			"Mutation First",
+			"Name A-Z",
+			"Mutation First";
 			"Normal First"
 		}
 	end,
 	GetDropCategoryValuesGiftSystem = function()
 		return {
 			"HarvestedFruits",
-			"Seeds";
-			"Sprinklers",
+			"Seeds",
+			"Sprinklers";
 			"WateringCans",
-			"Mushrooms";
-			"Gnomes",
-			"Raccoons";
-			"Crates",
+			"Mushrooms",
+			"Gnomes";
+			"Raccoons",
+			"Crates";
 			"Teleporters",
 			"Magnets",
 			"FruitMagnets",
-			"PetTeleporters";
-			"SeedPacks",
-			"Wheelbarrows";
-			"Trowels",
+			"PetTeleporters",
+			"SeedPacks";
+			"Wheelbarrows",
+			"Trowels";
 			"Crowbars",
 			"Ladders",
 			"FreezeRays",
 			"PowerHoses",
-			"Rakes";
-			"Signs",
+			"Rakes",
+			"Signs";
 			"EmptyPots",
 			"Flashbangs",
-			"Birds";
+			"Birds",
 			"Pets"
 		}
-	end,
+	end;
 	GetSelectionValuesGiftSystem = function(G)
 		local V = {}
 		local y = {}
@@ -24162,7 +24162,7 @@ Z.GiftSystem = {
 			end
 		end
 		return V
-	end;
+	end,
 	GetPlayerDropdownGiftSystem = function(G, V)
 		local j = {}
 		local i = {}
@@ -24193,7 +24193,7 @@ Z.GiftSystem = {
 			return tostring(G.Text or "") < tostring(V.Text or "")
 		end)
 		return j
-	end;
+	end,
 	IsSelectedGiftSystem = function(G, V)
 		if Z.FruitFilters and type(Z.FruitFilters.IsSelected) == "function" then
 			return Z.FruitFilters.IsSelected(G, V)
@@ -24214,7 +24214,7 @@ Z.GiftSystem = {
 			end
 		end
 		return false
-	end,
+	end;
 	IsSelectionEmptyGiftSystem = function(G)
 		if Z.FruitFilters and type(Z.FruitFilters.IsSelectionEmpty) == "function" then
 			return Z.FruitFilters.IsSelectionEmpty(G)
@@ -24284,7 +24284,7 @@ Z.GiftSystem = {
 			end
 		end
 		return G
-	end;
+	end,
 	GetFruitCountsGiftSystem = function(G)
 		local V = {}
 		for G, y in ipairs(type(G) == "table" and G or {}) do
@@ -24359,7 +24359,7 @@ Z.GiftSystem = {
 			end
 			return tostring(G.id or "") < tostring(y.id or "")
 		end)
-	end,
+	end;
 	GetFilteredFruitsGiftSystem = function()
 		local G = Z.GiftSystem.GetBackpackFruitsGiftSystem()
 		local V = {}
@@ -24393,7 +24393,7 @@ Z.GiftSystem = {
 			end
 		end
 		return false
-	end;
+	end,
 	WaitForFruitGoneGiftSystem = function(G, V)
 		G = tostring(G or "")
 		V = math.max(tonumber(V) or 8, 1)
@@ -24538,7 +24538,7 @@ Z.GiftSystem = {
 		if V then
 			V.Enabled = false
 		end
-	end,
+	end;
 	ProcessPromptGiftSystem = function(G, V)
 		if not h.gift_receive_enabled then
 			return false
@@ -24584,7 +24584,7 @@ Z.GiftSystem = {
 			return false
 		end
 		return Z.GiftSystem.IsSelectedGiftSystem(h.gift_drop_pickup_from, j)
-	end;
+	end,
 	IsAllowedDropCategoryGiftSystem = function(G)
 		if not G or G.Parent ~= y.DroppedItems then
 			return false
@@ -24642,7 +24642,7 @@ Z.GiftSystem = {
 			return false
 		end
 		return c == true
-	end,
+	end;
 	RefreshPlayerDropdownsGiftSystem = function()
 		if g.GiftSystemUi.SendTargetsDropdown then
 			g.GiftSystemUi.SendTargetsDropdown:SetValues(Z.GiftSystem.GetPlayerDropdownGiftSystem(true, h.gift_send_targets))
@@ -24666,14 +24666,14 @@ Z.GiftSystem = {
 		local j = G:AddRightGroupbox("Gift Drop Pickup", "package-check")
 		if V then
 			V:AddLabel({
-				Text = "\240\159\142\129 Sends filtered backpack fruits to a selected server player. Keep Preview Only on until the list looks right.",
+				Text = "\240\159\142\129 Sends filtered backpack fruits to a selected server player. Keep Preview Only on until the list looks right.";
 				DoesWrap = true
 			})
 			g.GiftSystemUi.SendTargetsDropdown = V:AddValueDropdown("gift_send_targets_ui", {
 				Values = Z.GiftSystem.GetPlayerDropdownGiftSystem(true, h.gift_send_targets);
-				Default = {},
-				Multi = true;
-				Searchable = true,
+				Default = {};
+				Multi = true,
+				Searchable = true;
 				MaxVisibleDropdownItems = 8,
 				Text = "\240\159\145\164 Send To",
 				Tooltip = "Select the alt or player that should receive fruits.",
@@ -24690,11 +24690,11 @@ Z.GiftSystem = {
 			G = V:AddValueDropdown("gift_fruit_list_ui", {
 				Values = Z.SeedData.GetSeedDataListDropDown();
 				Default = {};
-				Multi = true,
-				Searchable = true;
-				MaxVisibleDropdownItems = 10,
-				Text = "\240\159\141\142 Fruits To Gift";
-				Tooltip = "Empty allows all fruits that pass the filters.",
+				Multi = true;
+				Searchable = true,
+				MaxVisibleDropdownItems = 10;
+				Text = "\240\159\141\142 Fruits To Gift",
+				Tooltip = "Empty allows all fruits that pass the filters.";
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -24705,7 +24705,7 @@ Z.GiftSystem = {
 			})
 			G:SetValue(h.gift_fruit_list)
 			V:AddButton({
-				Text = "\226\153\187\239\184\143 Refresh Players";
+				Text = "\226\153\187\239\184\143 Refresh Players",
 				Tooltip = "Refreshes server player lists.";
 				Func = function()
 					Z.GiftSystem.RefreshPlayerDropdownsGiftSystem()
@@ -24713,7 +24713,7 @@ Z.GiftSystem = {
 			})
 			V:AddToggle("gift_preview_only_ui", {
 				Text = "\240\159\145\128 Preview Only",
-				Default = h.gift_preview_only;
+				Default = h.gift_preview_only,
 				Tooltip = "Shows what would be gifted without sending fruits.";
 				Callback = function(G)
 					h.gift_preview_only = G
@@ -24737,13 +24737,13 @@ Z.GiftSystem = {
 				return string.format("\226\172\134\239\184\143 Max Gift %.2fKG", V)
 			end
 			y = V:AddInput("gift_min_weight_ui", {
-				Text = i(h.gift_min_weight);
-				Default = tostring(h.gift_min_weight),
+				Text = i(h.gift_min_weight),
+				Default = tostring(h.gift_min_weight);
 				Numeric = true,
 				AllowEmpty = true,
-				Finished = true;
-				ClearTextOnFocus = false,
-				Placeholder = "Press Enter to update";
+				Finished = true,
+				ClearTextOnFocus = false;
+				Placeholder = "Press Enter to update",
 				Tooltip = "Press Enter to update. Fruits below this KG will not be gifted.";
 				Changed = function(G)
 					if y then
@@ -24771,9 +24771,9 @@ Z.GiftSystem = {
 			})
 			j = V:AddInput("gift_max_weight_ui", {
 				Text = c(h.gift_max_weight),
-				Default = tostring(h.gift_max_weight);
+				Default = tostring(h.gift_max_weight),
 				Numeric = true;
-				AllowEmpty = true,
+				AllowEmpty = true;
 				Finished = true,
 				ClearTextOnFocus = false,
 				Placeholder = "Press Enter to update",
@@ -24782,7 +24782,7 @@ Z.GiftSystem = {
 					if j then
 						j:SetText(c(G))
 					end
-				end;
+				end,
 				Callback = function(G)
 					local V = f(G)
 					if not V or V < 0 then
@@ -24806,10 +24806,10 @@ Z.GiftSystem = {
 			J = V:AddInput("gift_keep_amount_ui", {
 				Text = "\240\159\148\146 Keep Per Fruit",
 				Default = tostring(h.gift_keep_amount_per_fruit),
-				Numeric = true;
+				Numeric = true,
 				AllowEmpty = true;
-				Finished = true,
-				ClearTextOnFocus = false;
+				Finished = true;
+				ClearTextOnFocus = false,
 				Placeholder = "Amount to keep";
 				Tooltip = "Keeps this many of each fruit name in backpack.";
 				Callback = function(G)
@@ -24825,12 +24825,12 @@ Z.GiftSystem = {
 			})
 			local T
 			T = V:AddInput("gift_max_per_cycle_ui", {
-				Text = "\240\159\148\162 Max Per Cycle";
-				Default = tostring(h.gift_max_per_cycle),
+				Text = "\240\159\148\162 Max Per Cycle",
+				Default = tostring(h.gift_max_per_cycle);
 				Numeric = true,
-				AllowEmpty = true;
-				Finished = true,
-				ClearTextOnFocus = false;
+				AllowEmpty = true,
+				Finished = true;
+				ClearTextOnFocus = false,
 				Placeholder = "Fruits per cycle";
 				Tooltip = "Maximum fruits gifted each cycle.";
 				Callback = function(G)
@@ -24847,13 +24847,13 @@ Z.GiftSystem = {
 			local d
 			d = V:AddInput("gift_delay_ui", {
 				Text = "\226\143\177\239\184\143 Gift Delay",
-				Default = tostring(h.gift_delay);
-				Numeric = true,
+				Default = tostring(h.gift_delay),
+				Numeric = true;
 				AllowEmpty = true,
-				Finished = true;
-				ClearTextOnFocus = false,
-				Placeholder = "Seconds";
-				Tooltip = "Delay between each fruit gift.",
+				Finished = true,
+				ClearTextOnFocus = false;
+				Placeholder = "Seconds",
+				Tooltip = "Delay between each fruit gift.";
 				Callback = function(G)
 					local V = f(G)
 					if not V or V < .35 then
@@ -24867,10 +24867,10 @@ Z.GiftSystem = {
 			})
 			local u
 			u = V:AddDropdown("gift_send_order_ui", {
-				Values = Z.GiftSystem.GetSendOrderValuesGiftSystem();
+				Values = Z.GiftSystem.GetSendOrderValuesGiftSystem(),
 				Default = h.gift_send_order;
-				Multi = false,
-				Text = "\226\134\149\239\184\143 Send Order";
+				Multi = false;
+				Text = "\226\134\149\239\184\143 Send Order",
 				Tooltip = "Choose which matching fruits are sent first.";
 				Callback = function(G)
 					if type(G) ~= "string" or G == "" then
@@ -24883,8 +24883,8 @@ Z.GiftSystem = {
 			u:SetValue(h.gift_send_order)
 			V:AddToggle("gift_protect_favourites_ui", {
 				Text = "\226\173\144 Protect Favourites",
-				Default = h.gift_protect_favourites;
-				Tooltip = "Favourite fruits will not be gifted.",
+				Default = h.gift_protect_favourites,
+				Tooltip = "Favourite fruits will not be gifted.";
 				Callback = function(G)
 					h.gift_protect_favourites = G
 					a.Save.SaveDataSync()
@@ -24907,9 +24907,9 @@ Z.GiftSystem = {
 			q = V:AddValueDropdown("gift_mutation_whitelist_ui", {
 				Values = Z.FruitFilters.GetMutationNames();
 				Default = {};
-				Multi = true,
-				Text = "\226\156\133 Only Mutations";
-				Tooltip = "Only gift fruits with selected mutations. Empty allows all mutations.",
+				Multi = true;
+				Text = "\226\156\133 Only Mutations",
+				Tooltip = "Only gift fruits with selected mutations. Empty allows all mutations.";
 				Searchable = true,
 				MaxVisibleDropdownItems = 10,
 				Changed = function(G)
@@ -24923,12 +24923,12 @@ Z.GiftSystem = {
 			q:SetValue(h.gift_mutation_whitelist)
 			local E
 			E = V:AddValueDropdown("gift_mutation_blacklist_ui", {
-				Values = Z.FruitFilters.GetMutationNames();
-				Default = {},
-				Multi = true;
-				Text = "\226\155\148 Protect Mutations",
-				Tooltip = "Selected mutations will not be gifted.";
-				Searchable = true,
+				Values = Z.FruitFilters.GetMutationNames(),
+				Default = {};
+				Multi = true,
+				Text = "\226\155\148 Protect Mutations";
+				Tooltip = "Selected mutations will not be gifted.",
+				Searchable = true;
 				MaxVisibleDropdownItems = 10,
 				Changed = function(G)
 					if type(G) ~= "table" then
@@ -24945,9 +24945,9 @@ Z.GiftSystem = {
 				Default = {};
 				Multi = true;
 				Text = "\226\156\133 Only Variants";
-				Tooltip = "Only gift selected variants. Empty allows all variants.",
+				Tooltip = "Only gift selected variants. Empty allows all variants.";
 				Searchable = false,
-				MaxVisibleDropdownItems = 5;
+				MaxVisibleDropdownItems = 5,
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -24959,13 +24959,13 @@ Z.GiftSystem = {
 			H:SetValue(h.gift_variant_whitelist)
 			local r
 			r = V:AddValueDropdown("gift_variant_blacklist_ui", {
-				Values = Z.FruitFilters.GetVariantNames();
-				Default = {},
+				Values = Z.FruitFilters.GetVariantNames(),
+				Default = {};
 				Multi = true,
-				Text = "\240\159\155\161\239\184\143 Protect Variants";
+				Text = "\240\159\155\161\239\184\143 Protect Variants",
 				Tooltip = "Selected variants will not be gifted.";
 				Searchable = false;
-				MaxVisibleDropdownItems = 5,
+				MaxVisibleDropdownItems = 5;
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -24983,11 +24983,11 @@ Z.GiftSystem = {
 			})
 			local G
 			G = y:AddDropdown("gift_receive_mode_ui", {
-				Values = Z.GiftSystem.GetModeValuesGiftSystem(),
+				Values = Z.GiftSystem.GetModeValuesGiftSystem();
 				Default = h.gift_receive_mode,
-				Multi = false;
-				Text = "\240\159\155\161\239\184\143 Accept Mode",
-				Tooltip = "Trusted Only accepts from selected users. Anyone accepts every gift prompt.";
+				Multi = false,
+				Text = "\240\159\155\161\239\184\143 Accept Mode";
+				Tooltip = "Trusted Only accepts from selected users. Anyone accepts every gift prompt.",
 				Callback = function(G)
 					if type(G) ~= "string" or G == "" then
 						return
@@ -25000,10 +25000,10 @@ Z.GiftSystem = {
 			g.GiftSystemUi.ReceiveTrustedDropdown = y:AddValueDropdown("gift_receive_trusted_ui", {
 				Values = Z.GiftSystem.GetPlayerDropdownGiftSystem(true, h.gift_receive_trusted),
 				Default = {},
-				Multi = true;
-				Searchable = true,
-				MaxVisibleDropdownItems = 8;
-				Text = "\240\159\164\157 Trusted Senders",
+				Multi = true,
+				Searchable = true;
+				MaxVisibleDropdownItems = 8,
+				Text = "\240\159\164\157 Trusted Senders";
 				Tooltip = "Selected players can be auto accepted in Trusted Only mode.",
 				Changed = function(G)
 					if type(G) ~= "table" then
@@ -25038,8 +25038,8 @@ Z.GiftSystem = {
 			})
 			local G
 			G = j:AddDropdown("gift_drop_pickup_mode_ui", {
-				Values = Z.GiftSystem.GetModeValuesGiftSystem();
-				Default = h.gift_drop_pickup_mode,
+				Values = Z.GiftSystem.GetModeValuesGiftSystem(),
+				Default = h.gift_drop_pickup_mode;
 				Multi = false,
 				Text = "\240\159\155\161\239\184\143 Pickup Mode",
 				Tooltip = "Trusted Only picks drops from selected users. Anyone picks allowed categories from all users.",
@@ -25054,8 +25054,8 @@ Z.GiftSystem = {
 			G:SetValue(h.gift_drop_pickup_mode)
 			g.GiftSystemUi.DropTrustedDropdown = j:AddValueDropdown("gift_drop_pickup_from_ui", {
 				Values = Z.GiftSystem.GetPlayerDropdownGiftSystem(true, h.gift_drop_pickup_from);
-				Default = {},
-				Multi = true;
+				Default = {};
+				Multi = true,
 				Searchable = true;
 				MaxVisibleDropdownItems = 8;
 				Text = "\240\159\164\157 Pickup From";
@@ -25071,13 +25071,13 @@ Z.GiftSystem = {
 			g.GiftSystemUi.DropTrustedDropdown:SetValue(h.gift_drop_pickup_from, true)
 			local V
 			V = j:AddValueDropdown("gift_drop_pickup_categories_ui", {
-				Values = Z.GiftSystem.GetDropCategoryValuesGiftSystem(),
-				Default = {};
-				Multi = true,
+				Values = Z.GiftSystem.GetDropCategoryValuesGiftSystem();
+				Default = {},
+				Multi = true;
 				Searchable = false,
-				MaxVisibleDropdownItems = 7;
-				Text = "\240\159\147\166 Categories",
-				Tooltip = "Only selected drop categories will be picked up.";
+				MaxVisibleDropdownItems = 7,
+				Text = "\240\159\147\166 Categories";
+				Tooltip = "Only selected drop categories will be picked up.",
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -25089,7 +25089,7 @@ Z.GiftSystem = {
 			V:SetValue(h.gift_drop_pickup_categories)
 			j:AddToggle("gift_drop_pickup_use_player_walk_ui", {
 				Text = "\240\159\154\182 Use Player Walk";
-				Default = h.gift_drop_pickup_use_player_walk,
+				Default = h.gift_drop_pickup_use_player_walk;
 				Tooltip = "Walks to dropped items first, then activates the prompt.",
 				Callback = function(G)
 					h.gift_drop_pickup_use_player_walk = G
@@ -25098,7 +25098,7 @@ Z.GiftSystem = {
 			})
 			j:AddToggle("gift_drop_pickup_enabled_ui", {
 				Text = "\240\159\147\166 Enable Drop Pickup",
-				Default = h.gift_drop_pickup_enabled;
+				Default = h.gift_drop_pickup_enabled,
 				Tooltip = "Automatically picks allowed dropped items.";
 				Callback = function(G)
 					h.gift_drop_pickup_enabled = G
@@ -25160,23 +25160,23 @@ g.AutoDropItemsStatusText = ""
 g.AutoDropItemsUi = g.AutoDropItemsUi or {}
 Z.AutoDropItems = {
 	BusyAutoDropItems = false;
-	NextRunAtAutoDropItems = 0,
+	NextRunAtAutoDropItems = 0;
 	DropToolAttributesAutoDropItems = {
 		SeedTool = "Seeds";
-		Sprinkler = "Sprinklers",
+		Sprinkler = "Sprinklers";
 		WateringCan = "WateringCans",
-		Mushroom = "Mushrooms";
-		Gnome = "Gnomes",
-		Raccoon = "Raccoons";
+		Mushroom = "Mushrooms",
+		Gnome = "Gnomes";
+		Raccoon = "Raccoons",
 		Crate = "Crates";
 		Teleporter = "Teleporters";
-		PlayerMagnet = "Magnets",
-		FruitMagnet = "FruitMagnets";
+		PlayerMagnet = "Magnets";
+		FruitMagnet = "FruitMagnets",
 		PetTeleporter = "PetTeleporters";
 		SeedPack = "SeedPacks";
-		Wheelbarrow = "Wheelbarrows",
-		Trowel = "Trowels";
-		Crowbar = "Crowbars",
+		Wheelbarrow = "Wheelbarrows";
+		Trowel = "Trowels",
+		Crowbar = "Crowbars";
 		Ladder = "Ladders",
 		FreezeRay = "FreezeRays",
 		PowerHose = "PowerHoses",
@@ -25194,10 +25194,10 @@ Z.AutoDropItems = {
 		end
 		g.AutoDropItemsStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\147\164 [Auto Drop]</font> <font color=\'%s\'>%s</font></stroke>", tostring(V or "#FFFFFF"), G)
 		return true
-	end;
+	end,
 	ClearStatusAutoDropItems = function()
 		g.AutoDropItemsStatusText = ""
-	end,
+	end;
 	IsSelectionEmptyAutoDropItems = function(G)
 		if Z.FruitFilters and type(Z.FruitFilters.IsSelectionEmpty) == "function" then
 			return Z.FruitFilters.IsSelectionEmpty(G)
@@ -25229,16 +25229,16 @@ Z.AutoDropItems = {
 			end
 		end
 		return false
-	end;
+	end,
 	PassesOptionalSelectionAutoDropItems = function(G, V)
 		return Z.AutoDropItems.IsSelectionEmptyAutoDropItems(G) or Z.AutoDropItems.IsSelectedAutoDropItems(G, V)
-	end,
+	end;
 	GetCategoryValuesAutoDropItems = function()
 		if Z.GiftSystem and type(Z.GiftSystem.GetDropCategoryValuesGiftSystem) == "function" then
 			return Z.GiftSystem.GetDropCategoryValuesGiftSystem()
 		end
 		return {
-			"HarvestedFruits",
+			"HarvestedFruits";
 			"Seeds",
 			"Pets"
 		}
@@ -25246,43 +25246,43 @@ Z.AutoDropItems = {
 	GetOrderValuesAutoDropItems = function()
 		return {
 			"Fruits Lowest Weight",
-			"Fruits Highest Weight";
-			"Category A-Z",
+			"Fruits Highest Weight",
+			"Category A-Z";
 			"Name A-Z",
 			"Pets Lowest Rarity",
 			"Pets Highest Rarity"
 		}
-	end;
+	end,
 	GetPetRarityValuesAutoDropItems = function()
 		local G = {}
 		for V, y in ipairs(Z.PetSeller and Z.PetSeller.RarityOrder or {
 			"Common",
 			"Uncommon",
-			"Rare";
+			"Rare",
 			"Epic";
 			"Legendary";
-			"Mythic",
-			"Super";
+			"Mythic";
+			"Super",
 			"Secret"
 		}) do
 			local j = Z.Data.GetRarityColor(y)
 			table.insert(G, {
-				Text = string.format("<font color=\'%s\'>%s</font>", j, y);
+				Text = string.format("<font color=\'%s\'>%s</font>", j, y),
 				Value = y
 			})
 		end
 		return G
-	end,
+	end;
 	GetPetSizeValuesAutoDropItems = function()
 		return {
 			"Normal",
-			"Big";
+			"Big",
 			"Huge"
 		}
 	end;
 	GetPetVariantValuesAutoDropItems = function()
 		return {
-			"Normal";
+			"Normal",
 			"Rainbow"
 		}
 	end;
@@ -25348,19 +25348,19 @@ Z.AutoDropItems = {
 		local d = tostring(G:GetAttribute("Size") or "Normal")
 		local u = tostring(G:GetAttribute("Type") or G:GetAttribute("Variant") or "Normal")
 		return {
-			id = V,
-			key = V;
+			id = V;
+			key = V,
 			name = i;
-			displayName = J,
-			rarity = T;
-			rarityRank = g.RarityRank[T] or 999,
+			displayName = J;
+			rarity = T,
+			rarityRank = g.RarityRank[T] or 999;
 			size = d ~= "" and d or "Normal",
 			variant = u ~= "" and u or "Normal",
 			equipped = G.Parent == y.Character,
 			known = type(c) == "table",
 			tool = G
 		}
-	end;
+	end,
 	BuildDropDataAutoDropItems = function(G)
 		if typeof(G) ~= "Instance" or not G.Parent then
 			return nil
@@ -25368,11 +25368,11 @@ Z.AutoDropItems = {
 		local V = Z.AutoDropItems.BuildFruitDataAutoDropItems(G)
 		if V then
 			return {
-				tool = G;
+				tool = G,
 				category = "HarvestedFruits";
 				id = tostring(V.id);
 				name = tostring(V.name);
-				fruitData = V,
+				fruitData = V;
 				weight = tonumber(V.w) or 0
 			}
 		end
@@ -25382,11 +25382,11 @@ Z.AutoDropItems = {
 		local y = Z.AutoDropItems.BuildPetDataAutoDropItems(G)
 		if y then
 			return {
-				tool = G;
+				tool = G,
 				category = "Pets";
 				id = tostring(y.id);
-				name = tostring(y.displayName or y.name or "Pet"),
-				petInfo = y;
+				name = tostring(y.displayName or y.name or "Pet");
+				petInfo = y,
 				rarityRank = tonumber(y.rarityRank) or 999
 			}
 		end
@@ -25396,8 +25396,8 @@ Z.AutoDropItems = {
 				return {
 					tool = G,
 					category = y,
-					id = tostring(j);
-					name = Z.AutoDropItems.GetItemDisplayNameAutoDropItems(G, V, j, y),
+					id = tostring(j),
+					name = Z.AutoDropItems.GetItemDisplayNameAutoDropItems(G, V, j, y);
 					attributeName = V
 				}
 			end
@@ -25410,7 +25410,7 @@ Z.AutoDropItems = {
 			return false
 		end
 		return V:GetAttribute("IsFavorite") == true or V:GetAttribute("Favorite") == true or V:GetAttribute("Favourite") == true or V:GetAttribute("Favorited") == true or V:GetAttribute("Favourited") == true
-	end;
+	end,
 	PassesFruitFiltersAutoDropItems = function(G)
 		local V = type(G) == "table" and G.fruitData or nil
 		if type(V) ~= "table" then
@@ -25447,7 +25447,7 @@ Z.AutoDropItems = {
 			return false
 		end
 		return Z.AutoDropItems.PassesOptionalSelectionAutoDropItems(h.auto_drop_seed_list, G.name) or Z.AutoDropItems.PassesOptionalSelectionAutoDropItems(h.auto_drop_seed_list, G.id)
-	end,
+	end;
 	PassesPetFiltersAutoDropItems = function(G)
 		local V = type(G) == "table" and G.petInfo or nil
 		if type(V) ~= "table" then
@@ -25481,13 +25481,13 @@ Z.AutoDropItems = {
 			return false
 		end
 		return true
-	end;
+	end,
 	PassesOtherItemFiltersAutoDropItems = function(G)
 		if type(G) ~= "table" then
 			return false
 		end
 		return Z.AutoDropItems.PassesOptionalSelectionAutoDropItems(h.auto_drop_item_names, G.name) or Z.AutoDropItems.PassesOptionalSelectionAutoDropItems(h.auto_drop_item_names, G.id)
-	end,
+	end;
 	PassesFiltersAutoDropItems = function(G)
 		if type(G) ~= "table" then
 			return false
@@ -25531,7 +25531,7 @@ Z.AutoDropItems = {
 			end
 		end
 		return V
-	end;
+	end,
 	SortDropItemsAutoDropItems = function(G)
 		local V = tostring(h.auto_drop_order or "Fruits Lowest Weight")
 		table.sort(G, function(G, y)
@@ -25608,7 +25608,7 @@ Z.AutoDropItems = {
 			table.insert(V, d)
 		end
 		return V, # G
-	end,
+	end;
 	FindFruitToolByIdAutoDropItems = function(G)
 		G = tostring(G or "")
 		if G == "" then
@@ -25620,7 +25620,7 @@ Z.AutoDropItems = {
 			end
 		end
 		return nil
-	end;
+	end,
 	PromoteFruitProxyAutoDropItems = function(G)
 		G = tostring(G or "")
 		if G == "" then
@@ -25770,7 +25770,7 @@ Z.AutoDropItems = {
 			if c ~= "" and not V[c] then
 				V[c] = true
 				table.insert(G, {
-					Text = string.format("%s <font color=\'#888888\'>(%s)</font>", c, i.category);
+					Text = string.format("%s <font color=\'#888888\'>(%s)</font>", c, i.category),
 					Value = c
 				})
 			end
@@ -25788,7 +25788,7 @@ Z.AutoDropItems = {
 		local y = G:AddRightGroupbox("Auto Drop Filters", "filter")
 		if V then
 			V:AddLabel({
-				Text = "\240\159\147\164 Drops matching backpack tools only. Drop pickup stays separate.";
+				Text = "\240\159\147\164 Drops matching backpack tools only. Drop pickup stays separate.",
 				DoesWrap = true
 			})
 			V:AddToggle("auto_drop_preview_only_ui", {
@@ -25802,12 +25802,12 @@ Z.AutoDropItems = {
 			})
 			local G
 			G = V:AddValueDropdown("auto_drop_categories_ui", {
-				Values = Z.AutoDropItems.GetCategoryValuesAutoDropItems();
+				Values = Z.AutoDropItems.GetCategoryValuesAutoDropItems(),
 				Default = {};
 				Multi = true;
 				Searchable = false;
-				MaxVisibleDropdownItems = 10,
-				Text = "\240\159\147\166 Drop Categories";
+				MaxVisibleDropdownItems = 10;
+				Text = "\240\159\147\166 Drop Categories",
 				Tooltip = "Only selected categories can be dropped.";
 				Changed = function(G)
 					if type(G) ~= "table" then
@@ -25820,11 +25820,11 @@ Z.AutoDropItems = {
 			G:SetValue(h.auto_drop_categories, true)
 			local y
 			y = V:AddDropdown("auto_drop_order_ui", {
-				Values = Z.AutoDropItems.GetOrderValuesAutoDropItems();
+				Values = Z.AutoDropItems.GetOrderValuesAutoDropItems(),
 				Default = h.auto_drop_order;
 				Multi = false;
-				Text = "\226\134\149\239\184\143 Drop Order",
-				Tooltip = "Choose which matching item is dropped first.";
+				Text = "\226\134\149\239\184\143 Drop Order";
+				Tooltip = "Choose which matching item is dropped first.",
 				Callback = function(G)
 					if type(G) ~= "string" or G == "" then
 						return
@@ -25836,13 +25836,13 @@ Z.AutoDropItems = {
 			y:SetValue(h.auto_drop_order)
 			local j
 			j = V:AddInput("auto_drop_max_per_cycle_ui", {
-				Text = "\240\159\148\162 Max Per Cycle";
-				Default = tostring(h.auto_drop_max_per_cycle),
-				Numeric = true;
-				AllowEmpty = true,
+				Text = "\240\159\148\162 Max Per Cycle",
+				Default = tostring(h.auto_drop_max_per_cycle);
+				Numeric = true,
+				AllowEmpty = true;
 				Finished = true,
-				ClearTextOnFocus = false;
-				Placeholder = "Items per cycle",
+				ClearTextOnFocus = false,
+				Placeholder = "Items per cycle";
 				Tooltip = "Maximum matching items dropped each cycle.",
 				Callback = function(G)
 					local V = z(G)
@@ -25857,14 +25857,14 @@ Z.AutoDropItems = {
 			})
 			local i
 			i = V:AddInput("auto_drop_delay_ui", {
-				Text = "\226\143\177\239\184\143 Drop Delay";
+				Text = "\226\143\177\239\184\143 Drop Delay",
 				Default = tostring(h.auto_drop_delay);
-				Numeric = true,
+				Numeric = true;
 				AllowEmpty = true,
 				Finished = true,
 				ClearTextOnFocus = false,
-				Placeholder = "Seconds";
-				Tooltip = "Delay between each item drop.",
+				Placeholder = "Seconds",
+				Tooltip = "Delay between each item drop.";
 				Callback = function(G)
 					local V = f(G)
 					if not V or V < .35 then
@@ -25898,8 +25898,8 @@ Z.AutoDropItems = {
 				Multi = true;
 				Searchable = true;
 				MaxVisibleDropdownItems = 10;
-				Text = "\240\159\141\142 Fruits",
-				Tooltip = "Only selected fruits can be dropped. Empty allows all fruits.";
+				Text = "\240\159\141\142 Fruits";
+				Tooltip = "Only selected fruits can be dropped. Empty allows all fruits.",
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -25921,18 +25921,18 @@ Z.AutoDropItems = {
 			end
 			V = y:AddInput("auto_drop_min_weight_ui", {
 				Text = i(h.auto_drop_min_weight);
-				Default = tostring(h.auto_drop_min_weight),
+				Default = tostring(h.auto_drop_min_weight);
 				Numeric = true,
-				AllowEmpty = true;
-				Finished = true,
-				ClearTextOnFocus = false;
+				AllowEmpty = true,
+				Finished = true;
+				ClearTextOnFocus = false,
 				Placeholder = "Press Enter to update";
-				Tooltip = "Fruits below this KG will not be dropped.",
+				Tooltip = "Fruits below this KG will not be dropped.";
 				Changed = function(G)
 					if V then
 						V:SetText(i(G))
 					end
-				end;
+				end,
 				Callback = function(G)
 					local y = f(G)
 					if not y or y < 0 or y > ((tonumber(h.auto_drop_max_weight) or 89)) then
@@ -25948,18 +25948,18 @@ Z.AutoDropItems = {
 			})
 			j = y:AddInput("auto_drop_max_weight_ui", {
 				Text = c(h.auto_drop_max_weight);
-				Default = tostring(h.auto_drop_max_weight),
-				Numeric = true;
-				AllowEmpty = true,
-				Finished = true;
-				ClearTextOnFocus = false,
-				Placeholder = "Press Enter to update";
+				Default = tostring(h.auto_drop_max_weight);
+				Numeric = true,
+				AllowEmpty = true;
+				Finished = true,
+				ClearTextOnFocus = false;
+				Placeholder = "Press Enter to update",
 				Tooltip = "Fruits above this KG will not be dropped.";
 				Changed = function(G)
 					if j then
 						j:SetText(c(G))
 					end
-				end,
+				end;
 				Callback = function(G)
 					local V = f(G)
 					if not V or V < ((tonumber(h.auto_drop_min_weight) or 0)) then
@@ -25976,13 +25976,13 @@ Z.AutoDropItems = {
 			local J
 			J = y:AddInput("auto_drop_keep_fruit_ui", {
 				Text = "\240\159\148\146 Keep Per Fruit";
-				Default = tostring(h.auto_drop_keep_amount_per_fruit),
-				Numeric = true;
+				Default = tostring(h.auto_drop_keep_amount_per_fruit);
+				Numeric = true,
 				AllowEmpty = true;
-				Finished = true,
-				ClearTextOnFocus = false;
-				Placeholder = "Amount to keep",
-				Tooltip = "Keeps this many of each fruit name.";
+				Finished = true;
+				ClearTextOnFocus = false,
+				Placeholder = "Amount to keep";
+				Tooltip = "Keeps this many of each fruit name.",
 				Callback = function(G)
 					local V = z(G)
 					if V == nil or V < 0 then
@@ -25996,8 +25996,8 @@ Z.AutoDropItems = {
 			})
 			y:AddToggle("auto_drop_protect_favourites_ui", {
 				Text = "\226\173\144 Protect Favourite Fruits";
-				Default = h.auto_drop_protect_favourites,
-				Tooltip = "Favourite fruits will not be dropped.";
+				Default = h.auto_drop_protect_favourites;
+				Tooltip = "Favourite fruits will not be dropped.",
 				Callback = function(G)
 					h.auto_drop_protect_favourites = G
 					a.Save.SaveDataSync()
@@ -26005,13 +26005,13 @@ Z.AutoDropItems = {
 			})
 			local T
 			T = y:AddValueDropdown("auto_drop_seed_list_ui", {
-				Values = Z.SeedData.GetSeedDataListDropDown();
-				Default = {},
-				Multi = true;
+				Values = Z.SeedData.GetSeedDataListDropDown(),
+				Default = {};
+				Multi = true,
 				Searchable = true;
-				MaxVisibleDropdownItems = 10,
+				MaxVisibleDropdownItems = 10;
 				Text = "\240\159\140\177 Seeds",
-				Tooltip = "Only selected seeds can be dropped. Empty allows all seeds.";
+				Tooltip = "Only selected seeds can be dropped. Empty allows all seeds.",
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -26023,9 +26023,9 @@ Z.AutoDropItems = {
 			T:SetValue(h.auto_drop_seed_list)
 			local d
 			d = y:AddValueDropdown("auto_drop_item_names_ui", {
-				Values = Z.AutoDropItems.GetCurrentItemDropdownAutoDropItems();
-				Default = {},
-				Multi = true;
+				Values = Z.AutoDropItems.GetCurrentItemDropdownAutoDropItems(),
+				Default = {};
+				Multi = true,
 				Searchable = true;
 				MaxVisibleDropdownItems = 10;
 				Text = "\240\159\167\176 Other Items";
@@ -26040,7 +26040,7 @@ Z.AutoDropItems = {
 			})
 			d:SetValue(h.auto_drop_item_names)
 			y:AddButton({
-				Text = "\226\153\187\239\184\143 Refresh Item List";
+				Text = "\226\153\187\239\184\143 Refresh Item List",
 				Tooltip = "Refreshes current backpack item names.";
 				Func = function()
 					if d then
@@ -26051,13 +26051,13 @@ Z.AutoDropItems = {
 			})
 			local u
 			u = y:AddValueDropdown("auto_drop_mutation_whitelist_ui", {
-				Values = Z.FruitFilters.GetMutationNames();
+				Values = Z.FruitFilters.GetMutationNames(),
 				Default = {};
-				Multi = true,
-				Text = "\226\156\133 Only Fruit Mutations";
+				Multi = true;
+				Text = "\226\156\133 Only Fruit Mutations",
 				Tooltip = "Only fruits with selected mutations can be dropped. Empty allows all.";
 				Searchable = true;
-				MaxVisibleDropdownItems = 10,
+				MaxVisibleDropdownItems = 10;
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -26070,10 +26070,10 @@ Z.AutoDropItems = {
 			local q
 			q = y:AddValueDropdown("auto_drop_mutation_blacklist_ui", {
 				Values = Z.FruitFilters.GetMutationNames();
-				Default = {},
+				Default = {};
 				Multi = true,
-				Text = "\226\155\148 Protect Fruit Mutations";
-				Tooltip = "Fruits with selected mutations will not be dropped.",
+				Text = "\226\155\148 Protect Fruit Mutations",
+				Tooltip = "Fruits with selected mutations will not be dropped.";
 				Searchable = true,
 				MaxVisibleDropdownItems = 10,
 				Changed = function(G)
@@ -26089,10 +26089,10 @@ Z.AutoDropItems = {
 			E = y:AddValueDropdown("auto_drop_variant_whitelist_ui", {
 				Values = Z.FruitFilters.GetVariantNames(),
 				Default = {},
-				Multi = true;
+				Multi = true,
 				Text = "\226\156\133 Only Fruit Variants";
 				Tooltip = "Only selected fruit variants can be dropped. Empty allows all.";
-				Searchable = false,
+				Searchable = false;
 				MaxVisibleDropdownItems = 5,
 				Changed = function(G)
 					if type(G) ~= "table" then
@@ -26105,12 +26105,12 @@ Z.AutoDropItems = {
 			E:SetValue(h.auto_drop_variant_whitelist)
 			local H
 			H = y:AddValueDropdown("auto_drop_variant_blacklist_ui", {
-				Values = Z.FruitFilters.GetVariantNames(),
+				Values = Z.FruitFilters.GetVariantNames();
 				Default = {},
-				Multi = true;
+				Multi = true,
 				Text = "\226\155\148 Protect Fruit Variants";
 				Tooltip = "Selected fruit variants will not be dropped.";
-				Searchable = false,
+				Searchable = false;
 				MaxVisibleDropdownItems = 5,
 				Changed = function(G)
 					if type(G) ~= "table" then
@@ -26123,11 +26123,11 @@ Z.AutoDropItems = {
 			H:SetValue(h.auto_drop_variant_blacklist)
 			local r
 			r = y:AddValueDropdown("auto_drop_pet_selected_ui", {
-				Values = Z.PackOpenHelpers.GetPetDropdownPackOpenHelpers(),
-				Default = {};
+				Values = Z.PackOpenHelpers.GetPetDropdownPackOpenHelpers();
+				Default = {},
 				Multi = true;
-				Searchable = true,
-				MaxVisibleDropdownItems = 10;
+				Searchable = true;
+				MaxVisibleDropdownItems = 10,
 				Text = "\240\159\144\190 Pets";
 				Tooltip = "Only selected pets can be dropped. Empty allows all pets in selected categories.";
 				Changed = function(G)
@@ -26143,10 +26143,10 @@ Z.AutoDropItems = {
 			Y = y:AddValueDropdown("auto_drop_pet_protected_ui", {
 				Values = Z.PackOpenHelpers.GetPetDropdownPackOpenHelpers(),
 				Default = {},
-				Multi = true;
+				Multi = true,
 				Searchable = true;
-				MaxVisibleDropdownItems = 10,
-				Text = "\240\159\155\161\239\184\143 Protect Pets";
+				MaxVisibleDropdownItems = 10;
+				Text = "\240\159\155\161\239\184\143 Protect Pets",
 				Tooltip = "Selected pets will never be dropped.";
 				Changed = function(G)
 					if type(G) ~= "table" then
@@ -26159,14 +26159,14 @@ Z.AutoDropItems = {
 			Y:SetValue(h.auto_drop_pet_protected)
 			local e
 			e = y:AddInput("auto_drop_pet_keep_amount_ui", {
-				Text = "\240\159\148\146 Keep Per Pet";
+				Text = "\240\159\148\146 Keep Per Pet",
 				Default = tostring(h.auto_drop_pet_keep_amount);
 				Numeric = true;
 				AllowEmpty = true;
 				Finished = true;
-				ClearTextOnFocus = false,
+				ClearTextOnFocus = false;
 				Placeholder = "Amount to keep",
-				Tooltip = "Keeps this many of each pet name, size and variant.";
+				Tooltip = "Keeps this many of each pet name, size and variant.",
 				Callback = function(G)
 					local V = z(G)
 					if V == nil or V < 0 then
@@ -26179,8 +26179,8 @@ Z.AutoDropItems = {
 				end
 			})
 			y:AddToggle("auto_drop_pet_protect_equipped_ui", {
-				Text = "\240\159\155\161\239\184\143 Protect Equipped Pets",
-				Default = h.auto_drop_pet_protect_equipped;
+				Text = "\240\159\155\161\239\184\143 Protect Equipped Pets";
+				Default = h.auto_drop_pet_protect_equipped,
 				Tooltip = "Equipped pets will not be dropped.";
 				Callback = function(G)
 					h.auto_drop_pet_protect_equipped = G
@@ -26190,12 +26190,12 @@ Z.AutoDropItems = {
 			local s
 			s = y:AddValueDropdown("auto_drop_pet_rarity_whitelist_ui", {
 				Values = Z.AutoDropItems.GetPetRarityValuesAutoDropItems(),
-				Default = {};
-				Multi = true,
+				Default = {},
+				Multi = true;
 				Text = "\226\156\133 Only Pet Rarities",
 				Tooltip = "Only selected pet rarities can be dropped. Empty allows all.",
-				Searchable = true;
-				MaxVisibleDropdownItems = 8,
+				Searchable = true,
+				MaxVisibleDropdownItems = 8;
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -26209,7 +26209,7 @@ Z.AutoDropItems = {
 			N = y:AddValueDropdown("auto_drop_pet_rarity_blacklist_ui", {
 				Values = Z.AutoDropItems.GetPetRarityValuesAutoDropItems(),
 				Default = {},
-				Multi = true;
+				Multi = true,
 				Text = "\226\155\148 Protect Pet Rarities";
 				Tooltip = "Selected pet rarities will not be dropped.";
 				Searchable = true;
@@ -26226,10 +26226,10 @@ Z.AutoDropItems = {
 			local W
 			W = y:AddValueDropdown("auto_drop_pet_size_whitelist_ui", {
 				Values = Z.AutoDropItems.GetPetSizeValuesAutoDropItems(),
-				Default = {};
+				Default = {},
 				Multi = true;
-				Text = "\226\156\133 Only Pet Sizes",
-				Tooltip = "Only selected pet sizes can be dropped. Empty allows all.";
+				Text = "\226\156\133 Only Pet Sizes";
+				Tooltip = "Only selected pet sizes can be dropped. Empty allows all.",
 				Searchable = false;
 				MaxVisibleDropdownItems = 5;
 				Changed = function(G)
@@ -26246,9 +26246,9 @@ Z.AutoDropItems = {
 				Values = Z.AutoDropItems.GetPetSizeValuesAutoDropItems(),
 				Default = {},
 				Multi = true,
-				Text = "\226\155\148 Protect Pet Sizes";
-				Tooltip = "Selected pet sizes will not be dropped.",
-				Searchable = false;
+				Text = "\226\155\148 Protect Pet Sizes",
+				Tooltip = "Selected pet sizes will not be dropped.";
+				Searchable = false,
 				MaxVisibleDropdownItems = 5;
 				Changed = function(G)
 					if type(G) ~= "table" then
@@ -26262,11 +26262,11 @@ Z.AutoDropItems = {
 			local l
 			l = y:AddValueDropdown("auto_drop_pet_variant_whitelist_ui", {
 				Values = Z.AutoDropItems.GetPetVariantValuesAutoDropItems(),
-				Default = {};
+				Default = {},
 				Multi = true;
-				Text = "\226\156\133 Only Pet Variants",
+				Text = "\226\156\133 Only Pet Variants";
 				Tooltip = "Only selected pet variants can be dropped. Empty allows all.",
-				Searchable = false;
+				Searchable = false,
 				MaxVisibleDropdownItems = 5;
 				Changed = function(G)
 					if type(G) ~= "table" then
@@ -26279,13 +26279,13 @@ Z.AutoDropItems = {
 			l:SetValue(h.auto_drop_pet_variant_whitelist)
 			local B
 			B = y:AddValueDropdown("auto_drop_pet_variant_blacklist_ui", {
-				Values = Z.AutoDropItems.GetPetVariantValuesAutoDropItems(),
+				Values = Z.AutoDropItems.GetPetVariantValuesAutoDropItems();
 				Default = {},
 				Multi = true,
-				Text = "\226\155\148 Protect Pet Variants";
-				Tooltip = "Selected pet variants will not be dropped.",
-				Searchable = false;
-				MaxVisibleDropdownItems = 5,
+				Text = "\226\155\148 Protect Pet Variants",
+				Tooltip = "Selected pet variants will not be dropped.";
+				Searchable = false,
+				MaxVisibleDropdownItems = 5;
 				Changed = function(G)
 					if type(G) ~= "table" then
 						return
@@ -26334,7 +26334,7 @@ Z.MutationSeedPlacer = {
 				J = "Single"
 			end
 			table.insert(V, {
-				Value = i;
+				Value = i,
 				Rank = g.RarityRank[c] or 0;
 				Text = string.format("<font color=\'#FFFFFF\'>%s</font> <font color=\'%s\'>%s</font> <font color=\'#CFCFCF\'>%s</font>", i, Z.Data.GetRarityColor(c), c, J)
 			})
@@ -26346,7 +26346,7 @@ Z.MutationSeedPlacer = {
 			return tostring(G.Value or "") < tostring(V.Value or "")
 		end)
 		return V
-	end,
+	end;
 	OnStartMutationSeedPlacer = function()
 		if h.mutation_seed_placer_enabled ~= true then
 			return false
@@ -26431,22 +26431,22 @@ Z.MutationSeedPlacer = {
 			d = d:sub(1, 930) .. "\n..."
 		end
 		local u = {
-			username = "Exotic Hub";
+			username = "Exotic Hub",
 			embeds = {
 				{
-					title = J;
-					description = d,
+					title = J,
+					description = d;
 					color = T,
 					fields = {
 						{
-							name = "\240\159\145\164 Account",
+							name = "\240\159\145\164 Account";
 							value = "||@" .. (c .. "||"),
 							inline = true
 						}
-					};
+					},
 					footer = {
 						text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or ""))
-					},
+					};
 					timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 				}
 			}
@@ -26465,7 +26465,7 @@ Z.MutationSeedPlacer = {
 		Z.MutationSeedPlacer.SendWebhookMutationSeedPlacer(false, G, V)
 		Z.MutationSeedPlacer.SetStatusMutationSeedPlacer("Failed | " .. tostring(V or "no wanted plant"), "#FFCC66")
 		return false
-	end;
+	end,
 	RunMutationSeedPlacer = function()
 		if type(h.mutation_seed_placer_seed) ~= "table" or next(h.mutation_seed_placer_seed) == nil then
 			Z.MutationSeedPlacer.SetStatusMutationSeedPlacer("Select mutation seeds", "#FFCC66")
@@ -26502,7 +26502,7 @@ Z.MutationSeedPlacer = {
 						local G = tostring(y.PlantName or y.SeedName or "")
 						if G ~= "" then
 							return {
-								id = V;
+								id = V,
 								name = G
 							}
 						end
@@ -26557,9 +26557,9 @@ Z.MutationSeedPlacer = {
 				e = V(r)
 			end
 			local s = {
-				seed = E;
+				seed = E,
 				plant = "Unknown";
-				id = "",
+				id = "";
 				keep = false
 			}
 			if e then
@@ -26617,17 +26617,17 @@ Z.MutationSeedPlacer = {
 			return false
 		end
 		G:AddLabel({
-			Text = "Places selected mutation seeds, checks each summoned plant, then reports success or failure after all results finish.",
+			Text = "Places selected mutation seeds, checks each summoned plant, then reports success or failure after all results finish.";
 			DoesWrap = true
 		})
 		local V = G:AddValueDropdown("mutation_seed_placer_seed_ui", {
 			Values = Z.MutationSeedPlacer.GetDropdownMutationSeedPlacer(true);
-			Default = {},
-			Multi = true;
-			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			Default = {};
+			Multi = true,
+			Searchable = true;
+			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\167\172 Mutation Seeds";
-			Tooltip = "Selected mutation seed tools are used in rarity order.",
+			Tooltip = "Selected mutation seed tools are used in rarity order.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -26638,12 +26638,12 @@ Z.MutationSeedPlacer = {
 		})
 		V:SetValue(h.mutation_seed_placer_seed)
 		local j = G:AddValueDropdown("mutation_seed_placer_keep_plants_ui", {
-			Values = Z.MutationSeedPlacer.GetDropdownMutationSeedPlacer(false);
+			Values = Z.MutationSeedPlacer.GetDropdownMutationSeedPlacer(false),
 			Default = {};
-			Multi = true,
+			Multi = true;
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
-			Text = "\240\159\140\177 Plants To Keep",
+			MaxVisibleDropdownItems = 10,
+			Text = "\240\159\140\177 Plants To Keep";
 			Tooltip = "A run succeeds when any selected plant is summoned.",
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -26657,13 +26657,13 @@ Z.MutationSeedPlacer = {
 		local i
 		i = G:AddInput("mutation_seed_placer_seed_count_ui", {
 			Text = "\240\159\148\162 Seeds To Place",
-			Default = tostring(h.mutation_seed_placer_seed_count);
+			Default = tostring(h.mutation_seed_placer_seed_count),
 			Numeric = true;
-			AllowEmpty = false,
+			AllowEmpty = false;
 			Finished = true,
 			ClearTextOnFocus = false,
 			Placeholder = "1",
-			Tooltip = "Minimum 1. The run waits for each planted result.";
+			Tooltip = "Minimum 1. The run waits for each planted result.",
 			Callback = function(G)
 				local V = z(G)
 				if not V or V < 1 then
@@ -26677,14 +26677,14 @@ Z.MutationSeedPlacer = {
 		})
 		local c
 		c = G:AddInput("mutation_seed_placer_place_delay_ui", {
-			Text = "\226\154\161 Seed Place Delay",
+			Text = "\226\154\161 Seed Place Delay";
 			Default = tostring(h.mutation_seed_placer_place_delay),
-			Numeric = true;
+			Numeric = true,
 			AllowEmpty = false;
 			Finished = true;
-			ClearTextOnFocus = false,
+			ClearTextOnFocus = false;
 			Placeholder = "0.1",
-			Tooltip = "Delay between seeds. Min 0.001, max 3 seconds.";
+			Tooltip = "Delay between seeds. Min 0.001, max 3 seconds.",
 			Callback = function(G)
 				local V = tonumber(G)
 				if not V or V < .001 or V > 3 then
@@ -26697,17 +26697,17 @@ Z.MutationSeedPlacer = {
 			end
 		})
 		G:AddToggle("mutation_seed_placer_webhook_success_ui", {
-			Text = "\240\159\148\148 Webhook On Success";
+			Text = "\240\159\148\148 Webhook On Success",
 			Default = h.mutation_seed_placer_webhook_success;
-			Tooltip = "Sends the result list when a wanted plant is found.",
+			Tooltip = "Sends the result list when a wanted plant is found.";
 			Callback = function(G)
 				h.mutation_seed_placer_webhook_success = G == true
 				a.Save.SaveDataSync()
 			end
 		})
 		G:AddToggle("mutation_seed_placer_webhook_failure_ui", {
-			Text = "\240\159\148\148 Webhook On Failure";
-			Default = h.mutation_seed_placer_webhook_failure,
+			Text = "\240\159\148\148 Webhook On Failure",
+			Default = h.mutation_seed_placer_webhook_failure;
 			Tooltip = "Sends the result list when no wanted plant is found.",
 			Callback = function(G)
 				h.mutation_seed_placer_webhook_failure = G == true
@@ -26716,7 +26716,7 @@ Z.MutationSeedPlacer = {
 		})
 		G:AddToggle("mutation_seed_placer_shovel_failed_ui", {
 			Text = "\240\159\170\147 Shovel Failed Plants",
-			Default = h.mutation_seed_placer_shovel_failed;
+			Default = h.mutation_seed_placer_shovel_failed,
 			Tooltip = "Shovels unwanted plants that do not match your selected keep plants.";
 			Callback = function(G)
 				h.mutation_seed_placer_shovel_failed = G == true
@@ -26724,7 +26724,7 @@ Z.MutationSeedPlacer = {
 			end
 		})
 		G:AddToggle("mutation_seed_placer_enabled_ui", {
-			Text = "\240\159\167\172 Enable Mutation Seed Placer",
+			Text = "\240\159\167\172 Enable Mutation Seed Placer";
 			Default = h.mutation_seed_placer_enabled,
 			Tooltip = "Starts placing selected mutation seeds.",
 			Callback = function(G)
@@ -26755,36 +26755,36 @@ if h.mutation_seed_placer_enabled == true then
 	end)
 end
 Z.TotalControl = {
-	FreeGardenExpansionsTotalControl = 2;
-	FreePetInventoryUpgradesTotalControl = 1,
+	FreeGardenExpansionsTotalControl = 2,
+	FreePetInventoryUpgradesTotalControl = 1;
 	PetInventoryMinimumShecklesTotalControl = 90000000,
-	LargeGardenPlantThresholdTotalControl = 600;
+	LargeGardenPlantThresholdTotalControl = 600,
 	IdleSeedPetPriorityTotalControl = {
 		"Turkey";
 		"Robin"
-	},
+	};
 	IdleUtilityPetPriorityTotalControl = {
-		"BlackDragon",
+		"BlackDragon";
 		"GoldenDragonfly",
 		"Unicorn"
 	},
 	IdleCropPetPrioritySmallTotalControl = {
-		"Deer",
-		"Firefly";
+		"Deer";
+		"Firefly",
 		"Butterfly"
 	};
 	IdleCropPetPriorityLargeTotalControl = {
-		"Firefly",
-		"Deer";
+		"Firefly";
+		"Deer",
 		"Butterfly"
 	};
 	NormalPetBuyAvoidTotalControl = {
-		Frog = true;
+		Frog = true,
 		Owl = true
 	};
 	IsEnabledTotalControl = function()
 		return h.total_control_enabled == true
-	end,
+	end;
 	SetStatusTotalControl = function(G, V)
 		G = tostring(G or "")
 		X.status = G
@@ -26794,12 +26794,12 @@ Z.TotalControl = {
 		end
 		g.TotalControlStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\167\160 [Total Control]</font> <font color=\'%s\'>%s</font></stroke>", tostring(V or "#FFFFFF"), G)
 		return true
-	end;
+	end,
 	ClearStatusTotalControl = function()
 		X.status = ""
 		g.TotalControlStatusText = ""
 		return true
-	end,
+	end;
 	SetEnabledTotalControl = function(G)
 		local V = G == true
 		X.enabled = V
@@ -26875,7 +26875,7 @@ Z.TotalControl = {
 		end
 		G = tostring(G or "")
 		return G ~= "" and Z.SeedData.GetSeedDataX(G) ~= nil
-	end;
+	end,
 	ResolveSeedShopBuyLimitTotalControl = function(G)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -26923,7 +26923,7 @@ Z.TotalControl = {
 			end
 		end
 		return false
-	end,
+	end;
 	IsUsefulGearTotalControl = function(G, V)
 		G = tostring(G or "")
 		V = type(V) == "table" and V or g.AllGearShopData[G]
@@ -26941,7 +26941,7 @@ Z.TotalControl = {
 			return true
 		end
 		return Z.TotalControl.IsGearNameInGameDataTotalControl(G, y.WateringcanData, "Name")
-	end;
+	end,
 	GetGearShopPriorityTotalControl = function(G, V)
 		G = tostring(G or "")
 		V = type(V) == "table" and V or g.AllGearShopData[G]
@@ -26965,7 +26965,7 @@ Z.TotalControl = {
 			return 6
 		end
 		return 7
-	end,
+	end;
 	GetOwnedGearCountTotalControl = function(G)
 		G = tostring(G or "")
 		if G == "" then
@@ -26994,7 +26994,7 @@ Z.TotalControl = {
 			end
 		end
 		return V
-	end;
+	end,
 	ResolveGearShopNamesTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27048,7 +27048,7 @@ Z.TotalControl = {
 			return nil
 		end
 		return false
-	end,
+	end;
 	IsUsefulCrateTotalControl = function(G, V)
 		G = tostring(G or "")
 		V = type(V) == "table" and V or g.AllCrateShopData[G]
@@ -27074,7 +27074,7 @@ Z.TotalControl = {
 			return nil
 		end
 		return g.GetCheckIfPro() == true
-	end;
+	end,
 	IsGoodAuctionLotTotalControl = function(G)
 		if type(G) ~= "table" then
 			return false
@@ -27096,13 +27096,13 @@ Z.TotalControl = {
 			return j >= ((g.RarityRank.Legendary or 5)) or Z:find("super", 1, true) ~= nil
 		end
 		return j >= ((g.RarityRank.Super or 7))
-	end,
+	end;
 	ResolveAuctioneerPassesSelectedItemTotalControl = function(G)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return Z.TotalControl.IsGoodAuctionLotTotalControl(G)
-	end;
+	end,
 	ResolveAuctioneerPassesPriceTotalControl = function(G, V, y)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27115,7 +27115,7 @@ Z.TotalControl = {
 			return true
 		end
 		return false, string.format("waiting %d%%", j)
-	end,
+	end;
 	ResolveAuctioneerAffordableTotalControl = function(G, V, y)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27143,19 +27143,19 @@ Z.TotalControl = {
 		end
 		local V = g.RarityRank[tostring(Y.Auctioneer.ResolveRarityAuctioneer(G.lot) or "")] or 0
 		return (V * 1000 + ((tonumber(G.discountPercent) or 0)) * 10) - ((tonumber(G.currentPrice) or 0)) / 1000000
-	end;
+	end,
 	ResolvePetFinderEnabledTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return g.GetCheckIfPro() == true
-	end,
+	end;
 	ResolvePetFinderUseWalkTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return true
-	end;
+	end,
 	ResolvePetFinderAutoHopTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27172,12 +27172,12 @@ Z.TotalControl = {
 		end
 		return {
 			enabled = true,
-			target = 6;
+			target = 6,
 			sizes = {};
-			variants = {},
+			variants = {};
 			total_control = true
 		}
-	end;
+	end,
 	PassesPetFinderAvoidTotalControl = function(G)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27200,7 +27200,7 @@ Z.TotalControl = {
 		local V = g.RarityRank[tostring(G.rarity or "")] or 0
 		local y = g.RarityRank.Super or 7
 		return tostring(G.size or "Normal") == "Big" or tostring(G.size or "Normal") == "Huge" or tostring(G.variant or "Normal") == "Rainbow" or V >= y
-	end,
+	end;
 	ResolvePetFinderReachedTargetTotalControl = function(G, V)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27213,10 +27213,10 @@ Z.TotalControl = {
 		end
 		local y = {
 			enabled = true;
-			target = V.target or 6,
+			target = V.target or 6;
 			sizes = {
 				Normal = true
-			},
+			};
 			variants = {
 				Normal = true
 			}
@@ -27235,13 +27235,13 @@ Z.TotalControl = {
 		end
 		local V = (({
 			Huge = 300;
-			Big = 200,
+			Big = 200;
 			Normal = 0
 		}))[tostring(G.size or "Normal")] or 0
 		local y = tostring(G.variant or "Normal") == "Rainbow" and 100 or 0
 		local j = ((g.RarityRank[tostring(G.rarity or "")] or 0)) * 10
 		return (V + y) + j
-	end;
+	end,
 	AddPetPurchaseLogTotalControl = function(G)
 		if not Z.TotalControl.IsEnabledTotalControl() or type(G) ~= "table" then
 			return nil
@@ -27253,10 +27253,10 @@ Z.TotalControl = {
 		end
 		table.insert(V, 1, {
 			pet = G.name;
-			display_name = G.displayName,
+			display_name = G.displayName;
 			size = G.size,
 			variant = G.variant,
-			rarity = G.rarity;
+			rarity = G.rarity,
 			price = G.price;
 			purchased_at = os.time()
 		})
@@ -27315,7 +27315,7 @@ Z.TotalControl = {
 				table.insert(J, {
 					pet = G,
 					amount = 1,
-					size = tostring(y.size or "Normal");
+					size = tostring(y.size or "Normal"),
 					variant = tostring(y.variant or "Normal")
 				})
 				return true
@@ -27352,11 +27352,11 @@ Z.TotalControl = {
 			return nil
 		end
 		return {
-			id = u;
-			enabled = true,
-			triggerType = "Default";
-			loadoutMode = "Manual",
-			pets = J;
+			id = u,
+			enabled = true;
+			triggerType = "Default",
+			loadoutMode = "Manual";
+			pets = J,
 			total_control = true
 		}
 	end;
@@ -27391,15 +27391,15 @@ Z.TotalControl = {
 				id = "total_control_pet_speed",
 				enabled = true,
 				triggerType = "Default",
-				loadoutMode = "Speed";
-				pets = {},
+				loadoutMode = "Speed",
+				pets = {};
 				total_control = true
 			}
 		end
 		if Z.TotalControl.IsMutationSeedWeatherActiveTotalControl() then
 			return {
-				id = "total_control_pet_mutation_seed_speed",
-				enabled = true;
+				id = "total_control_pet_mutation_seed_speed";
+				enabled = true,
 				triggerType = "Default";
 				loadoutMode = "Speed";
 				pets = {};
@@ -27435,10 +27435,10 @@ Z.TotalControl = {
 			T = J("Speed") and "Speed" or "Growth"
 		end
 		return {
-			id = "total_control_pet_" .. string.lower(T),
+			id = "total_control_pet_" .. string.lower(T);
 			enabled = true,
 			triggerType = "Default",
-			loadoutMode = T;
+			loadoutMode = T,
 			pets = {};
 			total_control = true
 		}
@@ -27448,7 +27448,7 @@ Z.TotalControl = {
 			return nil
 		end
 		return false
-	end,
+	end;
 	ResolveSeedPlacerModeTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27460,7 +27460,7 @@ Z.TotalControl = {
 			return nil
 		end
 		return .3
-	end;
+	end,
 	ResolveSmartSeedingEnabledTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27490,7 +27490,7 @@ Z.TotalControl = {
 			return nil
 		end
 		return g.GetCheckIfPro() == true
-	end,
+	end;
 	ResolveFruitCollectPreventDestroyPlantsTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27571,31 +27571,31 @@ Z.TotalControl = {
 			return nil
 		end
 		return g.GetCheckIfPro() == true
-	end;
+	end,
 	ResolveDailyDealEnabledTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return true
-	end,
+	end;
 	ResolveSellWhenBackpackFullTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return false
-	end;
+	end,
 	ResolveSprinklerPlacerEnabledTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return g.GetCheckIfPro() == true
-	end,
+	end;
 	ResolveSprinklerWeatherAllowedTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return true
-	end;
+	end,
 	ResolveSprinklerPlaceModeTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27613,7 +27613,7 @@ Z.TotalControl = {
 			end
 		end
 		return G
-	end,
+	end;
 	ResolveSprinklerTargetAmountTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27631,19 +27631,19 @@ Z.TotalControl = {
 			return nil
 		end
 		return false
-	end;
+	end,
 	ResolveWaterPlantsEnabledTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return true
-	end,
+	end;
 	ResolveWaterPlantsWeatherAllowedTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return true
-	end;
+	end,
 	ResolveWaterPlantsModeTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27663,7 +27663,7 @@ Z.TotalControl = {
 			return nil
 		end
 		return true
-	end;
+	end,
 	ResolveGardenExpandEnabledTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27681,7 +27681,7 @@ Z.TotalControl = {
 		local V = Z.GardenSeedLimit.GetCurrentCountGardenSeedLimit()
 		local y = Z.GardenSeedLimit.GetCurrentLimitGardenSeedLimit()
 		return V >= y, V, y
-	end,
+	end;
 	ResolveGardenExpandTargetSlotTotalControl = function(G)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27693,13 +27693,13 @@ Z.TotalControl = {
 			return nil
 		end
 		return true
-	end;
+	end,
 	ResolvePetInventoryTargetUpgradeTotalControl = function(G)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
 		end
 		return math.max(math.floor(tonumber(G) or 0), 0)
-	end,
+	end;
 	CanBuyPetInventoryUpgradeTotalControl = function(G, V)
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27716,7 +27716,7 @@ Z.TotalControl = {
 			return nil
 		end
 		return math.max(tonumber(G) or 0, 0), 0
-	end;
+	end,
 	ResolveTrowelEnabledTotalControl = function()
 		if not Z.TotalControl.IsEnabledTotalControl() then
 			return nil
@@ -27742,7 +27742,7 @@ Y.ShopTrigger = {
 		return {
 			"Any Time"
 		}
-	end,
+	end;
 	NormaliseShopTrigger = function(G)
 		return Z.WeatherTriggers and Z.WeatherTriggers.NormaliseWeatherTriggers(G) or ((tostring(G or "")):lower()):gsub("%s+", "")
 	end,
@@ -27786,7 +27786,7 @@ Y.ShopBuyer = {
 			end
 		end
 		return false
-	end,
+	end;
 	GetSpendableShecklesShopBuyer = function(G, V)
 		V = tonumber(V) or 0
 		G = tostring(G or "")
@@ -27802,7 +27802,7 @@ Y.ShopBuyer = {
 			return V
 		end
 		return math.max(0, V - j)
-	end;
+	end,
 	GetAllSelectionShopBuyer = function(G)
 		local V = {}
 		if type(G) ~= "table" then
@@ -27834,7 +27834,7 @@ Y.SeedShop = {
 			return tonumber(V.Value) or 0
 		end
 		return 0
-	end,
+	end;
 	BuySeed = function(G)
 		local V = Z.TotalControl.ResolveSeedShopSelectionTotalControl(G)
 		if V ~= nil then
@@ -27850,7 +27850,7 @@ Y.SeedShop = {
 		end
 		j:Fire(G)
 		return true
-	end;
+	end,
 	SeedBuyerLoop = function()
 		local G = Z.TotalControl.ResolveSeedShopEnabledTotalControl()
 		if G ~= nil then
@@ -27945,7 +27945,7 @@ Y.GearShop = {
 		end
 		j:Fire(G)
 		return true
-	end,
+	end;
 	GearShopLoop = function()
 		local G = Z.TotalControl.ResolveGearShopEnabledTotalControl()
 		if G ~= nil then
@@ -28125,22 +28125,22 @@ g.FastAuctionUiRefs = g.FastAuctionUiRefs or {}
 Y.FastAuction = {
 	StartedFastAuction = false;
 	SnapshotRequestsInFlightFastAuction = 0;
-	LastSnapshotRequestAtFastAuction = 0,
+	LastSnapshotRequestAtFastAuction = 0;
 	LastSnapshotAtFastAuction = 0,
 	LiveLotsFastAuction = {},
 	LotsByIdFastAuction = {},
-	StockFastAuction = {};
+	StockFastAuction = {},
 	PendingLotIdFastAuction = "";
 	PendingAtFastAuction = 0;
-	NextAttemptByLotFastAuction = {},
+	NextAttemptByLotFastAuction = {};
 	AttemptCountFastAuction = 0,
-	RejoinAfterPendingFastAuction = false;
-	RejoinPendingFastAuction = false,
+	RejoinAfterPendingFastAuction = false,
+	RejoinPendingFastAuction = false;
 	LastManualRefreshAtFastAuction = 0,
 	LastControllerCacheReadAtFastAuction = 0,
-	RollIntervalSecondsFastAuction = 0;
-	RollWindowUnixFastAuction = 0,
-	TimerShiftSecondsFastAuction = 0;
+	RollIntervalSecondsFastAuction = 0,
+	RollWindowUnixFastAuction = 0;
+	TimerShiftSecondsFastAuction = 0,
 	EndedPriceByLotFastAuction = {};
 	GetServerTimeFastAuction = function()
 		local G, V = pcall(function()
@@ -28170,7 +28170,7 @@ Y.FastAuction = {
 		G = tonumber(G) or Y.FastAuction.GetServerTimeFastAuction()
 		local Z = tonumber(Y.FastAuction.TimerShiftSecondsFastAuction) or 0
 		return math.max(((y + V) + Z) - G, 0)
-	end,
+	end;
 	GetDisplayNameFastAuction = function(G)
 		if type(G) ~= "table" then
 			return "Unknown"
@@ -28181,9 +28181,9 @@ Y.FastAuction = {
 		end
 		local y = {}
 		for G, V in ipairs({
-			G.type;
-			G.size,
-			G.mutation;
+			G.type,
+			G.size;
+			G.mutation,
 			G.item
 		}) do
 			V = tostring(V or "")
@@ -28222,7 +28222,7 @@ Y.FastAuction = {
 		end
 		local Z = ((((y - ((tonumber(V) or 0)))) / y)) * 100
 		return math.clamp(Z, 0, 100)
-	end,
+	end;
 	GetStockFastAuction = function(G)
 		if type(G) ~= "table" then
 			return 0
@@ -28247,7 +28247,7 @@ Y.FastAuction = {
 		end
 		local y = Y.FastAuction.GetStockFastAuction(G)
 		return y == nil or y > 0
-	end;
+	end,
 	SetStatusFastAuction = function(G, V)
 		G = tostring(G or "")
 		V = tostring(V or "#FFFFFF")
@@ -28264,7 +28264,7 @@ Y.FastAuction = {
 			Z:SetText(y ~= "" and y or "<font color=\'#888888\'>Ready.</font>")
 		end
 		return true
-	end,
+	end;
 	RefreshAttemptLabelFastAuction = function()
 		local G = g.FastAuctionUiRefs.AttemptLabel
 		if not G or type(G.SetText) ~= "function" then
@@ -28273,7 +28273,7 @@ Y.FastAuction = {
 		local V = math.clamp(math.floor(tonumber(h.fast_auction_rejoin_attempts) or 10), 1, 10000)
 		G:SetText(string.format("Purchase attempts: <font color=\'#FFCC66\'>%d/%d</font>", Y.FastAuction.AttemptCountFastAuction, V))
 		return true
-	end;
+	end,
 	ApplySnapshotFastAuction = function(G)
 		if type(G) ~= "table" or type(G.manifest) ~= "table" or type(G.manifest.lots) ~= "table" then
 			return false
@@ -28321,7 +28321,7 @@ Y.FastAuction = {
 		Y.FastAuction.RefreshManualButtonsFastAuction(true)
 		Y.FastAuction.EvaluateAutoFastAuction()
 		return true
-	end,
+	end;
 	BootstrapControllerCacheFastAuction = function()
 		local G = os.clock()
 		local V = Y.FastAuction.LastControllerCacheReadAtFastAuction
@@ -28488,7 +28488,7 @@ Y.FastAuction = {
 			end
 		end)
 		return true
-	end,
+	end;
 	EnsureManualButtonsFastAuction = function(G)
 		local V = g.FastAuctionUiRefs
 		local y = V.ManualGroup
@@ -28503,7 +28503,7 @@ Y.FastAuction = {
 			}
 			j.Button = y:AddButton({
 				Text = "Waiting for item...",
-				Tooltip = "Purchases this live auction item immediately at its current price.";
+				Tooltip = "Purchases this live auction item immediately at its current price.",
 				Func = function()
 					local G = g.FastAuctionUiRefs.ManualButtons and g.FastAuctionUiRefs.ManualButtons[Z]
 					if G then
@@ -28625,7 +28625,7 @@ Y.FastAuction = {
 			end
 		end
 		return true
-	end,
+	end;
 	GetBestAffordableLotFastAuction = function()
 		local G = Y.FastAuction.GetServerTimeFastAuction()
 		local V = tonumber(Z.Money.GetSheckles()) or 0
@@ -28656,7 +28656,7 @@ Y.FastAuction = {
 	ClearPendingPurchaseFastAuction = function()
 		Y.FastAuction.PendingLotIdFastAuction = ""
 		Y.FastAuction.PendingAtFastAuction = 0
-	end;
+	end,
 	PurchaseLotByIdFastAuction = function(G, V)
 		G = tostring(G or "")
 		V = tostring(V or "manual")
@@ -28701,7 +28701,7 @@ Y.FastAuction = {
 		end
 		Y.FastAuction.SetStatusFastAuction("Buying " .. (Y.FastAuction.GetDisplayNameFastAuction(j) .. "..."), "#FFCC66")
 		return true
-	end,
+	end;
 	HandlePurchaseResultFastAuction = function(G, V, y)
 		G = tostring(G or "")
 		if G == "" or G ~= Y.FastAuction.PendingLotIdFastAuction then
@@ -28725,7 +28725,7 @@ Y.FastAuction = {
 		Y.FastAuction.RefreshManualButtonsFastAuction(true)
 		task.defer(Y.FastAuction.EvaluateAutoFastAuction)
 		return V == true
-	end;
+	end,
 	CheckPendingTimeoutFastAuction = function()
 		if Y.FastAuction.PendingLotIdFastAuction == "" then
 			return false
@@ -28758,7 +28758,7 @@ Y.FastAuction = {
 			return false
 		end
 		return Y.FastAuction.PurchaseLotByIdFastAuction(G.lotId, "auto")
-	end,
+	end;
 	StartFastAuction = function()
 		if Y.FastAuction.StartedFastAuction then
 			return false
@@ -28802,16 +28802,16 @@ g.AuctioneerStatusText = ""
 g.AuctioneerLogs = g.AuctioneerLogs or {}
 g.AuctioneerUiRefs = g.AuctioneerUiRefs or {}
 Y.Auctioneer = {
-	StartedAuctioneer = false;
+	StartedAuctioneer = false,
 	RequestingSnapshotAuctioneer = false;
 	PurchaseBusyAuctioneer = false;
 	NextPurchaseAtAuctioneer = 0;
-	LastSnapshotAtAuctioneer = 0,
+	LastSnapshotAtAuctioneer = 0;
 	LastSnapshotRequestAtAuctioneer = 0,
 	RestockKeyAuctioneer = "",
 	LiveLotsAuctioneer = {},
-	StockAuctioneer = {};
-	KnownItemsAuctioneer = {},
+	StockAuctioneer = {},
+	KnownItemsAuctioneer = {};
 	BoughtByItemAuctioneer = {},
 	BoughtByLotAuctioneer = {},
 	StartedSnapshotRetryAuctioneer = false,
@@ -28829,7 +28829,7 @@ Y.Auctioneer = {
 			return y.Workspace:GetServerTimeNow()
 		end)
 		return G and tonumber(V) or os.time()
-	end;
+	end,
 	SetStatusAuctioneer = function(G, V)
 		G = tostring(G or "")
 		if G == "" then
@@ -28838,7 +28838,7 @@ Y.Auctioneer = {
 		end
 		g.AuctioneerStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\148\168 [Auctioneer]</font> <font color=\'%s\'>%s</font></stroke>", tostring(V or "#FFFFFF"), G)
 		return true
-	end,
+	end;
 	SyncFastAuctionDataAuctioneer = function(G)
 		local V = Y.FastAuction
 		if type(V) ~= "table" then
@@ -28864,7 +28864,7 @@ Y.Auctioneer = {
 			Y.Auctioneer.RefreshLiveLotsAuctioneer()
 		end
 		return # y > 0
-	end;
+	end,
 	AddLogAuctioneer = function(G, V)
 		G = tostring(G or "")
 		if G == "" then
@@ -28872,7 +28872,7 @@ Y.Auctioneer = {
 		end
 		local y = os.date("%H:%M:%S")
 		table.insert(g.AuctioneerLogs, 1, {
-			text = string.format("%s  %s", y, G),
+			text = string.format("%s  %s", y, G);
 			colour = tostring(V or "#CFCFCF")
 		})
 		while # g.AuctioneerLogs > 25 do
@@ -28909,7 +28909,7 @@ Y.Auctioneer = {
 			end
 		end
 		return V
-	end;
+	end,
 	AddKnownItemAuctioneer = function(G, V, y, j)
 		V = tostring(V or "")
 		if V == "" or G[V] then
@@ -28924,7 +28924,7 @@ Y.Auctioneer = {
 		end
 		G[V] = {
 			Text = c,
-			Value = V;
+			Value = V,
 			Category = y;
 			Rank = g.RarityRank[j] or 0
 		}
@@ -28992,7 +28992,7 @@ Y.Auctioneer = {
 			return tostring(G.Value or "") < tostring(V.Value or "")
 		end)
 		return V
-	end,
+	end;
 	GetSupportedCategoriesAuctioneer = function()
 		local G = {}
 		local V = {}
@@ -29028,7 +29028,7 @@ Y.Auctioneer = {
 			end
 		end
 		return tostring(G.displayName or G.item or "Unknown")
-	end;
+	end,
 	ResolveRarityAuctioneer = function(G)
 		if type(G) ~= "table" then
 			return "Unknown"
@@ -29053,7 +29053,7 @@ Y.Auctioneer = {
 			end
 		end
 		return "Unknown"
-	end,
+	end;
 	GetCurrentPriceAuctioneer = function(G)
 		if type(G) ~= "table" then
 			return 0
@@ -29065,7 +29065,7 @@ Y.Auctioneer = {
 			end
 		end
 		return tonumber(G.startPrice) or 0
-	end;
+	end,
 	IsActiveLotAuctioneer = function(G)
 		if type(G) ~= "table" then
 			return false
@@ -29079,7 +29079,7 @@ Y.Auctioneer = {
 			end
 		end
 		return ((tonumber(G.expiresAt) or 0)) > V and ((Z == nil or Z > 0))
-	end,
+	end;
 	GetTicksElapsedAuctioneer = function(G)
 		if type(G) ~= "table" then
 			return 0
@@ -29091,7 +29091,7 @@ Y.Auctioneer = {
 			end
 		end
 		return 0
-	end;
+	end,
 	GetDiscountPercentAuctioneer = function(G, V)
 		local y = tonumber(type(G) == "table" and G.startPrice) or 0
 		V = tonumber(V) or 0
@@ -29100,7 +29100,7 @@ Y.Auctioneer = {
 		end
 		local Z = ((((y - V)) / y)) * 100
 		return math.clamp(math.floor(Z + .5), 0, 100)
-	end,
+	end;
 	GetStockAuctioneer = function(G)
 		if type(G) ~= "table" then
 			return 0
@@ -29116,7 +29116,7 @@ Y.Auctioneer = {
 			return nil
 		end
 		return tonumber(G.stockQuantity) or 0
-	end;
+	end,
 	GetOverrideAuctioneer = function(G)
 		G = tostring(G or "")
 		local V = type(h.auctioneer_overrides) == "table" and h.auctioneer_overrides or {}
@@ -29127,10 +29127,10 @@ Y.Auctioneer = {
 		return {
 			enabled = y.enabled ~= false;
 			price = math.max(tonumber(y.price) or 0, 0);
-			percent = math.clamp(math.floor(tonumber(y.percent) or 50), 0, 100),
+			percent = math.clamp(math.floor(tonumber(y.percent) or 50), 0, 100);
 			max_stock = math.clamp(math.floor(tonumber(y.max_stock) or 99999), 1, 99999)
 		}
-	end;
+	end,
 	GetOverrideSummaryAuctioneer = function(G, V)
 		G = tostring(G or "")
 		V = type(V) == "table" and V or Y.Auctioneer.GetOverrideAuctioneer(G)
@@ -29151,10 +29151,10 @@ Y.Auctioneer = {
 			V = tostring(V or "")
 			if V ~= "" and type(y) == "table" then
 				table.insert(G, {
-					itemName = V,
+					itemName = V;
 					rule = {
-						enabled = y.enabled ~= false,
-						price = math.max(tonumber(y.price) or 0, 0);
+						enabled = y.enabled ~= false;
+						price = math.max(tonumber(y.price) or 0, 0),
 						percent = math.clamp(math.floor(tonumber(y.percent) or 50), 0, 100);
 						max_stock = math.clamp(math.floor(tonumber(y.max_stock) or 99999), 1, 99999)
 					}
@@ -29211,9 +29211,9 @@ Y.Auctioneer = {
 			h.auctioneer_buy_selected = {}
 		end
 		h.auctioneer_overrides[G] = {
-			enabled = true,
+			enabled = true;
 			price = math.max(math.floor(tonumber(V) or 0), 0),
-			percent = math.clamp(math.floor(tonumber(y) or 50), 0, 100);
+			percent = math.clamp(math.floor(tonumber(y) or 50), 0, 100),
 			max_stock = math.clamp(math.floor(tonumber(Z) or 99999), 1, 99999)
 		}
 		h.auctioneer_buy_selected[G] = true
@@ -29221,7 +29221,7 @@ Y.Auctioneer = {
 		Y.Auctioneer.RefreshOverridesAuctioneer()
 		Y.Auctioneer.RefreshItemDropdownAuctioneer()
 		return true
-	end,
+	end;
 	RemoveOverrideAuctioneer = function(G)
 		G = tostring(G or "")
 		if G == "" or type(h.auctioneer_overrides) ~= "table" then
@@ -29231,7 +29231,7 @@ Y.Auctioneer = {
 		a.Save.SaveDataSync()
 		Y.Auctioneer.RefreshOverridesAuctioneer()
 		return true
-	end;
+	end,
 	ToggleOverrideAuctioneer = function(G, V)
 		G = tostring(G or "")
 		if G == "" or type(h.auctioneer_overrides) ~= "table" or type(h.auctioneer_overrides[G]) ~= "table" then
@@ -29258,7 +29258,7 @@ Y.Auctioneer = {
 			return false
 		end
 		return Y.Auctioneer.SelectionHasAuctioneer(c, y) or Y.Auctioneer.SelectionHasAuctioneer(c, j)
-	end,
+	end;
 	GetBuyLimitAuctioneer = function(G)
 		local V = Y.Auctioneer.GetLotOverrideAuctioneer(G)
 		return V and V.max_stock or 99999
@@ -29329,13 +29329,13 @@ Y.Auctioneer = {
 		return {
 			lot = G;
 			displayName = J;
-			itemName = T,
-			currentPrice = V;
-			discountPercent = i,
-			stock = q;
+			itemName = T;
+			currentPrice = V,
+			discountPercent = i;
+			stock = q,
 			ticks = Y.Auctioneer.GetTicksElapsedAuctioneer(G)
 		}
-	end,
+	end;
 	GetBestCandidateAuctioneer = function()
 		local G = {}
 		for V, y in ipairs(Y.Auctioneer.LiveLotsAuctioneer) do
@@ -29411,7 +29411,7 @@ Y.Auctioneer = {
 			return false
 		end
 		return true
-	end;
+	end,
 	CheckPurchaseTimeoutAuctioneer = function()
 		if Y.Auctioneer.PurchaseBusyAuctioneer ~= true then
 			return false
@@ -29442,32 +29442,32 @@ Y.Auctioneer = {
 			end
 		end
 		return 10
-	end,
+	end;
 	BuildWebhookPayloadAuctioneer = function(G, V, Z)
 		Z = type(Z) == "table" and Z or {}
 		local j = G and "\240\159\148\168 Auctioneer Purchase" or "\226\154\160\239\184\143 Auctioneer Failed"
 		local i = G and 5763719 or 16733525
 		return {
-			username = "Exotic Hub";
+			username = "Exotic Hub",
 			embeds = {
 				{
-					title = j;
+					title = j,
 					description = tostring(V or "Auctioneer update");
 					color = i;
 					fields = {
 						{
-							name = "Item",
-							value = tostring(Z.displayName or "Unknown");
+							name = "Item";
+							value = tostring(Z.displayName or "Unknown"),
 							inline = true
-						},
+						};
 						{
-							name = "Price";
+							name = "Price",
 							value = "$" .. q.formatShecklesNumber(Z.currentPrice or 0);
 							inline = true
-						},
+						};
 						{
 							name = "Discount",
-							value = tostring(Z.discountPercent or 0) .. "%";
+							value = tostring(Z.discountPercent or 0) .. "%",
 							inline = true
 						};
 						{
@@ -29475,7 +29475,7 @@ Y.Auctioneer = {
 							value = "||@" .. (tostring(y.LocalPlayer and y.LocalPlayer.Name or "Unknown") .. "||"),
 							inline = true
 						}
-					};
+					},
 					footer = {
 						text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or ""))
 					},
@@ -29483,7 +29483,7 @@ Y.Auctioneer = {
 				}
 			}
 		}
-	end;
+	end,
 	SendWebhookAuctioneer = function(G, V, y)
 		if not h.webhook_enabled then
 			return false
@@ -29569,7 +29569,7 @@ Y.Auctioneer = {
 		Y.Auctioneer.RefreshItemDropdownAuctioneer()
 		Y.Auctioneer.RefreshLiveLotsAuctioneer()
 		return true
-	end,
+	end;
 	ApplyStockUpdateAuctioneer = function(G)
 		if type(G) ~= "table" then
 			return false
@@ -29614,7 +29614,7 @@ Y.Auctioneer = {
 			end
 		end)
 		return true
-	end;
+	end,
 	StartPassiveSnapshotRetryAuctioneer = function()
 		if Y.Auctioneer.StartedSnapshotRetryAuctioneer then
 			return false
@@ -29631,7 +29631,7 @@ Y.Auctioneer = {
 			Y.Auctioneer.StartedSnapshotRetryAuctioneer = false
 		end)
 		return true
-	end,
+	end;
 	StartAuctioneer = function()
 		if Y.Auctioneer.StartedAuctioneer then
 			return false
@@ -29721,7 +29721,7 @@ Y.Auctioneer = {
 			return string.format("%dm %02ds", V, y)
 		end
 		return string.format("%dh %dm", math.floor(V / 60), V % 60)
-	end;
+	end,
 	RefreshItemDropdownAuctioneer = function()
 		local G = g.AuctioneerUiRefs
 		if type(G) ~= "table" then
@@ -29839,27 +29839,27 @@ g.MailSelectedRuleId = ""
 g.MailUiRefs = {}
 Z.Mail = {
 	Started = false;
-	Busy = false,
+	Busy = false;
 	NextSendAt = 0,
 	EquippedPets = {},
 	RecentlySentPets = {},
 	RecentlySentFruits = {},
-	RuleCooldowns = {};
-	MaxBatchItems = 20,
-	MaxStackMailCount = 999999;
+	RuleCooldowns = {},
+	MaxBatchItems = 20;
+	MaxStackMailCount = 999999,
 	ManualSendDelay = 10.1;
 	AutoMinSendDelay = 40;
 	AutoMaxSendDelay = 90;
 	RetryDelay = 10;
-	ClaimDelay = .5,
-	MaxFailures = 5;
+	ClaimDelay = .5;
+	MaxFailures = 5,
 	MaxReceipts = 50;
 	SetStatus = function(G, V)
 		g.MailStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\147\172 [Mail]</font> <font color=\'%s\'>%s</font></stroke>", tostring(V or "#FFFFFF"), tostring(G or "Waiting"))
-	end,
+	end;
 	ClearStatus = function()
 		g.MailStatusText = ""
-	end;
+	end,
 	SetManualUiStatus = function(G, V, y)
 		g.MailManualUiStatusText = string.format("<font color=\'%s\'>%s %s</font>", tostring(V or "#FFFFFF"), tostring(y or "\240\159\147\172"), tostring(G or "Waiting"))
 	end;
@@ -29879,7 +29879,7 @@ Z.Mail = {
 		pcall(function()
 			G.Disabled = V
 		end)
-	end,
+	end;
 	RefreshManualUi = function()
 		local G = g.MailManualStatusLabel
 		if G and type(G.SetText) == "function" then
@@ -29899,7 +29899,7 @@ Z.Mail = {
 			return V
 		end
 		return os.time()
-	end;
+	end,
 	GetSendWait = function()
 		local G = math.max(Z.Mail.NextSendAt - os.clock(), 0)
 		local V = math.max(((tonumber(h.mail_next_send_at) or 0)) - Z.Mail.GetServerTime(), 0)
@@ -29922,11 +29922,11 @@ Z.Mail = {
 	MakeId = function(G)
 		local V = (((y.HttpService:GenerateGUID(false)):gsub("%-", "")):sub(1, 8)):upper()
 		return tostring(G or "EXO") .. ("-" .. V)
-	end,
+	end;
 	CleanUsername = function(G)
 		G = tostring(G or "")
 		return (G:gsub("^%s*@?", "")):gsub("%s+$", "")
-	end;
+	end,
 	IsValidUsername = function(G)
 		G = Z.Mail.CleanUsername(G)
 		if # G < 3 or # G > 20 then
@@ -29934,7 +29934,7 @@ Z.Mail = {
 		end
 		return G:match("^[%w_]+$") ~= nil
 	end;
-	RecipientCacheUrl = "https://exotichub.app/api/gag2-recipient-cache",
+	RecipientCacheUrl = "https://exotichub.app/api/gag2-recipient-cache";
 	BuildRecipientFromUserIdMail = function(G, V, y)
 		G = Z.Mail.CleanUsername(G)
 		V = tonumber(V)
@@ -29950,10 +29950,10 @@ Z.Mail = {
 		end
 		return {
 			userId = V,
-			username = G;
+			username = G,
 			displayName = y
 		}
-	end,
+	end;
 	LookupRecipientWebCacheMail = function(G)
 		G = Z.Mail.CleanUsername(G)
 		if not Z.Mail.IsValidUsername(G) then
@@ -29964,7 +29964,7 @@ Z.Mail = {
 		local i, c = pcall(function()
 			if type(j) == "function" then
 				local G = j({
-					Url = V;
+					Url = V,
 					Method = "GET";
 					Headers = {
 						Accept = "application/json"
@@ -29989,7 +29989,7 @@ Z.Mail = {
 		end
 		local d = Z.Mail.CleanUsername(T.username or G)
 		return Z.Mail.BuildRecipientFromUserIdMail(d, T.userid, d)
-	end,
+	end;
 	SaveRecipientWebCacheMail = function(G, V)
 		G = Z.Mail.CleanUsername(G)
 		V = tonumber(V)
@@ -30066,11 +30066,11 @@ Z.Mail = {
 			return nil, y
 		end
 		return nil, "User was not found"
-	end;
+	end,
 	GetInventory = function()
 		local G = Z.DataReplica.GetData("Inventory")
 		return type(G) == "table" and G or nil
-	end,
+	end;
 	IsGiftableCategory = function(G)
 		if type(G) ~= "string" or G == "" then
 			return false
@@ -30084,10 +30084,10 @@ Z.Mail = {
 		end
 		local Z, j = pcall(V.IsGiftable, G)
 		return Z and j == true
-	end;
+	end,
 	IsStackCountMailCategory = function(G)
 		return G ~= "Pets" and (G ~= "HarvestedFruits" and Z.Mail.IsGiftableCategory(G))
-	end,
+	end;
 	EncodeGearSelection = function(G, V)
 		return tostring(G or "") .. ("::" .. tostring(V or ""))
 	end,
@@ -30119,7 +30119,7 @@ Z.Mail = {
 			end
 		end
 		return G
-	end;
+	end,
 	GetBackpackEmptyPotCountsMail = function()
 		local G = {}
 		for V, y in ipairs(Z.Backpack.GetBackpackAllItems()) do
@@ -30136,7 +30136,7 @@ Z.Mail = {
 			end
 		end
 		return G
-	end,
+	end;
 	GetGearDropdown = function()
 		local G = {}
 		local V = {}
@@ -30184,7 +30184,7 @@ Z.Mail = {
 			local T = c > 0 and "#7CFC00" or "#888888"
 			local d = y:gsub("(%l)(%u)", "%1 %2")
 			table.insert(G, {
-				Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">x%d</font> <font color=\"#AAAAAA\">(%s)</font>", j, T, c, d),
+				Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"%s\">x%d</font> <font color=\"#AAAAAA\">(%s)</font>", j, T, c, d);
 				Value = i
 			})
 		end
@@ -30287,7 +30287,7 @@ Z.Mail = {
 			return tostring(G.Value) < tostring(V.Value)
 		end)
 		return G
-	end,
+	end;
 	GetFruitDropdown = function()
 		local G = {}
 		local V = {}
@@ -30322,7 +30322,7 @@ Z.Mail = {
 			return tostring(G.Value) < tostring(V.Value)
 		end)
 		return G
-	end,
+	end;
 	GetEggToolCount = function(G)
 		local V = 0
 		G = tostring(G or "")
@@ -30352,7 +30352,7 @@ Z.Mail = {
 				local i = Z.Data.GetRarityColor(V)
 				local c = Z.Mail.GetAvailableCount("Eggs", j)
 				table.insert(G, {
-					Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"#7CFC00\">x%d</font> <font color=\"%s\">%s</font>", j, c, i, V);
+					Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"#7CFC00\">x%d</font> <font color=\"%s\">%s</font>", j, c, i, V),
 					Value = j
 				})
 			end
@@ -30375,7 +30375,7 @@ Z.Mail = {
 			end
 		end
 		return tostring(V or "Unknown")
-	end,
+	end;
 	GetOrderItemDisplayName = function(G)
 		if type(G) == "table" and (type(G.displayName) == "string" and G.displayName ~= "") then
 			return G.displayName
@@ -30387,7 +30387,7 @@ Z.Mail = {
 			y = G.itemName
 		end
 		return Z.Mail.GetItemDisplayName(V, y)
-	end;
+	end,
 	CopyStringArrayMail = function(G)
 		local V = {}
 		if type(G) ~= "table" then
@@ -30400,7 +30400,7 @@ Z.Mail = {
 			end
 		end
 		return V
-	end,
+	end;
 	GetAllowedItemKeysLookup = function(G, V)
 		local y = {}
 		local Z = false
@@ -30459,7 +30459,7 @@ Z.Mail = {
 			return true
 		end
 		return G[V] == true
-	end,
+	end;
 	CopySelection = function(G)
 		local V = {}
 		if type(G) ~= "table" then
@@ -30469,7 +30469,7 @@ Z.Mail = {
 			V[G] = y
 		end
 		return V
-	end;
+	end,
 	SelectionKey = function(G)
 		local V = {}
 		if type(G) ~= "table" then
@@ -30494,15 +30494,15 @@ Z.Mail = {
 			return nil, nil, "Max KG must be equal to or above Min KG"
 		end
 		return G, V, nil, Z.Mail.CopySelection(y), Z.Mail.CopySelection(j), Z.Mail.CopySelection(i), Z.Mail.CopySelection(c)
-	end,
+	end;
 	GetFruitFilterKey = function(G, V, y, j)
 		return table.concat({
 			tostring(tonumber(G) or 0),
-			tostring(tonumber(V) or 89);
-			Z.Mail.SelectionKey(y),
+			tostring(tonumber(V) or 89),
+			Z.Mail.SelectionKey(y);
 			Z.Mail.SelectionKey(j)
 		}, "|")
-	end;
+	end,
 	GetFruitFilterText = function(G)
 		if type(G) ~= "table" or G.category ~= "HarvestedFruits" then
 			return ""
@@ -30517,7 +30517,7 @@ Z.Mail = {
 			table.insert(V, "Variants")
 		end
 		return " <font color=\'#AAAAAA\'>[" .. (table.concat(V, ", ") .. "]</font>")
-	end,
+	end;
 	GetPetVariant = function(G)
 		if type(G) == "table" and G.Type == "Rainbow" then
 			return "Rainbow"
@@ -30530,7 +30530,7 @@ Z.Mail = {
 			return V
 		end
 		return "Normal"
-	end;
+	end,
 	CleanupRecentlySentPets = function()
 		local G = os.clock()
 		for V, y in pairs(Z.Mail.RecentlySentPets) do
@@ -30538,7 +30538,7 @@ Z.Mail = {
 				Z.Mail.RecentlySentPets[V] = nil
 			end
 		end
-	end,
+	end;
 	GetMatchingPets = function(G, V, y, j)
 		local i = {}
 		local c = Z.Mail.GetInventory()
@@ -30563,7 +30563,7 @@ Z.Mail = {
 				continue
 			end
 			table.insert(i, {
-				key = d;
+				key = d,
 				id = u;
 				data = J
 			})
@@ -30572,7 +30572,7 @@ Z.Mail = {
 			return G.key < V.key
 		end)
 		return i
-	end,
+	end;
 	GetMatchingPetsByKeys = function(G, V, y, j)
 		local i = {}
 		local c, J = Z.Mail.GetAllowedItemKeysLookup(V, y)
@@ -30605,8 +30605,8 @@ Z.Mail = {
 				continue
 			end
 			table.insert(i, {
-				key = T;
-				id = d,
+				key = T,
+				id = d;
 				data = y
 			})
 		end
@@ -30614,7 +30614,7 @@ Z.Mail = {
 			return G.key < V.key
 		end)
 		return i
-	end;
+	end,
 	CleanupRecentlySentFruits = function()
 		local G = os.clock()
 		for V, y in pairs(Z.Mail.RecentlySentFruits) do
@@ -30622,7 +30622,7 @@ Z.Mail = {
 				Z.Mail.RecentlySentFruits[V] = nil
 			end
 		end
-	end,
+	end;
 	GetBackpackMailFruits = function()
 		local G = {}
 		local V = {}
@@ -30643,8 +30643,8 @@ Z.Mail = {
 				continue
 			end
 			table.insert(G, {
-				key = Z,
-				id = tostring(y.id or Z);
+				key = Z;
+				id = tostring(y.id or Z),
 				name = j;
 				weight = tonumber(y.w) or 0;
 				data = y
@@ -30657,7 +30657,7 @@ Z.Mail = {
 			return tostring(G.key) < tostring(V.key)
 		end)
 		return G
-	end,
+	end;
 	GetMatchingFruits = function(G, V, y, j, i, c, J, T)
 		local d = {}
 		G = tostring(G or "")
@@ -30695,7 +30695,7 @@ Z.Mail = {
 			table.insert(d, q)
 		end
 		return d
-	end;
+	end,
 	GetMatchingFruitsByKeys = function(G, V, y, j)
 		local i = {}
 		local c, J = Z.Mail.GetAllowedItemKeysLookup(V, y)
@@ -30756,14 +30756,14 @@ Z.Mail = {
 		end
 		local Y = a[G]
 		return type(Y) == "table" and math.max(math.floor(tonumber(Y[V]) or 0), 0) or 0
-	end,
+	end;
 	GetBatchAmount = function(G, V)
 		V = math.max(math.floor(tonumber(V) or 0), 0)
 		if Z.Mail.IsStackCountMailCategory(G) then
 			return math.min(V, Z.Mail.MaxStackMailCount)
 		end
 		return math.min(V, Z.Mail.MaxBatchItems)
-	end;
+	end,
 	BuildBatch = function(G, V, y, j, i, c, J, T, d, u, q, g, E, a)
 		local H = {}
 		y = Z.Mail.GetBatchAmount(G, y)
@@ -30781,7 +30781,7 @@ Z.Mail = {
 			local d = math.min(y, # T)
 			for G = 1, d, 1 do
 				table.insert(H, {
-					Category = "Pets";
+					Category = "Pets",
 					ItemKey = T[G].key;
 					Count = 1
 				})
@@ -30799,8 +30799,8 @@ Z.Mail = {
 			local r = math.min(y, # i)
 			for G = 1, r, 1 do
 				table.insert(H, {
-					Category = "HarvestedFruits";
-					ItemKey = i[G].key,
+					Category = "HarvestedFruits",
+					ItemKey = i[G].key;
 					Count = 1
 				})
 			end
@@ -30813,7 +30813,7 @@ Z.Mail = {
 		local Y = math.min(y, r, Z.Mail.MaxStackMailCount)
 		if Y > 0 then
 			table.insert(H, {
-				Category = G;
+				Category = G,
 				ItemKey = V;
 				Count = Y
 			})
@@ -30828,7 +30828,7 @@ Z.Mail = {
 				Z.Mail.RecentlySentFruits[V.ItemKey] = os.clock() + 30
 			end
 		end
-	end,
+	end;
 	SendBatch = function(G, V, j, i, c)
 		if Z.Mail.Busy then
 			return false, "Mailbox is busy"
@@ -30888,7 +30888,7 @@ Z.Mail = {
 			end
 		until os.clock() >= a
 		return false
-	end;
+	end,
 	GetDraftItemsForUi = function()
 		local G = g.MailActiveOrder
 		if type(G) ~= "table" then
@@ -30898,7 +30898,7 @@ Z.Mail = {
 			return G.items, true
 		end
 		return g.MailDraftItems, false
-	end,
+	end;
 	GetDraftText = function()
 		local G, V = Z.Mail.GetDraftItemsForUi()
 		if type(G) ~= "table" or # G == 0 then
@@ -30924,7 +30924,7 @@ Z.Mail = {
 			return
 		end
 		pcall(V)
-	end;
+	end,
 	AddDraftItem = function(G, V, y, j, i, c, J, T, d)
 		if g.MailManualRunning then
 			return false, "Stop the current order first"
@@ -30957,7 +30957,7 @@ Z.Mail = {
 			end
 		end
 		local s = {
-			category = G;
+			category = G,
 			itemName = V;
 			amount = y
 		}
@@ -30973,7 +30973,7 @@ Z.Mail = {
 		table.insert(g.MailDraftItems, s)
 		Z.Mail.RefreshDraftUi()
 		return true, "Item added"
-	end,
+	end;
 	ClearDraft = function()
 		if g.MailManualRunning then
 			return false
@@ -30986,21 +30986,21 @@ Z.Mail = {
 		local G = {}
 		for V, y in ipairs(g.MailDraftItems) do
 			table.insert(G, {
-				category = y.category,
+				category = y.category;
 				itemName = y.itemName,
 				amount = y.amount,
 				sent = 0,
-				fruitMinKg = y.fruitMinKg;
-				fruitMaxKg = y.fruitMaxKg,
+				fruitMinKg = y.fruitMinKg,
+				fruitMaxKg = y.fruitMaxKg;
 				fruitMutations = Z.Mail.CopySelection(y.fruitMutations),
 				fruitVariants = Z.Mail.CopySelection(y.fruitVariants),
-				fruitMutationBlacklist = Z.Mail.CopySelection(y.fruitMutationBlacklist);
-				fruitVariantBlacklist = Z.Mail.CopySelection(y.fruitVariantBlacklist),
+				fruitMutationBlacklist = Z.Mail.CopySelection(y.fruitMutationBlacklist),
+				fruitVariantBlacklist = Z.Mail.CopySelection(y.fruitVariantBlacklist);
 				filterKey = y.filterKey
 			})
 		end
 		return G
-	end;
+	end,
 	BuildReceipt = function(G)
 		local V = {
 			"MAIL RECEIPT " .. tostring(G.id);
@@ -31048,12 +31048,12 @@ Z.Mail = {
 			local Z = y:match("([^\n]+)") or ("Receipt " .. V)
 			local j = y:match("To:%s*([^\n]+)") or ""
 			table.insert(G, {
-				Text = string.format("%s | %s", Z, j);
+				Text = string.format("%s | %s", Z, j),
 				Value = tostring(V)
 			})
 		end
 		return G
-	end,
+	end;
 	IsSavedManualOrderValid = function(G)
 		if type(G) ~= "table" or type(G.id) ~= "string" or G.id == "" or type(G.recipient) ~= "table" or type(G.recipient.userId) ~= "number" or type(G.items) ~= "table" or # G.items == 0 then
 			return false
@@ -31071,7 +31071,7 @@ Z.Mail = {
 	ClearSavedManualOrder = function()
 		h.mail_manual_order = {}
 		a.Save.SaveDataSync()
-	end;
+	end,
 	ApplyPendingParts = function(G, V)
 		if type(G) ~= "table" or type(G.items) ~= "table" or type(V) ~= "table" then
 			return false
@@ -31129,21 +31129,21 @@ Z.Mail = {
 				end
 			end
 			table.insert(y, {
-				itemIndex = G,
+				itemIndex = G;
 				category = T.category,
 				itemName = T.itemName,
-				count = a;
-				beforeCount = q,
+				count = a,
+				beforeCount = q;
 				sentBefore = T.sent,
-				batch = E;
+				batch = E,
 				mailKey = T.mailKey;
 				itemKeys = Z.Mail.CopyStringArrayMail(T.itemKeys);
-				itemIds = Z.Mail.CopyStringArrayMail(T.itemIds),
+				itemIds = Z.Mail.CopyStringArrayMail(T.itemIds);
 				fruitMinKg = T.fruitMinKg,
 				fruitMaxKg = T.fruitMaxKg,
 				fruitMutations = T.fruitMutations,
-				fruitVariants = T.fruitVariants;
-				fruitMutationBlacklist = T.fruitMutationBlacklist,
+				fruitVariants = T.fruitVariants,
+				fruitMutationBlacklist = T.fruitMutationBlacklist;
 				fruitVariantBlacklist = T.fruitVariantBlacklist
 			})
 			i += a
@@ -31165,7 +31165,7 @@ Z.Mail = {
 				continue
 			end
 			G.pending = {
-				parts = j;
+				parts = j,
 				batch = y
 			}
 			Z.Mail.SaveManualOrder(G)
@@ -31194,7 +31194,7 @@ Z.Mail = {
 			end
 		end
 		return false
-	end,
+	end;
 	WasPendingBatchSent = function(G)
 		if type(G) ~= "table" or type(G.batch) ~= "table" or # G.batch == 0 then
 			return false
@@ -31233,7 +31233,7 @@ Z.Mail = {
 		local y = math.max(math.floor(tonumber(G.beforeCount) or 0), 0)
 		local j = math.max(math.floor(tonumber(G.count) or 0), 0)
 		return j > 0 and V <= y - j
-	end;
+	end,
 	ReconcilePendingBatch = function(G)
 		local V = type(G) == "table" and G.pending
 		if type(V) ~= "table" or next(V) == nil then
@@ -31265,7 +31265,7 @@ Z.Mail = {
 		G.pending = {}
 		Z.Mail.SaveManualOrder(G)
 		return i
-	end,
+	end;
 	RunManualOrder = function(G)
 		if g.MailManualRunning or not Z.Mail.IsSavedManualOrderValid(G) then
 			return false
@@ -31308,20 +31308,20 @@ Z.Mail = {
 						local E = y.sent + q
 						local a = string.format("Order %s | %s | %d/%d", G.id, J, E, y.amount)
 						G.pending = {
-							itemIndex = V;
+							itemIndex = V,
 							category = y.category;
-							itemName = y.itemName,
+							itemName = y.itemName;
 							count = q,
 							beforeCount = d,
-							sentBefore = y.sent;
+							sentBefore = y.sent,
 							batch = u;
 							mailKey = y.mailKey;
 							itemKeys = Z.Mail.CopyStringArrayMail(y.itemKeys);
 							itemIds = Z.Mail.CopyStringArrayMail(y.itemIds);
 							fruitMinKg = y.fruitMinKg;
 							fruitMaxKg = y.fruitMaxKg;
-							fruitMutations = y.fruitMutations,
-							fruitVariants = y.fruitVariants;
+							fruitMutations = y.fruitMutations;
+							fruitVariants = y.fruitVariants,
 							fruitMutationBlacklist = y.fruitMutationBlacklist;
 							fruitVariantBlacklist = y.fruitVariantBlacklist
 						}
@@ -31388,7 +31388,7 @@ Z.Mail = {
 			Z.Mail.AddReceipt(Z.Mail.BuildReceipt(G))
 			Z.Webhooks.QueueMail("manual", {
 				orderId = tostring(G.id or "Unknown");
-				recipient = G.recipient and G.recipient.username or "Unknown",
+				recipient = G.recipient and G.recipient.username or "Unknown";
 				items = Z.Webhooks.CopyMailItems(G.items)
 			})
 			if Z.WebMailOrder and type(Z.WebMailOrder.CompleteWebMailOrder) == "function" then
@@ -31405,7 +31405,7 @@ Z.Mail = {
 			g.Notify("Order delivered: " .. G.id, 4)
 		end)
 		return true
-	end;
+	end,
 	StartManualOrder = function(G)
 		if g.MailManualRunning then
 			return false, "An order is already running"
@@ -31422,11 +31422,11 @@ Z.Mail = {
 			return false, y
 		end
 		local j = {
-			version = 1;
-			id = Z.Mail.MakeId("EXO"),
-			recipient = V;
+			version = 1,
+			id = Z.Mail.MakeId("EXO");
+			recipient = V,
 			items = Z.Mail.CloneDraftItems();
-			pending = {},
+			pending = {};
 			startedAt = os.time(),
 			state = "running",
 			batchTogether = h.mail_manual_batch_together == true
@@ -31451,7 +31451,7 @@ Z.Mail = {
 		Z.Mail.SetStatus("Resuming saved order " .. tostring(G.id), "#66CCFF")
 		Z.Mail.SetManualUiStatus("Resuming saved order " .. tostring(G.id), "#66CCFF", "\240\159\148\132")
 		return Z.Mail.RunManualOrder(G)
-	end;
+	end,
 	StopManualOrder = function()
 		if not g.MailManualRunning and not Z.Mail.IsSavedManualOrderValid(h.mail_manual_order) then
 			return false
@@ -31497,22 +31497,22 @@ Z.Mail = {
 		end
 		local l = Z.Mail.MakeId("RULE")
 		h.mail_auto_rules[l] = {
-			id = l;
-			enabled = true,
-			targetUserId = G.userId;
+			id = l,
+			enabled = true;
+			targetUserId = G.userId,
 			targetUsername = G.username;
-			targetDisplayName = G.displayName,
+			targetDisplayName = G.displayName;
 			category = V,
-			itemName = y;
-			triggerAmount = j,
+			itemName = y,
+			triggerAmount = j;
 			sendAmount = i,
 			petTypes = type(c) == "table" and c or {},
 			petSizes = type(J) == "table" and J or {},
-			fruitMinKg = r;
+			fruitMinKg = r,
 			fruitMaxKg = Y;
 			fruitMutations = s or {};
-			fruitVariants = N or {},
-			fruitMutationBlacklist = W or {};
+			fruitVariants = N or {};
+			fruitMutationBlacklist = W or {},
 			fruitVariantBlacklist = X or {};
 			filterKey = V == "HarvestedFruits" and Z.Mail.GetFruitFilterKey(r, Y, s, N) or ""
 		}
@@ -31522,7 +31522,7 @@ Z.Mail = {
 			B()
 		end
 		return true, l
-	end,
+	end;
 	RemoveRule = function(G)
 		local V = h.mail_auto_rules
 		local y = type(V) == "table" and V[G]
@@ -31582,7 +31582,7 @@ Z.Mail = {
 			return G.gag2_simple_mail
 		end
 		return nil
-	end,
+	end;
 	GetSimpleMailSortedKeys = function(G)
 		local V = {}
 		if type(G) ~= "table" then
@@ -31595,44 +31595,44 @@ Z.Mail = {
 			return tostring(G) < tostring(V)
 		end)
 		return V
-	end;
+	end,
 	GetSimpleMailCategory = function(G)
 		local V = tostring(G or "")
 		local y = V:gsub("%s+", "")
 		local j = y:lower()
 		local i = {
-			fruit = "HarvestedFruits";
-			fruits = "HarvestedFruits",
+			fruit = "HarvestedFruits",
+			fruits = "HarvestedFruits";
 			harvestedfruit = "HarvestedFruits",
 			harvestedfruits = "HarvestedFruits",
 			fruitvariant = "FruitVariants",
-			fruitvariants = "FruitVariants";
-			seed = "Seeds",
+			fruitvariants = "FruitVariants",
+			seed = "Seeds";
 			seeds = "Seeds",
 			pet = "Pets",
 			pets = "Pets",
 			egg = "Eggs",
-			eggs = "Eggs";
+			eggs = "Eggs",
 			sprinkler = "Sprinklers";
 			sprinklers = "Sprinklers";
 			wateringcan = "WateringCans";
-			wateringcans = "WateringCans",
+			wateringcans = "WateringCans";
 			mushroom = "Mushrooms",
 			mushrooms = "Mushrooms",
 			gnome = "Gnomes",
 			gnomes = "Gnomes",
 			raccoon = "Raccoons",
-			raccoons = "Raccoons";
-			trowel = "Trowels",
-			trowels = "Trowels";
+			raccoons = "Raccoons",
+			trowel = "Trowels";
+			trowels = "Trowels",
 			seedpack = "SeedPacks";
-			seedpacks = "SeedPacks",
-			crate = "Crates";
-			crates = "Crates",
-			prop = "Props";
-			props = "Props",
-			emptypot = "EmptyPots";
-			emptypots = "EmptyPots",
+			seedpacks = "SeedPacks";
+			crate = "Crates",
+			crates = "Crates";
+			prop = "Props",
+			props = "Props";
+			emptypot = "EmptyPots",
+			emptypots = "EmptyPots";
 			powerhose = "PowerHoses",
 			powerhoses = "PowerHoses"
 		}
@@ -31647,7 +31647,7 @@ Z.Mail = {
 			return y
 		end
 		return nil
-	end;
+	end,
 	IsSimpleMailAll = function(G)
 		return type(G) == "string" and G:lower() == "all"
 	end;
@@ -31692,14 +31692,14 @@ Z.Mail = {
 	end,
 	GetSimpleMailFruitSettings = function(G)
 		return {
-			minKg = tonumber(Z.Mail.GetSimpleMailField(G, "MinKg", 0)) or 0,
+			minKg = tonumber(Z.Mail.GetSimpleMailField(G, "MinKg", 0)) or 0;
 			maxKg = tonumber(Z.Mail.GetSimpleMailField(G, "MaxKg", 100000000)) or 100000000,
-			mutations = Z.Mail.GetSimpleMailSelection(G, "Mutations");
+			mutations = Z.Mail.GetSimpleMailSelection(G, "Mutations"),
 			variants = Z.Mail.GetSimpleMailSelection(G, "Variants");
 			mutationBlacklist = Z.Mail.GetSimpleMailSelection(G, "MutationBlacklist");
 			variantBlacklist = Z.Mail.GetSimpleMailSelection(G, "VariantBlacklist")
 		}
-	end,
+	end;
 	ResolveSimpleMailPetName = function(G)
 		G = tostring(G or "")
 		if G == "" or type(y.PetData) ~= "table" then
@@ -31820,7 +31820,7 @@ Z.Mail = {
 			})
 		end
 		return i, u
-	end,
+	end;
 	BuildSimpleMailPlanBatch = function(G)
 		local V = {}
 		local y = {}
@@ -31869,7 +31869,7 @@ Z.Mail = {
 					E = tostring(c) .. " fruits"
 				end
 				table.insert(y, {
-					category = g;
+					category = g,
 					name = E;
 					count = u
 				})
@@ -31881,7 +31881,7 @@ Z.Mail = {
 			c += math.max(math.floor(tonumber(V.count) or 0), 0)
 		end
 		return V, y, c
-	end,
+	end;
 	ProcessSimpleMailPlan = function()
 		local G = Z.Mail.GetSimpleMailPlan()
 		if type(G) ~= "table" then
@@ -31916,14 +31916,14 @@ Z.Mail = {
 			end
 			Z.Webhooks.QueueMail("automatic", {
 				ruleId = "Simple Mail";
-				recipient = u.username,
+				recipient = u.username;
 				items = T
 			})
 			Z.Mail.SetStatus(string.format("Simple mail | Sent %d items to @%s", d, u.username), "#7CFC00")
 			return d, true
 		end
 		return 0, false
-	end;
+	end,
 	ProcessCombinedAutoRules = function(G, V)
 		local y
 		local j = {}
@@ -31989,7 +31989,7 @@ Z.Mail = {
 			end
 			table.insert(i, {
 				ruleId = d;
-				rule = u,
+				rule = u;
 				count = W
 			})
 			T -= # N
@@ -32018,7 +32018,7 @@ Z.Mail = {
 			local c = E[i]
 			if not c then
 				c = {
-					category = y.category,
+					category = y.category;
 					name = Z.Mail.GetItemDisplayName(y.category, y.itemName) .. Z.Mail.GetFruitFilterText(y),
 					count = 0
 				}
@@ -32029,12 +32029,12 @@ Z.Mail = {
 		end
 		Z.Webhooks.QueueMail("automatic", {
 			ruleId = string.format("Combined (%d rules)", # i);
-			recipient = y.username,
+			recipient = y.username;
 			items = g
 		})
 		Z.Mail.SetStatus(string.format("Auto | Sent %d items from %d rules to @%s", q, # i, y.username), "#7CFC00")
 		return q
-	end;
+	end,
 	ProcessAutoRules = function()
 		if not h.mail_auto_send_enabled or g.MailManualRunning or Z.Mail.Busy then
 			return 0
@@ -32078,7 +32078,7 @@ Z.Mail = {
 			end
 			local d = {
 				userId = tonumber(j.targetUserId);
-				username = tostring(j.targetUsername or ""),
+				username = tostring(j.targetUsername or "");
 				displayName = tostring(j.targetDisplayName or j.targetUsername or "")
 			}
 			if not d.userId or d.userId <= 0 then
@@ -32117,7 +32117,7 @@ Z.Mail = {
 			if q > 0 then
 				Z.Webhooks.QueueMail("automatic", {
 					ruleId = V,
-					recipient = d.username;
+					recipient = d.username,
 					items = {
 						{
 							category = j.category;
@@ -32143,7 +32143,7 @@ Z.Mail = {
 			end
 		end
 		return G
-	end,
+	end;
 	GetAutoAcceptMultiplierSummaryMail = function()
 		local G = {}
 		for V, y in pairs(Z.Mail.GetAutoAcceptMultiplierRulesMail()) do
@@ -32171,13 +32171,13 @@ Z.Mail = {
 			h.mail_auto_accept_multiplier_rules = {}
 		end
 		h.mail_auto_accept_multiplier_rules[G] = {
-			enabled = true;
+			enabled = true,
 			multiplier = math.clamp(tonumber(V) or 1, 1, 5)
 		}
 		a.Save.SaveDataSync()
 		Z.Mail.RefreshAutoAcceptMultiplierUiMail()
 		return true
-	end,
+	end;
 	ClearAutoAcceptMultiplierRulesMail = function()
 		h.mail_auto_accept_multiplier_rules = {}
 		a.Save.SaveDataSync()
@@ -32216,7 +32216,7 @@ Z.Mail = {
 			end
 		end
 		return false
-	end,
+	end;
 	ClaimInbox = function(G)
 		if not G and not h.mail_auto_accept then
 			return 0
@@ -32298,7 +32298,7 @@ Z.Mail = {
 			Z.Mail.SetStatus("Incoming mail could not be claimed", "#FF5555")
 		end
 		return u
-	end,
+	end;
 	LoadEquippedPets = function()
 		local G = y.Networking and (y.Networking.Pets and y.Networking.Pets.GetEquippedPets)
 		if not G or type(G.Fire) ~= "function" then
@@ -32393,14 +32393,14 @@ if type(h.mail_web_completed_orders) ~= "table" then
 	h.mail_web_completed_orders = {}
 end
 Z.WebMailOrder = {
-	UrlWebMailOrder = "https://exotichub.app/api/gag2-mail-order-worker";
+	UrlWebMailOrder = "https://exotichub.app/api/gag2-mail-order-worker",
 	StartedWebMailOrder = false;
-	BusyWebMailOrder = false,
+	BusyWebMailOrder = false;
 	PollBusyWebMailOrder = false,
-	MaxCompletedWebMailOrder = 30;
+	MaxCompletedWebMailOrder = 30,
 	GetIntervalWebMailOrder = function()
 		return 7
-	end,
+	end;
 	SetStatusWebMailOrder = function(G, V)
 		G = tostring(G or "")
 		if G == "" then
@@ -32425,7 +32425,7 @@ Z.WebMailOrder = {
 			return nil
 		end
 		return V
-	end;
+	end,
 	GetOrderIdWebMailOrder = function(G)
 		if type(G) ~= "table" then
 			return ""
@@ -32457,7 +32457,7 @@ Z.WebMailOrder = {
 			G[V[y].id] = nil
 		end
 		return true
-	end;
+	end,
 	BuildItemsPayloadWebMailOrder = function(G)
 		local V = {}
 		if type(G) ~= "table" or type(G.items) ~= "table" then
@@ -32465,7 +32465,7 @@ Z.WebMailOrder = {
 		end
 		for G, y in ipairs(G.items) do
 			local j = {
-				category = tostring(y.category or "");
+				category = tostring(y.category or ""),
 				item_name = tostring(y.itemName or "");
 				amount = math.max(math.floor(tonumber(y.amount) or 0), 0);
 				sent = math.max(math.floor(tonumber(y.sent) or 0), 0)
@@ -32509,13 +32509,13 @@ Z.WebMailOrder = {
 			table.insert(V, j)
 		end
 		return V
-	end,
+	end;
 	SetLastStateWebMailOrder = function(G, V, y, Z, j)
 		g.MailWebOrderLastState = {
 			order_id = tostring(G or ""),
-			assignment_id = tostring(V or "");
+			assignment_id = tostring(V or ""),
 			status = tostring(y or "");
-			message = tostring(Z or ""),
+			message = tostring(Z or "");
 			updated_at = os.time(),
 			items = type(j) == "table" and j or {}
 		}
@@ -32530,15 +32530,15 @@ Z.WebMailOrder = {
 			return V
 		end
 		return nil
-	end;
+	end,
 	GetPayloadWebMailOrder = function()
 		local G = Z.WebMailOrder.GetCurrentOrderWebMailOrder()
 		if type(G) == "table" then
 			return {
-				order_id = tostring(G.webOrderId or "");
-				assignment_id = tostring(G.webAssignmentId or ""),
+				order_id = tostring(G.webOrderId or ""),
+				assignment_id = tostring(G.webAssignmentId or "");
 				status = tostring(G.state or "running"),
-				target_username = G.recipient and tostring(G.recipient.username or "") or "";
+				target_username = G.recipient and tostring(G.recipient.username or "") or "",
 				items = Z.WebMailOrder.BuildItemsPayloadWebMailOrder(G);
 				updated_at = os.time()
 			}
@@ -32547,14 +32547,14 @@ Z.WebMailOrder = {
 			return g.MailWebOrderLastState
 		end
 		return nil
-	end,
+	end;
 	BuildRequestWebMailOrder = function(G, V)
 		V = type(V) == "table" and V or {}
 		local j = {
-			game = "gag2",
+			game = "gag2";
 			action = tostring(G or "poll"),
-			webapi = tostring(h.web_api_key or "");
-			profile_id = tostring(g.player_userid or ""),
+			webapi = tostring(h.web_api_key or ""),
+			profile_id = tostring(g.player_userid or "");
 			username = tostring(y.LocalPlayer and y.LocalPlayer.Name or ""),
 			sc_v = tostring(y.CurentV or ""),
 			worker_state = Z.WebMailOrder.GetPayloadWebMailOrder()
@@ -32563,7 +32563,7 @@ Z.WebMailOrder = {
 			j[G] = V
 		end
 		return j
-	end;
+	end,
 	ReportWebMailOrder = function(G, V, y, j)
 		local i = Z.WebMailOrder.GetOrderIdWebMailOrder(G)
 		local c = ""
@@ -32588,7 +32588,7 @@ Z.WebMailOrder = {
 			}))
 		end)
 		return true
-	end,
+	end;
 	BuildOrderItemsWebMailOrder = function(G)
 		local V = {}
 		if type(G) ~= "table" then
@@ -32614,10 +32614,10 @@ Z.WebMailOrder = {
 			local J = Z.Mail.CopyStringArrayMail(y.item_keys or y.itemKeys)
 			local T = Z.Mail.CopyStringArrayMail(y.item_ids or y.itemIds)
 			local d = {
-				category = j;
-				itemName = i,
-				amount = c;
-				sent = 0,
+				category = j,
+				itemName = i;
+				amount = c,
+				sent = 0;
 				mailKey = tostring(y.mail_key or y.mailKey or ""),
 				sendMode = tostring(y.send_mode or y.sendMode or ""),
 				displayName = tostring(y.display_name or y.displayName or "")
@@ -32644,7 +32644,7 @@ Z.WebMailOrder = {
 			return nil, "No valid web order items"
 		end
 		return V, nil
-	end;
+	end,
 	ProcessCommandWebMailOrder = function(G)
 		if Z.WebMailOrder.BusyWebMailOrder then
 			return false
@@ -32690,17 +32690,17 @@ Z.WebMailOrder = {
 				return false
 			end
 			local d = {
-				version = 1,
-				id = "WEB-" .. V;
+				version = 1;
+				id = "WEB-" .. V,
 				recipient = i;
-				items = J,
-				pending = {};
+				items = J;
+				pending = {},
 				startedAt = os.time();
 				state = "running";
-				batchTogether = G.batch_together == true,
+				batchTogether = G.batch_together == true;
 				source = "web",
-				webOrderId = V;
-				webAssignmentId = tostring(G.assignment_id or ""),
+				webOrderId = V,
+				webAssignmentId = tostring(G.assignment_id or "");
 				reportUrl = tostring(G.report_url or "")
 			}
 			Z.Mail.SaveManualOrder(d)
@@ -32715,7 +32715,7 @@ Z.WebMailOrder = {
 			return false
 		end
 		return y == true
-	end;
+	end,
 	HandleResponseWebMailOrder = function(G)
 		local V = Z.WebMailOrder.GetCommandWebMailOrder(G)
 		if type(V) ~= "table" then
@@ -32760,7 +32760,7 @@ Z.WebMailOrder = {
 		Z.Mail.RefreshManualUi()
 		Z.Mail.RefreshDraftUi()
 		return true
-	end,
+	end;
 	HandleCurrentOrderStatusWebMailOrder = function(G, V)
 		if type(G) ~= "table" or type(V) ~= "table" or type(V.orders) ~= "table" then
 			return false
@@ -32788,7 +32788,7 @@ Z.WebMailOrder = {
 			return Z.Mail.RunManualOrder(G)
 		end
 		return true
-	end;
+	end,
 	PollWebMailOrder = function()
 		if Z.WebMailOrder.PollBusyWebMailOrder or Z.WebMailOrder.BusyWebMailOrder then
 			return false
@@ -32821,7 +32821,7 @@ Z.WebMailOrder = {
 			return Z.WebMailOrder.HandleCurrentOrderStatusWebMailOrder(G, d)
 		end
 		return Z.WebMailOrder.HandleResponseWebMailOrder(d)
-	end,
+	end;
 	StartWebMailOrder = function()
 		if Z.WebMailOrder.StartedWebMailOrder then
 			return false
@@ -32869,39 +32869,39 @@ Z.PetFinderPremium = {
 	Started = false;
 	Busy = false;
 	Folder = nil;
-	Pets = {},
-	FolderConnections = {};
+	Pets = {};
+	FolderConnections = {},
 	Pending = nil;
 	Handled = {};
 	RetryAt = {};
-	Attempts = {},
+	Attempts = {};
 	ExpectedCounts = {},
-	MaxAttempts = 2;
+	MaxAttempts = 2,
 	SizeRanks = {
 		Normal = 1;
 		Big = 2;
 		Huge = 3
-	},
+	};
 	VariantRanks = {
-		Normal = 1,
+		Normal = 1;
 		Rainbow = 2
 	},
-	NextScanAt = 0;
-	NextHopAt = 0,
+	NextScanAt = 0,
+	NextHopAt = 0;
 	ScanDelay = 10,
 	ConfirmTimeout = 3,
 	SetStatus = function(G, V)
 		g.PetFinderPremiumStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\144\190 [Pet Finder Premium]</font> <font color=\'%s\'>%s</font></stroke>", tostring(V or "#FFFFFF"), tostring(G or "Waiting"))
-	end;
+	end,
 	ClearStatus = function()
 		g.PetFinderPremiumStatusText = ""
-	end,
+	end;
 	GetServerTime = function()
 		local G, V = pcall(function()
 			return y.Workspace:GetServerTimeNow()
 		end)
 		return G and tonumber(V) or os.time()
-	end;
+	end,
 	CopyMap = function(G)
 		local V = {}
 		if type(G) == "table" then
@@ -32912,7 +32912,7 @@ Z.PetFinderPremium = {
 			end
 		end
 		return V
-	end,
+	end;
 	GetDisplayName = function(G)
 		local V = type(y.PetData) == "table" and y.PetData[G] or nil
 		local Z = type(V) == "table" and V.DisplayName or nil
@@ -32942,10 +32942,10 @@ Z.PetFinderPremium = {
 		end
 		local V = type(y.PetSizes) == "table" and (type(y.PetSizes.Normalize) == "function" and y.PetSizes.Normalize(G)) or nil
 		return type(V) == "string" and (V ~= "" and V) or G
-	end;
+	end,
 	GetVariant = function(G)
 		return type(G) == "string" and (G ~= "" and G) or "Normal"
-	end,
+	end;
 	GetInventoryPets = function()
 		local G = Z.DataReplica.GetData("Inventory")
 		local V = type(G) == "table" and G.Pets or nil
@@ -32967,7 +32967,7 @@ Z.PetFinderPremium = {
 			local T = Z.Data.GetRarityColor(i)
 			table.insert(G, {
 				Text = string.format("<font color=\"#FFFFFF\">%s</font> <font color=\"#7CFC00\">$%s</font> <font color=\"%s\">%s</font> <font color=\"#CFCFCF\">(%%%s)</font>", j, q.formatShecklesNumber(c), T, i, J),
-				Value = V;
+				Value = V,
 				Rank = g.RarityRank[i] or 0
 			})
 		end
@@ -32978,7 +32978,7 @@ Z.PetFinderPremium = {
 			return tostring(G.Value) < tostring(V.Value)
 		end)
 		return G
-	end,
+	end;
 	GetOptionValues = function(G)
 		local V = {
 			Normal = true
@@ -33004,8 +33004,8 @@ Z.PetFinderPremium = {
 		end
 		local j = {}
 		local i = G == "Size" and {
-			Normal = 1;
-			Big = 2,
+			Normal = 1,
+			Big = 2;
 			Huge = 3
 		} or {
 			Normal = 1,
@@ -33025,12 +33025,12 @@ Z.PetFinderPremium = {
 		local c = {}
 		for G, V in ipairs(j) do
 			table.insert(c, {
-				Text = V;
+				Text = V,
 				Value = V
 			})
 		end
 		return c
-	end,
+	end;
 	GetSizeValues = function()
 		return Z.PetFinderPremium.GetOptionValues("Size")
 	end,
@@ -33049,10 +33049,10 @@ Z.PetFinderPremium = {
 		return {
 			enabled = y.enabled == true;
 			target = math.max(math.floor(tonumber(y.target) or 1), 1);
-			sizes = Z.PetFinderPremium.CopyMap(y.sizes),
+			sizes = Z.PetFinderPremium.CopyMap(y.sizes);
 			variants = Z.PetFinderPremium.CopyMap(y.variants)
 		}
-	end;
+	end,
 	HasRule = function(G)
 		return type(h.pet_finder_buy_list) == "table" and type(h.pet_finder_buy_list[G]) == "table"
 	end;
@@ -33081,7 +33081,7 @@ Z.PetFinderPremium = {
 		h.pet_finder_buy_list[G] = {
 			enabled = c == true;
 			target = V;
-			sizes = Z.PetFinderPremium.CopyMap(j),
+			sizes = Z.PetFinderPremium.CopyMap(j);
 			variants = Z.PetFinderPremium.CopyMap(i)
 		}
 		Z.PetFinderPremium.ResetPetRuntime(G)
@@ -33100,7 +33100,7 @@ Z.PetFinderPremium = {
 			Z.PetFinderPremium.ResetHopTimer()
 		end
 		return true
-	end;
+	end,
 	GetActiveRuleNames = function()
 		local G = {}
 		if type(h.pet_finder_buy_list) ~= "table" then
@@ -33117,7 +33117,7 @@ Z.PetFinderPremium = {
 	end;
 	PassesSelection = function(G, V)
 		return type(G) ~= "table" or next(G) == nil or G[V] == true
-	end,
+	end;
 	PetNameMatches = function(G, V)
 		return G == V or Z.PetFinderPremium.GetDisplayName(G) == V
 	end,
@@ -33151,7 +33151,7 @@ Z.PetFinderPremium = {
 			return y
 		end
 		return math.max(y, tonumber(j.count) or 0)
-	end;
+	end,
 	HasReachedTarget = function(G, V)
 		return Z.PetFinderPremium.CountOwnedForRule(G, V) >= V.target
 	end;
@@ -33166,7 +33166,7 @@ Z.PetFinderPremium = {
 		local y = tonumber(G:GetAttribute("SpawnedAt")) or 0
 		local j = tonumber(G:GetAttribute("Lifetime")) or 0
 		return {
-			ref = G,
+			ref = G;
 			id = G.Name,
 			name = V,
 			displayName = Z.PetFinderPremium.GetDisplayName(V),
@@ -33180,7 +33180,7 @@ Z.PetFinderPremium = {
 	end,
 	IsExpired = function(G)
 		return G.expiresAt > 0 and Z.PetFinderPremium.GetServerTime() >= G.expiresAt
-	end;
+	end,
 	DisconnectFolder = function()
 		for G, V in ipairs(Z.PetFinderPremium.FolderConnections) do
 			pcall(function()
@@ -33193,7 +33193,7 @@ Z.PetFinderPremium = {
 		local G = y.Workspace:FindFirstChild("Map")
 		local V = G and G:FindFirstChild("WildPetRef")
 		return V and (V:IsA("Folder") and V) or nil
-	end,
+	end;
 	BindFolder = function(G)
 		if Z.PetFinderPremium.Folder == G then
 			return
@@ -33221,7 +33221,7 @@ Z.PetFinderPremium = {
 			Z.PetFinderPremium.RetryAt[G] = nil
 			Z.PetFinderPremium.Attempts[G] = nil
 		end))
-	end;
+	end,
 	FullScan = function()
 		Z.PetFinderPremium.BindFolder(Z.PetFinderPremium.GetFolder())
 		local G = Z.PetFinderPremium.Folder
@@ -33260,7 +33260,7 @@ Z.PetFinderPremium = {
 			return false
 		end
 		return ((tonumber(Z.Money.GetSheckles()) or 0)) >= G.price
-	end,
+	end;
 	GetCandidate = function()
 		local G
 		local V = 0
@@ -33297,7 +33297,7 @@ Z.PetFinderPremium = {
 			end
 		end
 		return G, V
-	end;
+	end,
 	GetTrackedCount = function()
 		local G = 0
 		for V in pairs(Z.PetFinderPremium.Pets) do
@@ -33317,10 +33317,10 @@ Z.PetFinderPremium = {
 			h.pet_finder_purchase_log = {}
 		end
 		table.insert(h.pet_finder_purchase_log, 1, {
-			pet = G.name;
-			display_name = G.displayName,
-			size = G.size;
-			variant = G.variant,
+			pet = G.name,
+			display_name = G.displayName;
+			size = G.size,
+			variant = G.variant;
 			rarity = G.rarity,
 			price = G.price,
 			purchased_at = os.time()
@@ -33338,18 +33338,18 @@ Z.PetFinderPremium = {
 			return false
 		end
 		return Z.Webhooks.Queue(g.PetFinder_WebhookData, {
-			event = "pet_purchase";
-			pet = G.name,
+			event = "pet_purchase",
+			pet = G.name;
 			display_name = G.displayName,
-			size = G.size;
-			variant = G.variant,
+			size = G.size,
+			variant = G.variant;
 			rarity = G.rarity,
-			price = tonumber(G.price) or 0;
+			price = tonumber(G.price) or 0,
 			sheckles = tonumber(Z.Money.GetSheckles()) or 0;
-			purchased_at = os.time(),
+			purchased_at = os.time();
 			username = y.LocalPlayer and y.LocalPlayer.Name or "Unknown"
 		})
-	end;
+	end,
 	ConfirmPurchase = function(G)
 		local V = Z.PetFinderPremium.Pending
 		if not V or V.confirmed then
@@ -33375,7 +33375,7 @@ Z.PetFinderPremium = {
 			g.PetFinderPremiumUi.RefreshRules()
 		end
 		return true
-	end,
+	end;
 	BuyPet = function(G)
 		if Z.PetFinderPremium.Busy or type(G) ~= "table" then
 			return false
@@ -33430,11 +33430,11 @@ Z.PetFinderPremium = {
 			return false
 		end
 		local q = {
-			ref = V,
-			data = G;
-			countBefore = Z.PetFinderPremium.CountOwnedForRule(G.name, j),
-			startedAt = os.clock();
-			confirmed = false,
+			ref = V;
+			data = G,
+			countBefore = Z.PetFinderPremium.CountOwnedForRule(G.name, j);
+			startedAt = os.clock(),
+			confirmed = false;
 			petTriggerToken = d
 		}
 		Z.PetFinderPremium.Pending = q
@@ -33450,7 +33450,7 @@ Z.PetFinderPremium = {
 				end
 				local V = tonumber(G:GetAttribute("OwnerUserId")) or 0
 				return V == 0 or V == tonumber(g.player_userid)
-			end;
+			end,
 			DoneTargetPivotTeleport = function(G)
 				if q.confirmed or not Z.PetFinderPremium.IsEnabled() then
 					return true
@@ -33505,7 +33505,7 @@ Z.PetFinderPremium = {
 			return G == true
 		end
 		return h.pet_finder_enabled == true
-	end,
+	end;
 	IsAutoHopEnabled = function()
 		local G = Z.TotalControl.ResolvePetFinderAutoHopTotalControl()
 		if G ~= nil then
@@ -33515,10 +33515,10 @@ Z.PetFinderPremium = {
 	end,
 	GetHopMinutes = function()
 		return math.max(math.floor(tonumber(h.pet_finder_hop_minutes) or 5), 1)
-	end;
+	end,
 	ResetHopTimer = function()
 		Z.PetFinderPremium.NextHopAt = os.clock() + Z.PetFinderPremium.GetHopMinutes() * 60
-	end,
+	end;
 	GetHopRemaining = function()
 		if Z.PetFinderPremium.NextHopAt <= 0 then
 			Z.PetFinderPremium.ResetHopTimer()
@@ -33537,7 +33537,7 @@ Z.PetFinderPremium = {
 			end
 		end
 		return false
-	end;
+	end,
 	UpdateIdle = function(G)
 		local V = Z.PetFinderPremium.GetTrackedCount()
 		if not Z.PetFinderPremium.IsAutoHopEnabled() then
@@ -33628,7 +33628,7 @@ Z.PetFinderPremium = {
 g.WebhookStatusText = ""
 Z.Webhooks = {
 	EventSeedListenerStarted = false;
-	EventSeedConnection = nil,
+	EventSeedConnection = nil;
 	SetStatus = function(G, V)
 		G = tostring(G or "")
 		if G == "" then
@@ -33651,7 +33651,7 @@ Z.Webhooks = {
 			return h.webhook_mail_claims == true
 		end
 		return false
-	end;
+	end,
 	RemoveMailType = function(G)
 		if type(g.Mail_WebhookData) ~= "table" then
 			return
@@ -33662,7 +33662,7 @@ Z.Webhooks = {
 				table.remove(g.Mail_WebhookData, V)
 			end
 		end
-	end,
+	end;
 	CopyMailItems = function(G)
 		local V = {}
 		if type(G) ~= "table" then
@@ -33676,8 +33676,8 @@ Z.Webhooks = {
 			local i = tostring(y.itemName or y.ItemName or y.name or y.ItemKey or "Unknown")
 			local c = math.max(math.floor(tonumber(y.amount or y.count or y.Count or 1) or 1), 1)
 			table.insert(V, {
-				category = j,
-				name = Z.Mail.GetItemDisplayName(j, i) .. Z.Mail.GetFruitFilterText(y);
+				category = j;
+				name = Z.Mail.GetItemDisplayName(j, i) .. Z.Mail.GetFruitFilterText(y),
 				count = c
 			})
 		end
@@ -33706,11 +33706,11 @@ Z.Webhooks = {
 			return false
 		end
 		return Z.Webhooks.Queue(g.EventSeed_WebhookData, {
-			username = tostring(G),
+			username = tostring(G);
 			seed = V,
 			queuedAt = os.time()
 		})
-	end;
+	end,
 	BuildEventSeedPayload = function(G)
 		if type(G) ~= "table" then
 			return nil
@@ -33721,12 +33721,12 @@ Z.Webhooks = {
 		end
 		local Z = V == "Rainbow Seed"
 		return {
-			username = "Exotic Hub";
+			username = "Exotic Hub",
 			embeds = {
 				{
 					title = Z and "\240\159\140\136 Rainbow Seed Claimed!" or "\240\159\159\161 Gold Seed Claimed!",
 					description = Z and "A rare **Rainbow Seed** was collected successfully!" or "A rare **Gold Seed** was collected successfully!",
-					color = Z and 16729559 or 16766720;
+					color = Z and 16729559 or 16766720,
 					fields = {
 						{
 							name = "\240\159\140\177 Seed";
@@ -33734,7 +33734,7 @@ Z.Webhooks = {
 							inline = true
 						};
 						{
-							name = "\240\159\145\164 Account";
+							name = "\240\159\145\164 Account",
 							value = "||@" .. (tostring(G.username or "Unknown") .. "||");
 							inline = true
 						}
@@ -33760,7 +33760,7 @@ Z.Webhooks = {
 			Z.Webhooks.QueueEventSeed(G, V)
 		end)
 		return true
-	end;
+	end,
 	TrimWebhookText = function(G, V)
 		G = tostring(G or "")
 		V = tonumber(V) or 1000
@@ -33768,7 +33768,7 @@ Z.Webhooks = {
 			return G
 		end
 		return G:sub(1, V - 3) .. "..."
-	end,
+	end;
 	StripWebhookRichText = function(G)
 		G = tostring(G or "")
 		G = G:gsub("<br%s*/?>", " ")
@@ -33783,7 +33783,7 @@ Z.Webhooks = {
 			return ""
 		end
 		return " `" .. (G .. "`")
-	end;
+	end,
 	BuildMailItemsText = function(G)
 		local V = {}
 		for G, y in ipairs(G or {}) do
@@ -33798,7 +33798,7 @@ Z.Webhooks = {
 			return "No item details available"
 		end
 		return Z.Webhooks.TrimWebhookText(table.concat(V, "\n"), 1000)
-	end,
+	end;
 	BuildClaimedMailText = function(G)
 		local V = {}
 		for G, y in ipairs(G or {}) do
@@ -33836,7 +33836,7 @@ Z.Webhooks = {
 			i = "Your manual mailbox order was completed successfully."
 			c = 5763719
 			table.insert(J, {
-				name = "\240\159\167\190 Order";
+				name = "\240\159\167\190 Order",
 				value = tostring(G.orderId or "Unknown");
 				inline = true
 			})
@@ -33855,12 +33855,12 @@ Z.Webhooks = {
 			i = "An automatic mailbox rule completed successfully."
 			c = 3447003
 			table.insert(J, {
-				name = "\226\154\153\239\184\143 Rule";
-				value = tostring(G.ruleId or "Unknown"),
+				name = "\226\154\153\239\184\143 Rule",
+				value = tostring(G.ruleId or "Unknown");
 				inline = true
 			})
 			table.insert(J, {
-				name = "\240\159\145\164 Recipient",
+				name = "\240\159\145\164 Recipient";
 				value = "||@" .. (tostring(G.recipient or "Unknown") .. "||"),
 				inline = true
 			})
@@ -33876,17 +33876,17 @@ Z.Webhooks = {
 			c = 10181046
 			table.insert(J, {
 				name = "\240\159\147\172 Claim Type";
-				value = tostring(G.mode or "Unknown"),
+				value = tostring(G.mode or "Unknown");
 				inline = true
 			})
 			table.insert(J, {
 				name = "\226\156\133 Claimed";
-				value = tostring(V),
+				value = tostring(V);
 				inline = true
 			})
 			table.insert(J, {
 				name = "\240\159\142\129 Received Items";
-				value = Z.Webhooks.BuildClaimedMailText(G.mails),
+				value = Z.Webhooks.BuildClaimedMailText(G.mails);
 				inline = false
 			})
 		else
@@ -33896,13 +33896,13 @@ Z.Webhooks = {
 			username = "Exotic Hub",
 			embeds = {
 				{
-					title = j,
+					title = j;
 					description = i,
-					color = c;
-					fields = J,
+					color = c,
+					fields = J;
 					footer = {
 						text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or ""))
-					},
+					};
 					timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 				}
 			}
@@ -33920,9 +33920,9 @@ Z.Webhooks = {
 			end
 		end
 		local V = {
-			"request",
+			"request";
 			"http_request",
-			"httprequest";
+			"httprequest",
 			"httpRequest"
 		}
 		for V, y in ipairs(V) do
@@ -33932,8 +33932,8 @@ Z.Webhooks = {
 		end
 		local y = {
 			"syn";
-			"http",
-			"fluxus";
+			"http";
+			"fluxus",
 			"krnl"
 		}
 		for V, y in ipairs(y) do
@@ -33953,15 +33953,15 @@ Z.Webhooks = {
 		end
 		table.insert(G, V)
 		return true
-	end,
+	end;
 	GetPetBuyStyle = function(G, V, y, j)
 		G = tostring(G or "Normal")
 		V = tostring(V or "Normal")
 		y = tostring(y or "Unknown")
 		local i = Z.PetFinderPremium.GetPetLabel(G, V, y)
 		local c = {
-			title = "\240\159\144\190 You Bought a " .. (i .. "!");
-			message = "Pet purchase confirmed.",
+			title = "\240\159\144\190 You Bought a " .. (i .. "!"),
+			message = "Pet purchase confirmed.";
 			colour = j
 		}
 		if V == "Rainbow" and G == "Huge" then
@@ -33986,7 +33986,7 @@ Z.Webhooks = {
 			c.colour = 16747586
 		end
 		return c
-	end;
+	end,
 	BuildPetBuyPayload = function(G)
 		if type(G) ~= "table" then
 			return nil
@@ -34000,7 +34000,7 @@ Z.Webhooks = {
 		local d = Z.PetFinderPremium.GetPetLabel(c, J, T)
 		local u = Z.Webhooks.GetPetBuyStyle(c, J, T, i)
 		return {
-			username = "Exotic Hub";
+			username = "Exotic Hub",
 			embeds = {
 				{
 					title = u.title;
@@ -34008,44 +34008,44 @@ Z.Webhooks = {
 					color = u.colour;
 					fields = {
 						{
-							name = "\240\159\144\190 Pet",
+							name = "\240\159\144\190 Pet";
 							value = "**" .. (d .. "**"),
 							inline = false
 						},
 						{
-							name = "\226\173\144 Rarity";
-							value = V,
+							name = "\226\173\144 Rarity",
+							value = V;
 							inline = true
 						},
 						{
 							name = "\240\159\146\176 Price";
 							value = "$" .. q.formatShecklesNumber(G.price);
 							inline = true
+						};
+						{
+							name = "\240\159\147\143 Size",
+							value = c;
+							inline = true
 						},
 						{
-							name = "\240\159\147\143 Size";
-							value = c,
-							inline = true
-						};
-						{
 							name = "\240\159\140\136 Variant",
-							value = J;
+							value = J,
 							inline = true
 						};
 						{
-							name = "\240\159\146\181 Current Sheckles";
+							name = "\240\159\146\181 Current Sheckles",
 							value = "$" .. q.formatShecklesNumber(G.sheckles);
 							inline = true
 						}
 					};
 					footer = {
 						text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or ""))
-					};
+					},
 					timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 				}
 			}
 		}
-	end,
+	end;
 	QueueTotalControlShopPurchase = function(G, V, j, i, c)
 		if not h.webhook_enabled or not Z.TotalControl.IsEnabledTotalControl() then
 			return false
@@ -34056,10 +34056,10 @@ Z.Webhooks = {
 		end
 		return Z.Webhooks.Queue(g.ShopPurchase_WebhookData, {
 			itemType = tostring(G or "Item"),
-			itemName = tostring(V or "Unknown");
+			itemName = tostring(V or "Unknown"),
 			rarity = j;
 			price = math.max(tonumber(i) or 0, 0);
-			sheckles = math.max(tonumber(c) or 0, 0),
+			sheckles = math.max(tonumber(c) or 0, 0);
 			username = tostring(y.LocalPlayer and y.LocalPlayer.Name or "Unknown")
 		})
 	end,
@@ -34071,36 +34071,36 @@ Z.Webhooks = {
 		local j = Z.Data.GetRarityColor(V)
 		local i = tonumber(((tostring(j)):gsub("#", "")), 16) or 5763719
 		return {
-			username = "Exotic Hub";
+			username = "Exotic Hub",
 			embeds = {
 				{
 					title = "\240\159\155\146 Total Control " .. (tostring(G.itemType or "Item") .. " Purchase"),
-					description = "A Mythic+ shop item was purchased.";
-					color = i,
+					description = "A Mythic+ shop item was purchased.",
+					color = i;
 					fields = {
 						{
 							name = "Item";
-							value = "**" .. (tostring(G.itemName or "Unknown") .. "**"),
+							value = "**" .. (tostring(G.itemName or "Unknown") .. "**");
 							inline = true
-						};
+						},
 						{
 							name = "Rarity";
 							value = V;
 							inline = true
-						},
+						};
 						{
 							name = "Purchase Price";
-							value = "$" .. q.formatShecklesNumber(G.price),
+							value = "$" .. q.formatShecklesNumber(G.price);
 							inline = true
-						};
+						},
 						{
 							name = "Current Sheckles";
 							value = "$" .. q.formatShecklesNumber(G.sheckles);
 							inline = true
 						};
 						{
-							name = "Account";
-							value = "||@" .. (tostring(G.username or "Unknown") .. "||"),
+							name = "Account",
+							value = "||@" .. (tostring(G.username or "Unknown") .. "||");
 							inline = true
 						}
 					},
@@ -34111,7 +34111,7 @@ Z.Webhooks = {
 				}
 			}
 		}
-	end,
+	end;
 	Post = function(G)
 		local V = tostring(h.webhook_url or "")
 		if type(G) ~= "table" then
@@ -34130,11 +34130,11 @@ Z.Webhooks = {
 		if c then
 			local G, y = pcall(function()
 				return c({
-					Url = V;
+					Url = V,
 					Method = "POST";
 					Headers = {
 						["Content-Type"] = "application/json"
-					},
+					};
 					Body = i
 				})
 			end)
@@ -34241,14 +34241,14 @@ Z.Webhooks = {
 				continue
 			end
 			local y = {
-				manual = "manual order",
+				manual = "manual order";
 				automatic = "automatic mail",
 				claim = "claimed mail"
 			}
 			return g.Mail_WebhookData, 1, V, y[G.webhookType] or "mail notification"
 		end
 		return nil
-	end;
+	end,
 	ProcessNext = function()
 		local G = type(g.ShopPurchase_WebhookData) == "table" and # g.ShopPurchase_WebhookData > 0 or h.webhook_pet_buys or h.webhook_event_seeds or h.webhook_mail_manual or h.webhook_mail_auto or h.webhook_mail_claims
 		if not G then
@@ -34283,7 +34283,7 @@ Z.Webhooks = {
 		table.remove(y, j)
 		Z.Webhooks.SetStatus(string.format("%s sent | Pending: %d", c, Z.Webhooks.GetPendingCount()), "#7CFC00")
 		return true
-	end,
+	end;
 	Loop = function()
 		if not h.webhook_enabled then
 			Z.Webhooks.ClearStatus()
@@ -34300,9 +34300,9 @@ Z.Webhooks = {
 }
 Z.Webhooks.StartEventSeedListener()
 Z.PackOpeningWebhook = {
-	StartedPackOpeningWebhook = false;
-	ListenerStartedPackOpeningWebhook = false,
-	SeenPackOpeningWebhook = {};
+	StartedPackOpeningWebhook = false,
+	ListenerStartedPackOpeningWebhook = false;
+	SeenPackOpeningWebhook = {},
 	SetStatusPackOpeningWebhook = function(G, V)
 		G = tostring(G or "")
 		if G == "" then
@@ -34344,13 +34344,13 @@ Z.PackOpeningWebhook = {
 			end
 		end
 		return Z.PackOpenHelpers.PassesSelectedPackOpenHelpers(h.egg_hatcher_webhook_pets, G.pet) and (Z.PackOpenHelpers.PassesSelectedPackOpenHelpers(h.egg_hatcher_webhook_rarities, G.rarity) and (Z.PackOpenHelpers.PassesSelectedPackOpenHelpers(h.egg_hatcher_webhook_sizes, G.size) and Z.PackOpenHelpers.PassesSelectedPackOpenHelpers(h.egg_hatcher_webhook_variants, G.variant)))
-	end,
+	end;
 	PassesSeedPackFiltersPackOpeningWebhook = function(G)
 		if type(G) ~= "table" then
 			return false
 		end
 		return Z.PackOpenHelpers.PassesSelectedPackOpenHelpers(h.seed_pack_opener_webhook_seeds, G.seed) and Z.PackOpenHelpers.PassesSelectedPackOpenHelpers(h.seed_pack_opener_webhook_rarities, G.rarity)
-	end;
+	end,
 	QueueEggHatchPackOpeningWebhook = function(G, V, j, i, c)
 		if not h.webhook_enabled or not h.egg_hatcher_webhook_enabled then
 			return false
@@ -34361,14 +34361,14 @@ Z.PackOpeningWebhook = {
 			return false
 		end
 		local J = {
-			openId = tostring(G or "");
-			egg = V,
-			pet = j;
+			openId = tostring(G or ""),
+			egg = V;
+			pet = j,
 			displayName = Z.PackOpenHelpers.GetPetDisplayNamePackOpenHelpers(j);
 			rarity = Z.PackOpenHelpers.GetPetRarityPackOpenHelpers(j);
-			size = Z.PackOpenHelpers.NormaliseSizePackOpenHelpers(i),
-			variant = Z.PackOpenHelpers.NormaliseVariantPackOpenHelpers(c);
-			username = tostring(y.LocalPlayer and y.LocalPlayer.Name or "Unknown"),
+			size = Z.PackOpenHelpers.NormaliseSizePackOpenHelpers(i);
+			variant = Z.PackOpenHelpers.NormaliseVariantPackOpenHelpers(c),
+			username = tostring(y.LocalPlayer and y.LocalPlayer.Name or "Unknown");
 			queuedAt = os.time()
 		}
 		local T = "egg|" .. (J.openId .. ("|" .. (J.egg .. ("|" .. (J.pet .. ("|" .. (J.size .. ("|" .. J.variant))))))))
@@ -34377,7 +34377,7 @@ Z.PackOpeningWebhook = {
 		end
 		table.insert(g.EggHatcherWebhookData, J)
 		return true
-	end;
+	end,
 	QueueSeedPackPackOpeningWebhook = function(G, V, j)
 		if not h.webhook_enabled or not h.seed_pack_opener_webhook_enabled then
 			return false
@@ -34441,43 +34441,43 @@ Z.PackOpeningWebhook = {
 			end
 		end
 		return false
-	end,
+	end;
 	BuildEggPayloadPackOpeningWebhook = function(G)
 		if type(G) ~= "table" then
 			return nil
 		end
 		local V = Z.PackOpeningWebhook.GetEggPetLabelPackOpeningWebhook(G)
 		return {
-			username = "Exotic Hub";
+			username = "Exotic Hub",
 			embeds = {
 				{
-					title = "\240\159\165\154 Egg Hatched!",
-					description = "A pet hatched from an egg.";
+					title = "\240\159\165\154 Egg Hatched!";
+					description = "A pet hatched from an egg.",
 					color = Z.PackOpeningWebhook.GetColourPackOpeningWebhook(G.rarity);
 					fields = {
 						{
 							name = "\240\159\165\154 Egg";
 							value = "**" .. (tostring(G.egg or "Unknown") .. "**");
 							inline = true
-						},
+						};
 						{
 							name = "\240\159\144\190 Pet";
 							value = "**" .. (V .. "**");
 							inline = true
-						},
+						};
 						{
-							name = "\226\173\144 Rarity",
-							value = tostring(G.rarity or "Unknown");
+							name = "\226\173\144 Rarity";
+							value = tostring(G.rarity or "Unknown"),
 							inline = true
 						};
 						{
 							name = "\240\159\147\143 Size";
-							value = tostring(G.size or "Normal"),
+							value = tostring(G.size or "Normal");
 							inline = true
 						},
 						{
 							name = "\240\159\140\136 Variant";
-							value = tostring(G.variant or "Normal"),
+							value = tostring(G.variant or "Normal");
 							inline = true
 						},
 						{
@@ -34488,12 +34488,12 @@ Z.PackOpeningWebhook = {
 					},
 					footer = {
 						text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or ""))
-					},
+					};
 					timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 				}
 			}
 		}
-	end;
+	end,
 	BuildGroupedEggPayloadPackOpeningWebhook = function(G)
 		if type(G) ~= "table" then
 			return nil, 0
@@ -34532,15 +34532,15 @@ Z.PackOpeningWebhook = {
 			embeds = {
 				{
 					title = "\240\159\165\154 Hatch Report",
-					description = "-> Session Info:\n| \240\159\145\164 Username: ||@" .. (c .. ("||\n| \240\159\150\165\239\184\143 Server Version: v" .. (tostring(game.PlaceVersion or "?") .. ("\n\n-> Stats:\n| \240\159\165\154 Eggs Used: " .. (tostring(i) .. ("\n\n-> Eggs:\n| " .. table.concat(J, "\n| ")))))));
+					description = "-> Session Info:\n| \240\159\145\164 Username: ||@" .. (c .. ("||\n| \240\159\150\165\239\184\143 Server Version: v" .. (tostring(game.PlaceVersion or "?") .. ("\n\n-> Stats:\n| \240\159\165\154 Eggs Used: " .. (tostring(i) .. ("\n\n-> Eggs:\n| " .. table.concat(J, "\n| "))))))),
 					color = 5793266;
 					fields = {
 						{
-							name = "-> Pets Hatched (" .. (tostring(i) .. "):");
+							name = "-> Pets Hatched (" .. (tostring(i) .. "):"),
 							value = T;
 							inline = false
 						}
-					},
+					};
 					footer = {
 						text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or ""))
 					},
@@ -34558,30 +34558,30 @@ Z.PackOpeningWebhook = {
 			embeds = {
 				{
 					title = "\240\159\142\129 Seed Pack Opened!";
-					description = "A seed pack produced a seed.",
-					color = Z.PackOpeningWebhook.GetColourPackOpeningWebhook(G.rarity);
+					description = "A seed pack produced a seed.";
+					color = Z.PackOpeningWebhook.GetColourPackOpeningWebhook(G.rarity),
 					fields = {
 						{
-							name = "\240\159\142\129 Pack";
+							name = "\240\159\142\129 Pack",
 							value = "**" .. (tostring(G.pack or "Unknown") .. "**");
 							inline = true
 						};
 						{
 							name = "\240\159\140\177 Seed";
-							value = "**" .. (tostring(G.seed or "Unknown") .. "**"),
+							value = "**" .. (tostring(G.seed or "Unknown") .. "**");
 							inline = true
-						};
+						},
 						{
 							name = "\226\173\144 Rarity",
 							value = tostring(G.rarity or "Unknown"),
 							inline = true
-						};
+						},
 						{
-							name = "\240\159\145\164 Account";
-							value = "||@" .. (tostring(G.username or "Unknown") .. "||"),
+							name = "\240\159\145\164 Account",
+							value = "||@" .. (tostring(G.username or "Unknown") .. "||");
 							inline = true
 						}
-					};
+					},
 					footer = {
 						text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or ""))
 					};
@@ -34589,7 +34589,7 @@ Z.PackOpeningWebhook = {
 				}
 			}
 		}
-	end,
+	end;
 	GetPendingCountPackOpeningWebhook = function()
 		local G = 0
 		if h.egg_hatcher_webhook_enabled and type(g.EggHatcherWebhookData) == "table" then
@@ -34599,7 +34599,7 @@ Z.PackOpeningWebhook = {
 			G += # g.SeedPackOpenerWebhookData
 		end
 		return G
-	end;
+	end,
 	ProcessPackOpeningWebhook = function()
 		if not h.webhook_enabled then
 			Z.PackOpeningWebhook.SetStatusPackOpeningWebhook("")
@@ -34682,7 +34682,7 @@ Z.PackOpeningWebhook = {
 			end)
 		end
 		return true
-	end,
+	end;
 	StartPackOpeningWebhook = function()
 		if Z.PackOpeningWebhook.StartedPackOpeningWebhook then
 			return false
@@ -34705,24 +34705,24 @@ Z.PackOpeningWebhook = {
 Z.PackOpeningWebhook.StartPackOpeningWebhook()
 g.MoonPredictorStatusText = ""
 Z.MoonPredictor = {
-	Started = false;
+	Started = false,
 	DebugBusy = false;
-	Label = nil,
-	RollMode = "number";
+	Label = nil;
+	RollMode = "number",
 	ValidationText = "Waiting for a night to validate";
 	Colours = {
-		Moon = "#B7C9FF",
-		Goldmoon = "#FFD700";
-		["Rainbow Moon"] = "#FF66FF",
+		Moon = "#B7C9FF";
+		Goldmoon = "#FFD700",
+		["Rainbow Moon"] = "#FF66FF";
 		Bloodmoon = "#FF4444"
-	};
+	},
 	GetNight = function()
 		local G = y.TimeCycleData and (y.TimeCycleData.Data and y.TimeCycleData.Data.Night)
 		if type(G) ~= "table" or type(G.Weathers) ~= "table" then
 			return nil
 		end
 		return G
-	end,
+	end;
 	GetServerTime = function()
 		local G, V = pcall(function()
 			return y.Workspace:GetServerTimeNow()
@@ -34806,7 +34806,7 @@ Z.MoonPredictor = {
 		local T = math.floor(G / 600) * 600
 		local d = (T + c) + J
 		return G < d and d or d + 600
-	end;
+	end,
 	GetRare = function(G, V)
 		G = math.clamp(math.floor(tonumber(G) or 1), 1, 20)
 		V = V == "integer" and "integer" or "number"
@@ -34817,9 +34817,9 @@ Z.MoonPredictor = {
 			local J, T, d = Z.MoonPredictor.Pick(j + c, V)
 			if J and J ~= "Moon" then
 				table.insert(i, {
-					Name = J;
+					Name = J,
 					At = y + c * 600;
-					Roll = T,
+					Roll = T;
 					Seed = d
 				})
 				if # i >= G then
@@ -34841,7 +34841,7 @@ Z.MoonPredictor = {
 			return string.format("%dm %02ds", y, Z)
 		end
 		return string.format("%ds", Z)
-	end;
+	end,
 	GetLines = function(G, V, y)
 		local j = Z.MoonPredictor.GetServerTime()
 		local i = {}
@@ -34854,7 +34854,7 @@ Z.MoonPredictor = {
 			end
 		end
 		return i
-	end,
+	end;
 	Update = function()
 		if not h.moon_predictor_enabled then
 			g.MoonPredictorStatusText = ""
@@ -34887,7 +34887,7 @@ Z.MoonPredictor = {
 			return
 		end
 		g.MoonPredictorStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\140\153 [Moon]</font> <font color=\'%s\'>%s in %s</font></stroke>", Z.MoonPredictor.Colours[J.Name] or "#FFFFFF", J.Name, Z.MoonPredictor.FormatTime(J.At - G))
-	end;
+	end,
 	SendDebugPost = function()
 		if Z.MoonPredictor.DebugBusy then
 			return false, "Debug post already running"
@@ -34903,12 +34903,12 @@ Z.MoonPredictor = {
 		local d = table.concat(Z.MoonPredictor.GetLines("number", 12, true), "\n")
 		local u = table.concat(Z.MoonPredictor.GetLines("integer", 12, true), "\n")
 		local q = {
-			username = "Exotic Hub";
+			username = "Exotic Hub",
 			embeds = {
 				{
-					title = "\240\159\140\153 Moon Predictor Debug",
+					title = "\240\159\140\153 Moon Predictor Debug";
 					description = string.format("Live: **%s / %s**\nNext Night: <t:%d:R>\nSelected: **%s**\nValidation: %s", tostring(y.Workspace:GetAttribute("ActivePhase") or "Unknown"), tostring(y.Workspace:GetAttribute("ActiveWeather") or "Unknown"), math.floor(Z.MoonPredictor.GetNextNightAt()), Z.MoonPredictor.RollMode, Z.MoonPredictor.ValidationText),
-					color = 9268223;
+					color = 9268223,
 					fields = {
 						{
 							name = "NextNumber";
@@ -34916,19 +34916,19 @@ Z.MoonPredictor = {
 							inline = false
 						};
 						{
-							name = "NextInteger",
-							value = u ~= "" and u or "No predictions";
+							name = "NextInteger";
+							value = u ~= "" and u or "No predictions",
 							inline = false
 						};
 						{
-							name = "Current cycle";
+							name = "Current cycle",
 							value = string.format("Cycle `%d`\nNumber `%s` roll `%.6f` seed `%d`\nInteger `%s` roll `%s` seed `%d`", G, tostring(V), tonumber(j) or 0, tonumber(i) or 0, tostring(c), tostring(J), tonumber(T) or 0);
 							inline = false
 						}
-					},
+					};
 					footer = {
 						text = tostring(y.AppName or "Exotic Hub") .. (" " .. tostring(y.CurentV or ""))
-					};
+					},
 					timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 				}
 			}
@@ -34938,7 +34938,7 @@ Z.MoonPredictor = {
 		warn("[Moon Predictor][NextNumber]\n" .. d)
 		warn("[Moon Predictor][NextInteger]\n" .. u)
 		return g, g and "Moon debug post sent" or tostring(E or "Debug post failed")
-	end,
+	end;
 	Start = function()
 		if Z.MoonPredictor.Started then
 			return
@@ -34959,17 +34959,17 @@ Z.MoonPredictor = {
 Z.MoonPredictionApi = {
 	Url = "https://exotichub.app/gag2predict";
 	Busy = false;
-	Started = false,
+	Started = false;
 	Debug = false,
 	Interval = 30,
-	PredictionCount = 20;
+	PredictionCount = 20,
 	LastSignature = "";
 	GetMoonPredictionIconId = function(G)
 		local V = Z.MoonPredictor.GetNight()
 		local y = V and (V.Weathers and V.Weathers[tostring(G or "")]) or nil
 		local j = type(y) == "table" and tostring(y.Image or "") or ""
 		return j:match("%d+") or "0"
-	end,
+	end;
 	GetMoonPredictionIcons = function()
 		local G = Z.MoonPredictor.GetNight()
 		local V = {}
@@ -34981,7 +34981,7 @@ Z.MoonPredictionApi = {
 			V[tostring(G)] = Z:match("%d+") or "0"
 		end
 		return V
-	end;
+	end,
 	GetMoonPredictionEvents = function()
 		local G = Z.MoonPredictor.GetRare(Z.MoonPredictionApi.PredictionCount, Z.MoonPredictor.RollMode)
 		if type(G) ~= "table" then
@@ -34995,14 +34995,14 @@ Z.MoonPredictionApi = {
 				continue
 			end
 			table.insert(V, {
-				name = j;
+				name = j,
 				starts_at = i;
-				cycle = math.floor(i / 600),
+				cycle = math.floor(i / 600);
 				icon_id = Z.MoonPredictionApi.GetMoonPredictionIconId(j)
 			})
 		end
 		return V
-	end;
+	end,
 	BuildMoonPredictionPayload = function()
 		local G = y.LocalPlayer
 		local V = Z.MoonPredictionApi.GetMoonPredictionEvents()
@@ -35014,22 +35014,22 @@ Z.MoonPredictionApi = {
 		local c = tostring(y.Workspace:GetAttribute("ActiveWeather") or "Unknown")
 		local J = math.floor(tonumber(y.Workspace:GetAttribute("PhaseDuration")) or 0)
 		return {
-			version = 1;
+			version = 1,
 			game = "gag2";
 			generated_at = j;
 			source = {
-				user_id = tostring(G.UserId),
+				user_id = tostring(G.UserId);
 				job_id = tostring(game.JobId or ""),
 				place_version = tonumber(game.PlaceVersion) or 0
 			},
 			phase = {
-				name = i;
-				weather = c,
-				ends_at = J;
+				name = i,
+				weather = c;
+				ends_at = J,
 				icon_id = i == "Night" and Z.MoonPredictionApi.GetMoonPredictionIconId(c) or "0"
-			},
+			};
 			next_night_at = math.floor(Z.MoonPredictor.GetNextNightAt()),
-			icons = Z.MoonPredictionApi.GetMoonPredictionIcons();
+			icons = Z.MoonPredictionApi.GetMoonPredictionIcons(),
 			predictions = V
 		}
 	end;
@@ -35038,9 +35038,9 @@ Z.MoonPredictionApi = {
 			return nil
 		end
 		local V = {
-			tostring(G.phase.name or ""),
-			tostring(G.phase.weather or "");
-			tostring(G.phase.ends_at or 0),
+			tostring(G.phase.name or "");
+			tostring(G.phase.weather or ""),
+			tostring(G.phase.ends_at or 0);
 			tostring(G.next_night_at or 0)
 		}
 		for G, y in ipairs(G.predictions) do
@@ -35088,7 +35088,7 @@ Z.MoonPredictionApi = {
 			print("[MoonPredictionApi] Payload:", y.HttpService:JSONEncode(G))
 		end
 		return true
-	end,
+	end;
 	LoopMoonPredictionApi = function()
 		local G, V = pcall(Z.MoonPredictionApi.SendMoonPredictionApi)
 		if not G and Z.MoonPredictionApi.Debug then
@@ -35113,8 +35113,8 @@ Z.MoonPredictionApi = {
 Z.MoonPredictionApi.StartMoonPredictionApi()
 Z.LiveMapPetsApi = {
 	Url = "https://exotichub.app/gag2livepets",
-	Busy = false;
-	Started = false,
+	Busy = false,
+	Started = false;
 	Interval = 7,
 	LastSignature = nil,
 	GetIconId = function(G)
@@ -35147,26 +35147,26 @@ Z.LiveMapPetsApi = {
 				continue
 			end
 			table.insert(i, table.concat({
-				J;
+				J,
 				T;
-				d,
+				d;
 				u,
-				q;
+				q,
 				tostring(g)
 			}, "\031"))
 			local a = table.concat({
-				J,
+				J;
 				T,
 				d
 			}, "\031")
 			if not y[a] then
 				y[a] = {
 					n = J;
-					s = T,
+					s = T;
 					v = d,
 					r = u,
-					i = q;
-					a = 0,
+					i = q,
+					a = 0;
 					t = E
 				}
 			end
@@ -35190,7 +35190,7 @@ Z.LiveMapPetsApi = {
 		end)
 		table.sort(i)
 		return j, table.concat(i, "\030")
-	end;
+	end,
 	Send = function()
 		if Z.LiveMapPetsApi.Busy then
 			return false
@@ -35214,7 +35214,7 @@ Z.LiveMapPetsApi = {
 		local T = {
 			j = j;
 			u = tostring(V.UserId);
-			pv = tonumber(game.PlaceVersion) or 0,
+			pv = tonumber(game.PlaceVersion) or 0;
 			p = i
 		}
 		local d, u, q, g, E = pcall(function()
@@ -35258,7 +35258,7 @@ Z.LiveMapPetsApi = {
 	end
 }
 Z.GardenItems = {
-	Busy = false;
+	Busy = false,
 	AlreadyRunningPetPlayer = false;
 	IsOwnAutoDropItemGardenItems = function(G)
 		if not G or G.Parent ~= y.DroppedItems then
@@ -35278,7 +35278,7 @@ Z.GardenItems = {
 			return Z.AutoDropItems.IsSelectedAutoDropItems(h.auto_drop_categories, V)
 		end
 		return type(h.auto_drop_categories) == "table" and h.auto_drop_categories[V] == true
-	end,
+	end;
 	PetSeedCollectSystem = {
 		IsOurSeed = function(G)
 			if not G or G.Parent ~= y.DroppedItems then
@@ -35288,7 +35288,7 @@ Z.GardenItems = {
 				return false
 			end
 			return tonumber(G:GetAttribute("DroppedBy")) == tonumber(g.player_userid)
-		end,
+		end;
 		Claim = function(G)
 			if not h.auto_collect_drop_seeds or Z.GardenItems.Busy or Z.GardenItems.IsOwnAutoDropItemGardenItems(G) or not Z.GardenItems.PetSeedCollectSystem.IsOurSeed(G) then
 				return false
@@ -35321,13 +35321,13 @@ Z.GardenItems = {
 					return true
 				end
 				return Z.TargetPivotTeleport.StickToTargetUntilTargetPivotTeleport(G, y, {
-					TimeoutTargetPivotTeleport = 5;
-					RefreshIntervalTargetPivotTeleport = .15,
+					TimeoutTargetPivotTeleport = 5,
+					RefreshIntervalTargetPivotTeleport = .15;
 					ActionIntervalTargetPivotTeleport = .2,
 					RepeatActionTargetPivotTeleport = true,
 					ValidateTargetPivotTeleport = function(G)
 						return Z.GardenItems.PetSeedCollectSystem.IsOurSeed(G)
-					end;
+					end,
 					DoneTargetPivotTeleport = function(G)
 						return not Z.GardenItems.PetSeedCollectSystem.IsOurSeed(G)
 					end;
@@ -35385,10 +35385,10 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 		end
 		g.PottedPlantWeatherGuardStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\141\128 [Pot Guard]</font> <font color=\'%s\'>%s</font></stroke>", tostring(V or "#FFFFFF"), G)
 		return true
-	end,
+	end;
 	GetActionDelayPottedPlantWeatherGuard = function()
 		return math.clamp(tonumber(h.potted_weather_guard_action_delay) or .3, .001, 5)
-	end;
+	end,
 	ResetStackPlacementPottedPlantWeatherGuard = function()
 		g.PottedPlantWeatherGuardNextStackIndex = 0
 		Z.GardenItems.PottedPlantWeatherGuard.StackBasePositionPottedPlantWeatherGuard = nil
@@ -35404,7 +35404,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			end
 		end
 		return true
-	end,
+	end;
 	IsSelectedPottedPlantWeatherGuard = function(G, V)
 		V = tostring(V or "")
 		if V == "" or type(G) ~= "table" then
@@ -35423,7 +35423,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 	CleanPlantIdPottedPlantWeatherGuard = function(G)
 		G = tostring(G or "")
 		return G:match("^%d+_(.+)$") or G
-	end;
+	end,
 	GetPlantModelByIdPottedPlantWeatherGuard = function(G)
 		G = Z.GardenItems.PottedPlantWeatherGuard.CleanPlantIdPottedPlantWeatherGuard(G)
 		if G == "" then
@@ -35496,7 +35496,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			return false
 		end
 		return G:FindFirstChild("PotVisual") ~= nil or G:FindFirstChild("PickUpPottedPlantPrompt", true) ~= nil
-	end,
+	end;
 	GetEmptyPotToolPottedPlantWeatherGuard = function()
 		for G, V in ipairs(Z.Backpack.GetBackpackAllItems()) do
 			if V and (V:IsA("Tool") and V:GetAttribute("EmptyPot")) then
@@ -35508,7 +35508,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			end
 		end
 		return nil
-	end;
+	end,
 	GetPottedPlantToolsPottedPlantWeatherGuard = function()
 		local G = {}
 		for V, y in ipairs(Z.Backpack.GetBackpackAllItems()) do
@@ -35517,7 +35517,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 				local Z = tostring(y:GetAttribute("Id") or "")
 				if V ~= "" and Z ~= "" then
 					table.insert(G, {
-						tool = y;
+						tool = y,
 						id = Z;
 						plantName = V
 					})
@@ -35557,7 +35557,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			end
 		end
 		return false
-	end,
+	end;
 	ProjectPositionToPropAreaPottedPlantWeatherGuard = function(G, V)
 		if typeof(G) ~= "Vector3" then
 			return nil
@@ -35592,7 +35592,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 		local c = Z.Farm._Random:NextNumber(- j, j)
 		local J = Z.Farm._Random:NextNumber(- i, i)
 		return y.CFrame:PointToWorldSpace(Vector3.new(c, y.Size.Y / 2, J))
-	end;
+	end,
 	GetGridOpenPositionPottedPlantWeatherGuard = function(G, V, y, j)
 		local i = Z.ControlMode.RightCol
 		if type(j) == "string" and j ~= "" then
@@ -35618,7 +35618,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			return typeof(G.position) == "Vector3" and Z.Seeder.IsPositionOpen(G.position, V)
 		end)
 		return c and c.position or nil
-	end,
+	end;
 	GetSavedCFrameTextPottedPlantWeatherGuard = function()
 		local G = h.potted_weather_guard_saved_cframe
 		local V = type(G) == "table" and tonumber(G.x) or nil
@@ -35629,7 +35629,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			return "\240\159\147\141 Stack CFrame: Not set"
 		end
 		return string.format("\240\159\147\141 Stack CFrame: X %.2f | Y %.2f | Z %.2f | R %.1f\194\176", V, y, Z, j)
-	end;
+	end,
 	SaveCurrentCFramePottedPlantWeatherGuard = function()
 		local G = y.Character and y.Character:FindFirstChild("HumanoidRootPart")
 		if not G then
@@ -35641,7 +35641,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 		end
 		local j, i = G.CFrame:ToOrientation()
 		h.potted_weather_guard_saved_cframe = {
-			x = G.Position.X,
+			x = G.Position.X;
 			y = G.Position.Y,
 			z = G.Position.Z,
 			rotation = math.deg(i)
@@ -35718,7 +35718,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			return Z.PlantShovel.GetPlantTypeDropdown()
 		end
 		return Z.SeedData.GetSeedDataListDropDown()
-	end;
+	end,
 	GetPlantMutationDropdownPottedPlantWeatherGuard = function()
 		local G = {}
 		local V = {}
@@ -35752,21 +35752,21 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			end
 		end
 		local i, c = Z.FruitFilters.GetMutationLookup({
-			ob = G,
+			ob = G;
 			m = y,
-			Mutation = y;
-			v = j,
+			Mutation = y,
+			v = j;
 			Variant = j
 		})
 		local J = Z.FruitFilters.GetFruitVariant({
 			ob = G,
-			m = y;
+			m = y,
 			Mutation = y;
 			v = j;
 			Variant = j
 		}, c)
 		return y, c, J
-	end,
+	end;
 	PassesPlantMutationSelectionPottedPlantWeatherGuard = function(G, V)
 		local y = h.potted_weather_guard_plant_mutations
 		if Z.GardenItems.PottedPlantWeatherGuard.IsSelectionEmptyPottedPlantWeatherGuard(y) then
@@ -35792,7 +35792,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			V = G
 		end
 		return G, V
-	end;
+	end,
 	GetFruitWeightPlantMatchesPottedPlantWeatherGuard = function(G)
 		local V = {}
 		local y = Z.FruitFiltersDataSync
@@ -35818,7 +35818,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			end
 		end
 		return V
-	end,
+	end;
 	GetMatchingPlantsPottedPlantWeatherGuard = function(G)
 		local V = {}
 		local y = h.potted_weather_guard_selected_plants
@@ -35880,7 +35880,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			J[u] = true
 			table.insert(V, {
 				id = u;
-				plantName = E,
+				plantName = E;
 				isPotted = a,
 				plantModel = q
 			})
@@ -35926,7 +35926,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			table.insert(V, {
 				id = d,
 				plantName = q,
-				isPotted = g;
+				isPotted = g,
 				plantModel = T
 			})
 		end
@@ -35937,7 +35937,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			return G.id < V.id
 		end)
 		return V
-	end,
+	end;
 	PotPlantPottedPlantWeatherGuard = function(G, V)
 		if type(G) ~= "table" or G.id == "" then
 			return false
@@ -36030,7 +36030,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			return false, tostring(J or "Place failed")
 		end
 		return true
-	end;
+	end,
 	CanStartManualActionPottedPlantWeatherGuard = function()
 		local G = Z.GardenItems.PottedPlantWeatherGuard
 		if h.potted_weather_guard_enabled == true then
@@ -36040,7 +36040,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			return false, "A pot action is already running"
 		end
 		return true
-	end,
+	end;
 	CancelManualActionPottedPlantWeatherGuard = function()
 		local G = Z.GardenItems.PottedPlantWeatherGuard
 		if not G.ManualBusyPottedPlantWeatherGuard then
@@ -36048,7 +36048,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 		end
 		G.CancelManualPottedPlantWeatherGuard = true
 		return true, "Cancelling pot action"
-	end;
+	end,
 	StartPickAllPottedPlantsPottedPlantWeatherGuard = function()
 		local G = Z.GardenItems.PottedPlantWeatherGuard
 		local V, y = G.CanStartManualActionPottedPlantWeatherGuard()
@@ -36197,7 +36197,7 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 			V.SetStatusPottedPlantWeatherGuard("Waiting for matching plants", "#CFCFCF")
 		end
 		return J > 0
-	end,
+	end;
 	RestoreMatchingPotsPottedPlantWeatherGuard = function()
 		local G = Z.GardenItems.PottedPlantWeatherGuard
 		local V = h.potted_weather_guard_selected_plants
@@ -36301,21 +36301,21 @@ Z.GardenItems.PottedPlantWeatherGuard = {
 }
 g.GardenExpandStatusText = ""
 Z.GardenItems.ExpandSystem = {
-	Busy = false;
+	Busy = false,
 	Started = false;
 	SetStatus = function(G, V)
 		g.GardenExpandStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'%s\'>\240\159\143\161 Garden Expansion:</font> <font color=\'#FFFFFF\'>%s</font></stroke>", tostring(V or "#FFFFFF"), tostring(G or ""))
-	end,
+	end;
 	GetCurrentSlot = function()
 		local G = tonumber(Z.DataReplica.GetData("OwnedExpansions", 0)) or 0
 		return math.clamp(math.floor(G), 0, Z.GardenItems.ExpandSystem.GetMaximumSlot())
-	end;
+	end,
 	GetMaximumSlot = function()
 		if type(y.ExpansionPrices) ~= "table" then
 			return 1
 		end
 		return math.max(# y.ExpansionPrices, 1)
-	end,
+	end;
 	GetPrice = function(G)
 		G = tonumber(G)
 		if not G or type(y.ExpansionPrices) ~= "table" then
@@ -36422,7 +36422,7 @@ Z.GardenItems.ExpandSystem = {
 Z.GardenItems.ExpandSystem.Start()
 g.PetMaxInventoryStatusText = ""
 Z.GardenItems.PetMaxInventorySystem = {
-	BusyPetMaxInventorySystem = false,
+	BusyPetMaxInventorySystem = false;
 	StartedPetMaxInventorySystem = false,
 	SetStatusPetMaxInventorySystem = function(G, V)
 		G = tostring(G or "")
@@ -36432,12 +36432,12 @@ Z.GardenItems.PetMaxInventorySystem = {
 		end
 		g.PetMaxInventoryStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'%s\'>\240\159\144\190 Pet Slots:</font> <font color=\'#FFFFFF\'>%s</font></stroke>", tostring(V or "#FFFFFF"), G)
 		return true
-	end;
+	end,
 	GetBaseMaxPetMaxInventorySystem = function()
 		local G = y.PetSlotPrices
 		local V = type(G) == "table" and tonumber(G.BaseMax) or 3
 		return math.max(math.floor(V or 3), 1)
-	end,
+	end;
 	GetAbsoluteMaxPetMaxInventorySystem = function()
 		local G = Z.GardenItems.PetMaxInventorySystem
 		local V = y.PetSlotPrices
@@ -36454,12 +36454,12 @@ Z.GardenItems.PetMaxInventorySystem = {
 	GetMaximumUpgradePetMaxInventorySystem = function()
 		local G = Z.GardenItems.PetMaxInventorySystem
 		return math.max(G.GetAbsoluteMaxPetMaxInventorySystem() - G.GetBaseMaxPetMaxInventorySystem(), 0)
-	end;
+	end,
 	GetCurrentMaxPetMaxInventorySystem = function()
 		local G = Z.GardenItems.PetMaxInventorySystem
 		local V = tonumber(y.LocalPlayer:GetAttribute("MaxEquippedPets")) or G.GetBaseMaxPetMaxInventorySystem()
 		return math.max(math.floor(V), G.GetBaseMaxPetMaxInventorySystem())
-	end,
+	end;
 	GetPurchasedCountPetMaxInventorySystem = function()
 		local G = Z.GardenItems.PetMaxInventorySystem
 		local V = G.GetCurrentMaxPetMaxInventorySystem() - G.GetBaseMaxPetMaxInventorySystem()
@@ -36477,7 +36477,7 @@ Z.GardenItems.PetMaxInventorySystem = {
 		end
 		local j = math.floor(tonumber(h.auto_expand_pet_inventory_max_upgrade) or 1)
 		return math.clamp(j, 1, V)
-	end;
+	end,
 	GetNextPricePetMaxInventorySystem = function(G)
 		local V = y.PetSlotPrices
 		G = tonumber(G) or Z.GardenItems.PetMaxInventorySystem.GetCurrentMaxPetMaxInventorySystem()
@@ -36494,7 +36494,7 @@ Z.GardenItems.PetMaxInventorySystem = {
 		local i = Z.GardenItems.PetMaxInventorySystem
 		local c = math.max(math.floor(G - i.GetBaseMaxPetMaxInventorySystem()), 0) + 1
 		return tonumber(j[c])
-	end,
+	end;
 	GetSpendableShecklesPetMaxInventorySystem = function(G)
 		G = tonumber(G) or 0
 		local V, y = Z.TotalControl.ResolvePetInventorySpendableShecklesTotalControl(G)
@@ -36606,10 +36606,10 @@ g.EventSeedCollectStatusText = ""
 Z.GardenItems.EventSeedCollectSystem = {
 	Busy = false;
 	Started = false;
-	CurrentItem = nil,
+	CurrentItem = nil;
 	RetryAt = setmetatable({}, {
 		__mode = "k"
-	}),
+	});
 	Claim_old = function(G)
 		if not h.auto_collect_event_seeds then
 			return false
@@ -36639,7 +36639,7 @@ Z.GardenItems.EventSeedCollectSystem = {
 			return true
 		end)
 		return j and i == true
-	end;
+	end,
 	SetStatusEventSeedCollectSystem = function(G, V)
 		G = tostring(G or "")
 		if G == "" then
@@ -36690,7 +36690,7 @@ Z.GardenItems.EventSeedCollectSystem = {
 			end
 		end
 		return j, i, c
-	end,
+	end;
 	Claim = function(G, V)
 		local j = Z.GardenItems.EventSeedCollectSystem
 		if not h.auto_collect_event_seeds or j.Busy or (not h.garden_items_use_player_walk and Z.TargetPivotTeleport.BusyTargetPivotTeleport) or not G or G.Parent ~= y.EventSeedDrops or os.clock() < ((j.RetryAt[G] or 0)) then
@@ -36724,9 +36724,9 @@ Z.GardenItems.EventSeedCollectSystem = {
 			end
 			j.SetStatusEventSeedCollectSystem("Staying next to closest seed", "#FFCC66")
 			return Z.TargetPivotTeleport.StickToTargetUntilTargetPivotTeleport(G, i, {
-				TimeoutTargetPivotTeleport = 5,
-				RefreshIntervalTargetPivotTeleport = .15;
-				ActionIntervalTargetPivotTeleport = .2,
+				TimeoutTargetPivotTeleport = 5;
+				RefreshIntervalTargetPivotTeleport = .15,
+				ActionIntervalTargetPivotTeleport = .2;
 				RepeatActionTargetPivotTeleport = true,
 				ValidateTargetPivotTeleport = function(G)
 					if not h.auto_collect_event_seeds or not G or G.Parent ~= y.EventSeedDrops then
@@ -36737,7 +36737,7 @@ Z.GardenItems.EventSeedCollectSystem = {
 				end,
 				DoneTargetPivotTeleport = function(G)
 					return not G or G.Parent ~= y.EventSeedDrops
-				end;
+				end,
 				ActionTargetPivotTeleport = function(G)
 					local V = Z.ProximityPrompt.FindProximityPromptByClass(G)
 					if V and (V.Parent and V.Enabled) then
@@ -36784,7 +36784,7 @@ Z.GardenItems.EventSeedCollectSystem = {
 		local i = j < math.huge and tostring(math.floor(j + .5)) .. " studs" or "nearby"
 		G.SetStatusEventSeedCollectSystem("Locked closest seed " .. i, "#FFCC66")
 		return G.Claim(V, y)
-	end,
+	end;
 	StartGoldRainbowCollect = function()
 		local G = Z.GardenItems.EventSeedCollectSystem
 		if G.Started then
@@ -36810,19 +36810,19 @@ Z.GardenItems.EventSeedCollectSystem = {
 }
 Z.GardenItems.EventSeedCollectSystem.StartGoldRainbowCollect()
 e.RealTimeStats = {
-	statusLabel = nil,
+	statusLabel = nil;
 	sessionLabel = nil,
-	sessionStartedAt = y.Workspace:GetServerTimeNow();
+	sessionStartedAt = y.Workspace:GetServerTimeNow(),
 	lastFullPerformanceDashboardRefresh = 0;
-	lastMailboxCountRefreshRealTimeStats = 0,
-	mailboxCountRealTimeStats = 0;
+	lastMailboxCountRefreshRealTimeStats = 0;
+	mailboxCountRealTimeStats = 0,
 	TextSizeScalesRealTimeStats = {
-		NormalStatus = .025;
+		NormalStatus = .025,
 		NormalSession = .021;
 		DashboardUser = .029;
 		DashboardSheckles = .12;
-		DashboardLine = .033,
-		DashboardFooter = .04;
+		DashboardLine = .033;
+		DashboardFooter = .04,
 		DashboardVersion = .026;
 		Minimum = 10;
 		Maximum = 64
@@ -36841,13 +36841,13 @@ e.RealTimeStats = {
 		return {
 			normal = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.NormalStatus, 12, 28),
 			session = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.NormalSession, 11, 24),
-			user = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.DashboardUser, G.Minimum, G.Maximum);
+			user = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.DashboardUser, G.Minimum, G.Maximum),
 			sheckles = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.DashboardSheckles, G.Minimum, G.Maximum);
 			line = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.DashboardLine, G.Minimum, G.Maximum);
-			footer = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.DashboardFooter, G.Minimum, G.Maximum),
+			footer = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.DashboardFooter, G.Minimum, G.Maximum);
 			version = e.RealTimeStats.GetScaledTextSizeRealTimeStats(G.DashboardVersion, G.Minimum, G.Maximum)
 		}
-	end;
+	end,
 	EscapeRichTextRealTimeStats = function(G)
 		G = tostring(G or "")
 		G = G:gsub("&", "&amp;")
@@ -36856,7 +36856,7 @@ e.RealTimeStats = {
 		G = G:gsub("\"", "&quot;")
 		G = G:gsub("\'", "&apos;")
 		return G
-	end,
+	end;
 	GetSessionTextRealTimeStats = function()
 		local G = math.max(math.floor(((y.Workspace:GetServerTimeNow() - e.RealTimeStats.sessionStartedAt)) + .5), 0)
 		local V = math.floor(G / 3600)
@@ -36866,7 +36866,7 @@ e.RealTimeStats = {
 			return string.format("Session: %dh %dm %dsec", V, Z, j)
 		end
 		return string.format("Session: %dm %dsec", Z, j)
-	end;
+	end,
 	ApplyNormalStatusStyleRealTimeStats = function(G)
 		if not G then
 			return false
@@ -36905,7 +36905,7 @@ e.RealTimeStats = {
 		G.LineHeight = 1.08
 		G.TextSize = tonumber(V) or (e.RealTimeStats.GetTextSizesRealTimeStats()).line
 		return true
-	end,
+	end;
 	FormatMoneyRealTimeStats = function(G)
 		if E and (E.Currency and type(E.Currency.FormatMoney) == "function") then
 			return E.Currency.FormatMoney(G)
@@ -36918,7 +36918,7 @@ e.RealTimeStats = {
 		local j = e.RealTimeStats.EscapeRichTextRealTimeStats(e.RealTimeStats.FormatMoneyRealTimeStats(tonumber(V.outgoingPerMinute) or 0))
 		local i = math.max(math.floor(tonumber(G) or (e.RealTimeStats.GetTextSizesRealTimeStats()).normal), 1)
 		return string.format("<font color=\'#FFFFFF\' size=\'%d\'>Income</font> <font color=\'#39FF14\' size=\'%d\'>$%s /min</font> <font color=\'#606060\' size=\'%d\'>|</font> <font color=\'#FFFFFF\' size=\'%d\'>Expense</font> <font color=\'#FF6666\' size=\'%d\'>-$%s /min</font>", i, i, y, i, i, i, j)
-	end;
+	end,
 	GetGoldmoonTextRealTimeStats = function()
 		local G = Z.MoonPredictor
 		if type(G) ~= "table" then
@@ -36944,7 +36944,7 @@ e.RealTimeStats = {
 			end
 		end
 		return "not soon"
-	end,
+	end;
 	GetWeatherTextRealTimeStats = function()
 		local G = tostring(y.Workspace:GetAttribute("ActivePhase") or "")
 		local V = tostring(y.Workspace:GetAttribute("ActiveWeather") or "")
@@ -36962,7 +36962,7 @@ e.RealTimeStats = {
 			return "Goldmoon active now | " .. j
 		end
 		return "Goldmoon " .. (Z .. (" | " .. j))
-	end;
+	end,
 	GetMailboxCountRealTimeStats = function()
 		local G = os.clock()
 		local V = tonumber(e.RealTimeStats.mailboxCountRealTimeStats) or 0
@@ -36992,7 +36992,7 @@ e.RealTimeStats = {
 		end
 		e.RealTimeStats.mailboxCountRealTimeStats = T
 		return T
-	end,
+	end;
 	GetProgressTextRealTimeStats = function(G, V, y)
 		local Z = math.max(math.floor(tonumber(G) or 0), 0)
 		local j = math.max(math.floor(tonumber(V) or Z), Z)
@@ -37030,7 +37030,7 @@ e.RealTimeStats = {
 			end
 		end
 		return 0
-	end;
+	end,
 	BuildFullPerformanceDashboardRealTimeStats = function()
 		local G = e.RealTimeStats.GetTextSizesRealTimeStats()
 		local V = y.LocalPlayer
@@ -37111,14 +37111,14 @@ e.RealTimeStats = {
 			S = string.format(" <font color=\"#FFD700\" size=\"%d\">[LITE %d%%]</font>", G.line, Z.LiteFruitCollection.GetSpeedPercentLiteFruitCollection())
 		end
 		local z = {
-			string.format("<b><font color=\"#CFCFCF\" size=\"%d\"></font> <font color=\"#39FF14\" size=\"%d\">$%s</font></b>", G.sheckles, G.sheckles, c),
-			string.format("<font color=\"#AFAFAF\" size=\"%d\">\240\159\145\164 %s</font>", G.user, j);
+			string.format("<b><font color=\"#CFCFCF\" size=\"%d\"></font> <font color=\"#39FF14\" size=\"%d\">$%s</font></b>", G.sheckles, G.sheckles, c);
+			string.format("<font color=\"#AFAFAF\" size=\"%d\">\240\159\145\164 %s</font>", G.user, j),
 			string.format("<font color=\"#FFFFFF\" size=\"%d\">\240\159\167\160 Total Control:</font> <font color=\"#FF8FA3\" size=\"%d\">%s</font>", G.line, G.line, J);
 			string.format("<font color=\"#FFFFFF\" size=\"%d\">\240\159\141\147 Fruit Collect:</font>%s <font color=\"#EDEDED\" size=\"%d\">%d/%d</font>", G.line, S, G.line, T, d);
-			e.RealTimeStats.GetIncomeExpenseLineRealTimeStats(G.line),
+			e.RealTimeStats.GetIncomeExpenseLineRealTimeStats(G.line);
 			string.format("<font color=\"#FFFFFF\" size=\"%d\">\240\159\140\177 Planted:</font> %s", G.line, N),
 			e.RealTimeStats.GetUpgradeLineRealTimeStats("\240\159\144\190", "Pet Slots Unlock", a, H, G.line),
-			e.RealTimeStats.GetUpgradeLineRealTimeStats("\240\159\143\161", "Plot Expansion Unlock", u, q, G.line);
+			e.RealTimeStats.GetUpgradeLineRealTimeStats("\240\159\143\161", "Plot Expansion Unlock", u, q, G.line),
 			string.format("<font color=\"#FFFFFF\" size=\"%d\">\240\159\140\166\239\184\143 Weather:</font> <font color=\"#FFD700\" size=\"%d\">%s</font>", G.line, G.line, K)
 		}
 		local f = e.RealTimeStats.GetMailboxCountRealTimeStats()
@@ -37278,10 +37278,10 @@ g.GetProLabel = function()
 	return G
 end
 Z.PlantModelCleaner = {
-	StartedPlantModelCleaner = false;
-	ConnectionsPlantModelCleaner = {},
-	FolderConnectionsPlantModelCleaner = {};
-	DestroyedPlantModelCleaner = 0,
+	StartedPlantModelCleaner = false,
+	ConnectionsPlantModelCleaner = {};
+	FolderConnectionsPlantModelCleaner = {},
+	DestroyedPlantModelCleaner = 0;
 	IsActivePlantModelCleaner = function()
 		local G = Z.TotalControl
 		local V = G and (type(G.ResolveFruitCollectPreventDestroyPlantsTotalControl) == "function" and G.ResolveFruitCollectPreventDestroyPlantsTotalControl()) or nil
@@ -37295,10 +37295,10 @@ Z.PlantModelCleaner = {
 			return true
 		end
 		return false
-	end;
+	end,
 	SetStatusPlantModelCleaner = function(G, V)
 		g.PlantModelCleanerStatusText = string.format("<stroke color=\'#000000\' thickness=\'1\'><font color=\'#FFFFFF\'>\240\159\140\177 [Plant Models]</font> <font color=\'%s\'>%s</font></stroke>", tostring(V or "#FFFFFF"), tostring(G or ""))
-	end,
+	end;
 	DestroyObjectPlantModelCleaner = function(G)
 		if not Z.PlantModelCleaner.IsActivePlantModelCleaner() then
 			return false
@@ -37354,14 +37354,14 @@ Z.PlantModelCleaner = {
 			Z.PlantModelCleaner.CleanFolderPlantModelCleaner(G)
 		end
 		return true
-	end;
+	end,
 	HookOwnPlantsFolderPlantModelCleaner = function()
 		local G = Z.Farm.GetMyPlantsFolder()
 		if not G or not G.Parent then
 			return false
 		end
 		return Z.PlantModelCleaner.HookFolderPlantModelCleaner(G)
-	end,
+	end;
 	HookOtherPlantsFoldersPlantModelCleaner = function()
 		for G, V in ipairs(Z.Farm.GetMyPlantsFoldersNotMine()) do
 			if not V or not V.Parent then
@@ -37403,7 +37403,7 @@ Z.PlantModelCleaner = {
 		end)
 		table.insert(Z.PlantModelCleaner.ConnectionsPlantModelCleaner, V)
 		return true
-	end;
+	end,
 	RemovePlantByIdPlantModelCleaner = function(G)
 		if not Z.PlantModelCleaner.IsActivePlantModelCleaner() then
 			return false
@@ -37426,7 +37426,7 @@ Z.PlantModelCleaner = {
 			end
 		end
 		return false
-	end,
+	end;
 	ApplyPlantModelCleaner = function()
 		Z.PlantModelCleaner.HookOwnPlantsFolderPlantModelCleaner()
 		Z.PlantModelCleaner.HookOtherPlantsFoldersPlantModelCleaner()
@@ -37436,7 +37436,7 @@ Z.PlantModelCleaner = {
 			Z.PlantModelCleaner.SetStatusPlantModelCleaner("Idle", "#CFCFCF")
 		end
 		return true
-	end;
+	end,
 	StartPlantModelCleaner = function()
 		if Z.PlantModelCleaner.StartedPlantModelCleaner then
 			return false
@@ -37456,7 +37456,7 @@ Z.PlantModelCleaner = {
 			end
 		end)
 		return true
-	end,
+	end;
 	RemoveAllPlants = function()
 		local G = y.Workspace:FindFirstChild("Gardens")
 		if G then
@@ -37471,7 +37471,7 @@ Z.PlantModelCleaner = {
 				end
 			end
 		end
-	end;
+	end,
 	StartPlantRemovelSys = function()
 		task.spawn(function()
 			while true do
@@ -37498,7 +37498,7 @@ g.HomeDashboardUi = function()
 	local c = V:AddRightGroupbox("Farm Details", "sprout", false)
 	if j then
 		j:AddButton({
-			Text = "Hop Server (Request Hop)",
+			Text = "Hop Server (Request Hop)";
 			Func = function()
 				Z.AntiAfk.RequestHop()
 			end
@@ -37508,11 +37508,11 @@ g.HomeDashboardUi = function()
 	local T = V:AddLeftGroupbox("<font color=\"#FFFFFF\">Website </font><font color=\"#00A2FF\">Sync</font>", "cloud-cog")
 	if i then
 		Z.MoonPredictor.Label = i:AddLabel({
-			Text = "<font color=\'#AFAFAF\'>Loading moon predictions...</font>",
+			Text = "<font color=\'#AFAFAF\'>Loading moon predictions...</font>";
 			DoesWrap = true
 		})
 		i:AddToggle("moon_predictor_enabled_ui", {
-			Text = "Enable Moon Predictor",
+			Text = "Enable Moon Predictor";
 			Default = h.moon_predictor_enabled,
 			Tooltip = "Shows upcoming Goldmoon, Rainbow Moon and Bloodmoon events.",
 			Callback = function(G)
@@ -37524,7 +37524,7 @@ g.HomeDashboardUi = function()
 	end
 	if c then
 		Z.FarmDetails.Label = c:AddLabel({
-			Text = "<font color=\'#AFAFAF\'>Loading farm details...</font>",
+			Text = "<font color=\'#AFAFAF\'>Loading farm details...</font>";
 			DoesWrap = true
 		})
 		c:AddButton({
@@ -37550,13 +37550,13 @@ g.HomeDashboardUi = function()
 			end
 		end
 		T:AddInput("gag2_web_api_key", {
-			Text = "\240\159\148\145 Web API Key",
+			Text = "\240\159\148\145 Web API Key";
 			Default = h.web_api_key,
 			Numeric = false,
 			AllowEmpty = true,
 			Finished = false,
-			ClearTextOnFocus = false;
-			Placeholder = "Enter API key",
+			ClearTextOnFocus = false,
+			Placeholder = "Enter API key";
 			Tooltip = "Get your API key from the Exotic Hub website.",
 			Callback = function(G)
 				h.web_api_key = (tostring(G or "")):match("^%s*(.-)%s*$")
@@ -37570,7 +37570,7 @@ g.HomeDashboardUi = function()
 		})
 		T:AddDivider()
 		T:AddButton({
-			Text = "\240\159\148\151 Link This Account",
+			Text = "\240\159\148\151 Link This Account";
 			Func = function()
 				if Z.WebApi.Busy then
 					g.Notify("Link request already running", 3)
@@ -37591,7 +37591,7 @@ g.HomeDashboardUi = function()
 	end
 	if J then
 		J:AddButton({
-			Text = "Copy Config",
+			Text = "Copy Config";
 			Func = function()
 				local G = a.Config.BuildCopyText()
 				if not G then
@@ -37637,7 +37637,7 @@ g.HomeDashboardUi = function()
 		y:AddDivider()
 		y:AddToggle("automiddletp", {
 			Text = "\240\159\147\141 Spawn Middle";
-			Default = h.char_farm_middle,
+			Default = h.char_farm_middle;
 			Tooltip = "Place your character in the centre of the farm when you join.",
 			Callback = function(G)
 				h.char_farm_middle = G
@@ -37648,7 +37648,7 @@ g.HomeDashboardUi = function()
 end
 g.MailUi = function()
 	local G = d:AddTab({
-		Name = "Mail " .. g.GetProLabel(),
+		Name = "Mail " .. g.GetProLabel();
 		Description = "Send and receive items",
 		Icon = "mail"
 	})
@@ -37674,13 +37674,13 @@ g.MailUi = function()
 			DoesWrap = true
 		})
 		V:AddInput("mail_manual_username_ui", {
-			Text = "\240\159\145\164 Recipient Username";
+			Text = "\240\159\145\164 Recipient Username",
 			Default = g.MailDraftTargetUsername;
 			Numeric = false;
-			AllowEmpty = true,
+			AllowEmpty = true;
 			Finished = true,
 			ClearTextOnFocus = false,
-			Placeholder = "Roblox username";
+			Placeholder = "Roblox username",
 			Callback = function(G)
 				g.MailDraftTargetUsername = Z.Mail.CleanUsername(G)
 			end
@@ -37701,7 +37701,7 @@ g.MailUi = function()
 		V:AddToggle("mail_include_comment_ui", {
 			Text = "\240\159\146\172 Include Order Comment";
 			Default = h.mail_include_comment;
-			Tooltip = "Adds the order ID and progress to each mail.",
+			Tooltip = "Adds the order ID and progress to each mail.";
 			Callback = function(G)
 				h.mail_include_comment = G
 				a.Save.SaveDataSync()
@@ -37709,19 +37709,19 @@ g.MailUi = function()
 		})
 		E = V:AddToggle("mail_ignore_batch_limit_ui", {
 			Text = "\240\159\147\166 Ignore 20 Item Limit",
-			Default = h.mail_ignore_batch_limit;
+			Default = h.mail_ignore_batch_limit,
 			Tooltip = "Sends the full amount in one mail. Applies to manual and automatic sending.";
-			DisabledTooltip = g.GetProMessage(),
+			DisabledTooltip = g.GetProMessage();
 			Callback = function(G)
 				h.mail_ignore_batch_limit = G
 				a.Save.SaveDataSync()
 			end
 		})
 		H = V:AddToggle("mail_manual_batch_together_ui", {
-			Text = "\240\159\147\166 Combine Order Items";
+			Text = "\240\159\147\166 Combine Order Items",
 			Default = h.mail_manual_batch_together;
-			Tooltip = "Combines different order items into the same mail when possible.",
-			DisabledTooltip = g.GetProMessage();
+			Tooltip = "Combines different order items into the same mail when possible.";
+			DisabledTooltip = g.GetProMessage(),
 			Callback = function(G)
 				h.mail_manual_batch_together = G
 				a.Save.SaveDataSync()
@@ -37732,16 +37732,16 @@ g.MailUi = function()
 		local r
 		r = V:AddDropdown("mail_manual_category_ui", {
 			Values = {
-				"Seeds";
+				"Seeds",
 				"Pets";
 				"Eggs";
 				"Gears";
 				"Fruits"
-			},
+			};
 			Default = G,
-			Multi = false;
+			Multi = false,
 			Text = "\240\159\147\166 Item Category";
-			Tooltip = "Choose seeds, pets, eggs, gears or fruits.",
+			Tooltip = "Choose seeds, pets, eggs, gears or fruits.";
 			Callback = function(V)
 				if V ~= "Seeds" and (V ~= "Pets" and (V ~= "Eggs" and (V ~= "Gears" and V ~= "Fruits"))) then
 					return
@@ -37759,12 +37759,12 @@ g.MailUi = function()
 		r:SetValue(G)
 		d = V:AddValueDropdown("mail_manual_item_ui", {
 			Values = {};
-			Default = "",
+			Default = "";
 			Multi = false,
-			Searchable = true;
+			Searchable = true,
 			MaxVisibleDropdownItems = 10;
 			Text = "\240\159\142\129 Select Item";
-			Tooltip = "Select the item to add to the order.",
+			Tooltip = "Select the item to add to the order.";
 			Changed = function(G)
 				if type(G) ~= "string" or G == "" then
 					return
@@ -37778,11 +37778,11 @@ g.MailUi = function()
 		Y = V:AddInput("mail_manual_amount_ui", {
 			Text = "\240\159\148\162 Amount",
 			Default = tostring(j),
-			Numeric = true;
-			AllowEmpty = true,
-			Finished = true;
+			Numeric = true,
+			AllowEmpty = true;
+			Finished = true,
 			ClearTextOnFocus = false;
-			Placeholder = "Amount to send",
+			Placeholder = "Amount to send";
 			Callback = function(G)
 				local V = z(G)
 				if not V or V <= 0 then
@@ -37796,14 +37796,14 @@ g.MailUi = function()
 		})
 		local e
 		e = V:AddInput("mail_manual_fruit_min_kg_ui", {
-			Text = "\240\159\141\147 Fruit Min KG";
+			Text = "\240\159\141\147 Fruit Min KG",
 			Default = tostring(i);
 			Numeric = true;
 			AllowEmpty = true;
-			Finished = true,
+			Finished = true;
 			ClearTextOnFocus = false,
-			Placeholder = "0";
-			Tooltip = "Fruit mail only. Minimum fruit weight.",
+			Placeholder = "0",
+			Tooltip = "Fruit mail only. Minimum fruit weight.";
 			Callback = function(G)
 				local V = f(G)
 				if not V or V < 0 then
@@ -37817,12 +37817,12 @@ g.MailUi = function()
 		})
 		local s
 		s = V:AddInput("mail_manual_fruit_max_kg_ui", {
-			Text = "\240\159\141\147 Fruit Max KG";
+			Text = "\240\159\141\147 Fruit Max KG",
 			Default = tostring(c);
 			Numeric = true;
 			AllowEmpty = true;
-			Finished = true,
-			ClearTextOnFocus = false;
+			Finished = true;
+			ClearTextOnFocus = false,
 			Placeholder = "89";
 			Tooltip = "Fruit mail only. Maximum fruit weight.";
 			Callback = function(G)
@@ -37838,23 +37838,23 @@ g.MailUi = function()
 		})
 		V:AddValueDropdown("mail_manual_fruit_mutations_ui", {
 			Values = Z.FruitFilters.GetMutationNames(),
-			Default = {};
+			Default = {},
 			Multi = true;
 			Searchable = true;
-			MaxVisibleDropdownItems = 8,
+			MaxVisibleDropdownItems = 8;
 			Text = "\240\159\141\147 Fruit Mutations",
-			Tooltip = "Fruit mail only. No selection sends all mutations.";
+			Tooltip = "Fruit mail only. No selection sends all mutations.",
 			Changed = function(G)
 				J = type(G) == "table" and G or {}
 				g.MailDraftFruitMutations = J
 			end
 		})
 		V:AddValueDropdown("mail_manual_fruit_variants_ui", {
-			Values = Z.FruitFilters.GetVariantNames();
+			Values = Z.FruitFilters.GetVariantNames(),
 			Default = {};
 			Multi = true;
 			Searchable = false;
-			MaxVisibleDropdownItems = 5,
+			MaxVisibleDropdownItems = 5;
 			Text = "\240\159\141\147 Fruit Variants",
 			Tooltip = "Fruit mail only. No selection sends all variants.",
 			Changed = function(G)
@@ -37863,7 +37863,7 @@ g.MailUi = function()
 			end
 		})
 		q = V:AddButton({
-			Text = "\226\158\149 Add To Order";
+			Text = "\226\158\149 Add To Order",
 			DisabledTooltip = g.GetProMessage();
 			Func = function()
 				local V, d = Z.Mail.AddDraftItem(G, y, j, i, c, J, T)
@@ -37879,7 +37879,7 @@ g.MailUi = function()
 		E:SetDisabled(not g.GetCheckIfPro())
 		V:AddDivider()
 		u = V:AddLabel({
-			Text = Z.Mail.GetDraftText(),
+			Text = Z.Mail.GetDraftText();
 			DoesWrap = true
 		})
 		g.MailUiRefs.RefreshDraft = function()
@@ -37888,13 +37888,13 @@ g.MailUi = function()
 			end
 		end
 		g.MailManualStatusLabel = V:AddLabel({
-			Text = g.MailManualUiStatusText,
+			Text = g.MailManualUiStatusText;
 			DoesWrap = true
 		})
 		g.MailStartOrderButton = V:AddButton({
 			Text = "\226\150\182\239\184\143 Start Sending",
-			Disabled = g.MailManualRunning;
-			DisabledTooltip = "The current order is still sending.",
+			Disabled = g.MailManualRunning,
+			DisabledTooltip = "The current order is still sending.";
 			Func = function()
 				if not g.GetCheckIfPro() then
 					g.Notify(g.GetProMessage(), 5)
@@ -37910,7 +37910,7 @@ g.MailUi = function()
 		g.MailStopOrderButton = g.MailStartOrderButton:AddButton({
 			Text = "\226\143\185\239\184\143 Stop",
 			Disabled = not g.MailManualRunning,
-			DisabledTooltip = "No manual order is running.";
+			DisabledTooltip = "No manual order is running.",
 			Func = function()
 				if not g.GetCheckIfPro() then
 					g.Notify(g.GetProMessage(), 5)
@@ -37922,7 +37922,7 @@ g.MailUi = function()
 			end
 		})
 		g.MailClearOrderButton = V:AddButton({
-			Text = "\240\159\167\185 Clear Order";
+			Text = "\240\159\167\185 Clear Order",
 			Disabled = g.MailManualRunning;
 			DisabledTooltip = "The current order is still sending.";
 			Func = function()
@@ -37960,8 +37960,8 @@ g.MailUi = function()
 			Text = "\240\159\145\164 Recipient Username",
 			Default = "",
 			Numeric = false,
-			AllowEmpty = true;
-			Finished = true,
+			AllowEmpty = true,
+			Finished = true;
 			ClearTextOnFocus = false,
 			Placeholder = "Roblox username",
 			Callback = function(V)
@@ -37972,15 +37972,15 @@ g.MailUi = function()
 		s = y:AddDropdown("mail_rule_category_ui", {
 			Values = {
 				"Seeds";
-				"Pets",
-				"Eggs";
-				"Gears",
+				"Pets";
+				"Eggs",
+				"Gears";
 				"Fruits"
 			},
 			Default = V,
 			Multi = false,
-			Text = "\240\159\147\166 Item Category";
-			Tooltip = "Choose seeds, pets, eggs, gears or fruits.",
+			Text = "\240\159\147\166 Item Category",
+			Tooltip = "Choose seeds, pets, eggs, gears or fruits.";
 			Callback = function(G)
 				if G ~= "Seeds" and (G ~= "Pets" and (G ~= "Eggs" and (G ~= "Gears" and G ~= "Fruits"))) then
 					return
@@ -37995,9 +37995,9 @@ g.MailUi = function()
 		})
 		s:SetValue(V)
 		H = y:AddValueDropdown("mail_rule_item_ui", {
-			Values = {},
-			Default = "";
-			Multi = false,
+			Values = {};
+			Default = "",
+			Multi = false;
 			Searchable = true,
 			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\142\129 Select Item",
@@ -38015,11 +38015,11 @@ g.MailUi = function()
 			Text = "\240\159\142\175 Trigger Amount";
 			Default = tostring(i);
 			Numeric = true;
-			AllowEmpty = true,
-			Finished = true;
-			ClearTextOnFocus = false,
-			Placeholder = "Example: 5";
-			Tooltip = "The rule starts when you own at least this amount.",
+			AllowEmpty = true;
+			Finished = true,
+			ClearTextOnFocus = false;
+			Placeholder = "Example: 5",
+			Tooltip = "The rule starts when you own at least this amount.";
 			Callback = function(G)
 				local V = z(G)
 				if not V or V <= 0 then
@@ -38035,11 +38035,11 @@ g.MailUi = function()
 			Text = "\240\159\147\164 Send Amount",
 			Default = tostring(c),
 			Numeric = true,
-			AllowEmpty = true;
+			AllowEmpty = true,
 			Finished = true;
 			ClearTextOnFocus = false;
-			Placeholder = "Example: 5",
-			Tooltip = "How many matching items to send each time the rule runs.";
+			Placeholder = "Example: 5";
+			Tooltip = "How many matching items to send each time the rule runs.",
 			Callback = function(G)
 				local V = z(G)
 				if not V or V <= 0 then
@@ -38053,15 +38053,15 @@ g.MailUi = function()
 		local X
 		X = y:AddValueDropdown("mail_rule_pet_types_ui", {
 			Values = {
-				"Normal";
+				"Normal",
 				"Rainbow"
-			},
-			Default = {};
-			Multi = true,
+			};
+			Default = {},
+			Multi = true;
 			Searchable = false,
-			MaxVisibleDropdownItems = 5;
-			Text = "\226\156\168 Pet Variant",
-			Tooltip = "Pet rules only. No selection sends all variants.";
+			MaxVisibleDropdownItems = 5,
+			Text = "\226\156\168 Pet Variant";
+			Tooltip = "Pet rules only. No selection sends all variants.",
 			Changed = function(G)
 				J = type(G) == "table" and G or {}
 			end
@@ -38070,11 +38070,11 @@ g.MailUi = function()
 		local l
 		l = y:AddValueDropdown("mail_rule_pet_sizes_ui", {
 			Values = {
-				"Normal",
-				"Big";
+				"Normal";
+				"Big",
 				"Huge"
 			};
-			Default = {},
+			Default = {};
 			Multi = true,
 			Searchable = false,
 			MaxVisibleDropdownItems = 5,
@@ -38091,7 +38091,7 @@ g.MailUi = function()
 			Default = tostring(d),
 			Numeric = true,
 			AllowEmpty = true,
-			Finished = true;
+			Finished = true,
 			ClearTextOnFocus = false;
 			Placeholder = "0";
 			Tooltip = "Fruit rules only. Minimum fruit weight.";
@@ -38107,14 +38107,14 @@ g.MailUi = function()
 		})
 		local L
 		L = y:AddInput("mail_rule_fruit_max_kg_ui", {
-			Text = "\240\159\141\147 Fruit Max KG",
+			Text = "\240\159\141\147 Fruit Max KG";
 			Default = tostring(u),
 			Numeric = true,
 			AllowEmpty = true,
-			Finished = true;
+			Finished = true,
 			ClearTextOnFocus = false;
 			Placeholder = "89";
-			Tooltip = "Fruit rules only. Maximum fruit weight.",
+			Tooltip = "Fruit rules only. Maximum fruit weight.";
 			Callback = function(G)
 				local V = f(G)
 				if not V or V < 0 then
@@ -38126,22 +38126,22 @@ g.MailUi = function()
 			end
 		})
 		y:AddValueDropdown("mail_rule_fruit_mutations_ui", {
-			Values = Z.FruitFilters.GetMutationNames();
+			Values = Z.FruitFilters.GetMutationNames(),
 			Default = {};
-			Multi = true,
-			Searchable = true;
-			MaxVisibleDropdownItems = 8,
-			Text = "\240\159\141\147 Fruit Mutations";
+			Multi = true;
+			Searchable = true,
+			MaxVisibleDropdownItems = 8;
+			Text = "\240\159\141\147 Fruit Mutations",
 			Tooltip = "Fruit rules only. No selection sends all mutations.";
 			Changed = function(G)
 				q = type(G) == "table" and G or {}
 			end
 		})
 		y:AddValueDropdown("mail_rule_fruit_variants_ui", {
-			Values = Z.FruitFilters.GetVariantNames();
+			Values = Z.FruitFilters.GetVariantNames(),
 			Default = {};
-			Multi = true,
-			Searchable = false;
+			Multi = true;
+			Searchable = false,
 			MaxVisibleDropdownItems = 5;
 			Text = "\240\159\141\147 Fruit Variants";
 			Tooltip = "Fruit rules only. No selection sends all variants.";
@@ -38171,12 +38171,12 @@ g.MailUi = function()
 		e:SetDisabled(not g.GetCheckIfPro())
 		y:AddDivider()
 		r = y:AddValueDropdown("mail_active_rules_ui", {
-			Values = {};
+			Values = {},
 			Default = "";
-			Multi = false,
+			Multi = false;
 			Searchable = true,
-			MaxVisibleDropdownItems = 8;
-			Text = "\240\159\147\139 Active Rules",
+			MaxVisibleDropdownItems = 8,
+			Text = "\240\159\147\139 Active Rules";
 			Tooltip = "Select a rule to enable, disable or remove it.",
 			Changed = function(G)
 				if type(G) ~= "string" then
@@ -38190,7 +38190,7 @@ g.MailUi = function()
 			end
 		})
 		Y = y:AddLabel({
-			Text = "Select a rule",
+			Text = "Select a rule";
 			DoesWrap = true
 		})
 		g.MailUiRefs.RefreshRules = function()
@@ -38203,7 +38203,7 @@ g.MailUi = function()
 		end
 		g.MailUiRefs.RefreshRules()
 		local m = y:AddButton({
-			Text = "\240\159\148\132 Enable / Disable",
+			Text = "\240\159\148\132 Enable / Disable";
 			Func = function()
 				local G, V = Z.Mail.ToggleRule(g.MailSelectedRuleId)
 				if not G then
@@ -38228,10 +38228,10 @@ g.MailUi = function()
 		y:AddDivider()
 		local K
 		K = y:AddToggle("mail_auto_batch_together_ui", {
-			Text = "\240\159\147\166 Combine Automatic Rules",
+			Text = "\240\159\147\166 Combine Automatic Rules";
 			Default = h.mail_auto_batch_together,
 			Tooltip = "Combines matching rules for the same recipient into one mail.",
-			DisabledTooltip = g.GetProMessage();
+			DisabledTooltip = g.GetProMessage(),
 			Callback = function(G)
 				h.mail_auto_batch_together = G
 				a.Save.SaveDataSync()
@@ -38243,8 +38243,8 @@ g.MailUi = function()
 		b = y:AddToggle("mail_auto_send_enabled_ui", {
 			Text = "\240\159\147\164 Enable Automatic Send",
 			Default = h.mail_auto_send_enabled,
-			Tooltip = "Runs enabled mail rules when their trigger is reached.";
-			DisabledTooltip = g.GetProMessage(),
+			Tooltip = "Runs enabled mail rules when their trigger is reached.",
+			DisabledTooltip = g.GetProMessage();
 			Callback = function(G)
 				h.mail_auto_send_enabled = G
 				if G then
@@ -38268,9 +38268,9 @@ g.MailUi = function()
 			Values = {},
 			Default = "",
 			Multi = false,
-			Searchable = true;
+			Searchable = true,
 			MaxVisibleDropdownItems = 8;
-			Text = "\240\159\167\190 Select Receipt",
+			Text = "\240\159\167\190 Select Receipt";
 			Tooltip = "Select a receipt to view or copy it.",
 			Changed = function(G)
 				local y = tonumber(G)
@@ -38285,7 +38285,7 @@ g.MailUi = function()
 			end
 		})
 		V = j:AddLabel({
-			Text = "<font color=\'#888888\'>No receipt selected</font>",
+			Text = "<font color=\'#888888\'>No receipt selected</font>";
 			DoesWrap = true
 		})
 		g.MailUiRefs.RefreshReceipts = function()
@@ -38326,8 +38326,8 @@ g.MailUi = function()
 		})
 		i:AddToggle("mail_auto_accept_ui", {
 			Text = "\240\159\147\165 Auto Accept Incoming Mail";
-			Default = h.mail_auto_accept,
-			Tooltip = "Automatically claims incoming item mail.";
+			Default = h.mail_auto_accept;
+			Tooltip = "Automatically claims incoming item mail.",
 			Callback = function(G)
 				h.mail_auto_accept = G
 				if G then
@@ -38345,9 +38345,9 @@ g.MailUi = function()
 		local V = 1
 		local y = i:AddValueDropdown("mail_auto_accept_multiplier_fruit_ui", {
 			Values = Z.Mail.GetFruitDropdown(),
-			Default = "";
+			Default = "",
 			Multi = false;
-			Searchable = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\140\177 Accept Fruit",
 			Tooltip = "Choose the fruit for an incoming mail multiplier rule.",
@@ -38356,13 +38356,13 @@ g.MailUi = function()
 			end
 		})
 		local j = i:AddValueDropdown("mail_auto_accept_multiplier_value_ui", {
-			Values = Z.SellMultiplierOverrides.GetMultiplierDropdownSellMultiplierOverrides();
+			Values = Z.SellMultiplierOverrides.GetMultiplierDropdownSellMultiplierOverrides(),
 			Default = "1";
-			Multi = false,
+			Multi = false;
 			Searchable = false,
-			MaxVisibleDropdownItems = 5;
-			Text = "\240\159\147\136 Accept At Multiplier",
-			Tooltip = "Accepts mail containing this fruit when its live multiplier reaches this value.";
+			MaxVisibleDropdownItems = 5,
+			Text = "\240\159\147\136 Accept At Multiplier";
+			Tooltip = "Accepts mail containing this fruit when its live multiplier reaches this value.",
 			Changed = function(G)
 				V = math.clamp(tonumber(G) or 1, 1, 5)
 			end
@@ -38389,7 +38389,7 @@ g.MailUi = function()
 			end
 		})
 		i:AddButton({
-			Text = "\240\159\147\172 Claim Existing Mail";
+			Text = "\240\159\147\172 Claim Existing Mail",
 			Func = function()
 				task.spawn(function()
 					local G = Z.Mail.ClaimInbox(true)
@@ -38415,7 +38415,7 @@ end
 g.PremiumUi = function()
 	local G = d:AddTab({
 		Name = "Premium " .. g.GetProLabel(),
-		Description = "Premium systems";
+		Description = "Premium systems",
 		Icon = "crown"
 	})
 	local V = G.TabLabel
@@ -38431,22 +38431,22 @@ g.PremiumUi = function()
 	if H then
 		if not g.GetCheckIfPro() then
 			H:AddLabel({
-				Text = g.GetProMessage();
+				Text = g.GetProMessage(),
 				DoesWrap = true
 			})
 		end
 		H:AddLabel({
-			Text = "Uses selected watering cans and places one of each selected sprinkler.<br/>Saved positions belong to each selected player and follow their plot rotation.<br/>Players outside the current server are ignored until they join.",
+			Text = "Uses selected watering cans and places one of each selected sprinkler.<br/>Saved positions belong to each selected player and follow their plot rotation.<br/>Players outside the current server are ignored until they join.";
 			DoesWrap = true
 		})
 		local G = H:AddValueDropdown("friend_garden_care_friends_ui", {
-			Values = Z.FriendGardenCare.GetSavedFriendDropdownFriendGardenCare();
+			Values = Z.FriendGardenCare.GetSavedFriendDropdownFriendGardenCare(),
 			Default = {};
-			Multi = true,
-			Searchable = true;
+			Multi = true;
+			Searchable = true,
 			MaxVisibleDropdownItems = 8;
-			Text = "\240\159\145\165 Select Players",
-			Tooltip = "Selected players stay saved even when they leave the server.";
+			Text = "\240\159\145\165 Select Players";
+			Tooltip = "Selected players stay saved even when they leave the server.",
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -38464,7 +38464,7 @@ g.PremiumUi = function()
 		G:SetValue(h.friend_garden_care_friends, true)
 		H:AddButton({
 			Text = "\226\153\187\239\184\143 Refresh Players";
-			Tooltip = "Reloads players in the current server and keeps saved selections.",
+			Tooltip = "Reloads players in the current server and keeps saved selections.";
 			Func = function()
 				Z.FriendGardenCare.RefreshFriendDropdownFriendGardenCare(true)
 			end
@@ -38487,9 +38487,9 @@ g.PremiumUi = function()
 				"Saved Location"
 			});
 			Default = h.friend_garden_care_location_mode;
-			Multi = false,
-			Text = "\240\159\147\141 Location";
-			Tooltip = "Players without a saved location automatically use the default farm placement.",
+			Multi = false;
+			Text = "\240\159\147\141 Location",
+			Tooltip = "Players without a saved location automatically use the default farm placement.";
 			Callback = function(G)
 				if G ~= "Saved Location" and not Z.Farm.IsPlacementModeFarm(G) then
 					return
@@ -38501,13 +38501,13 @@ g.PremiumUi = function()
 		})
 		V:SetValue(h.friend_garden_care_location_mode)
 		local y = H:AddLabel({
-			Text = Z.FriendGardenCare.GetSavedPositionTextFriendGardenCare();
+			Text = Z.FriendGardenCare.GetSavedPositionTextFriendGardenCare(),
 			DoesWrap = true
 		})
 		g.FriendGardenCareUi.LocationLabelFriendGardenCare = y
 		H:AddButton({
 			Text = "\240\159\147\140 Copy CFrame";
-			Tooltip = "Stand inside a selected player\'s plant area. The location is saved only for that player.",
+			Tooltip = "Stand inside a selected player\'s plant area. The location is saved only for that player.";
 			Func = function()
 				local G, j = Z.FriendGardenCare.SaveCurrentPositionFriendGardenCare()
 				g.Notify(j, 3)
@@ -38518,13 +38518,13 @@ g.PremiumUi = function()
 			end
 		})
 		local j = H:AddValueDropdown("friend_garden_care_watering_cans_ui", {
-			Values = Z.WaterPlants.GetCanDropdown(),
+			Values = Z.WaterPlants.GetCanDropdown();
 			Default = {},
 			Multi = true,
-			Searchable = true;
+			Searchable = true,
 			MaxVisibleDropdownItems = 6;
-			Text = "\240\159\146\167 Watering Cans",
-			Tooltip = "Selected cans are spent at each online player\'s location.";
+			Text = "\240\159\146\167 Watering Cans";
+			Tooltip = "Selected cans are spent at each online player\'s location.",
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -38548,13 +38548,13 @@ g.PremiumUi = function()
 			end
 		})
 		local i = H:AddValueDropdown("friend_garden_care_sprinklers_ui", {
-			Values = Z.SprinklerPlacer.GetDropdown(),
-			Default = {};
+			Values = Z.SprinklerPlacer.GetDropdown();
+			Default = {},
 			Multi = true;
 			Searchable = true;
 			MaxVisibleDropdownItems = 8;
 			Text = "\240\159\146\166 Sprinklers";
-			Tooltip = "Places one available sprinkler of every selected type for each online player.",
+			Tooltip = "Places one available sprinkler of every selected type for each online player.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -38567,14 +38567,14 @@ g.PremiumUi = function()
 		i:SetValue(h.friend_garden_care_sprinklers)
 		local c
 		c = H:AddInput("friend_garden_care_placement_delay_ui", {
-			Text = "\226\143\177\239\184\143 Placement Delay";
-			Default = tostring(h.friend_garden_care_placement_delay),
+			Text = "\226\143\177\239\184\143 Placement Delay",
+			Default = tostring(h.friend_garden_care_placement_delay);
 			Numeric = true,
-			AllowEmpty = false;
-			Finished = true,
+			AllowEmpty = false,
+			Finished = true;
 			ClearTextOnFocus = false,
 			Placeholder = "0.15",
-			Tooltip = "Delay between successful watering and sprinkler actions. Minimum 0.001 seconds.";
+			Tooltip = "Delay between successful watering and sprinkler actions. Minimum 0.001 seconds.",
 			Callback = function(G)
 				local V = tonumber(G)
 				if not V or V < .001 then
@@ -38591,10 +38591,10 @@ g.PremiumUi = function()
 		J = H:AddInput("friend_garden_care_max_watering_ui", {
 			Text = "\240\159\148\162 Max Watering Limit";
 			Default = tostring(h.friend_garden_care_max_watering);
-			Numeric = true,
+			Numeric = true;
 			AllowEmpty = false,
-			Finished = true;
-			ClearTextOnFocus = false,
+			Finished = true,
+			ClearTextOnFocus = false;
 			Placeholder = "0",
 			Tooltip = "Maximum cans to use for each player. 0 spends every available selected can.",
 			Callback = function(G)
@@ -38612,9 +38612,9 @@ g.PremiumUi = function()
 		local T
 		T = H:AddToggle("friend_garden_care_enabled_ui", {
 			Text = "\226\156\133 Enable System";
-			Default = h.friend_garden_care_enabled == true,
+			Default = h.friend_garden_care_enabled == true;
 			Tooltip = "Runs only for selected players who are currently in the server.",
-			DisabledTooltip = g.GetProMessage();
+			DisabledTooltip = g.GetProMessage(),
 			Callback = function(G)
 				h.friend_garden_care_enabled = G == true
 				Z.FriendGardenCare.ResetProgressFriendGardenCare()
@@ -38637,13 +38637,13 @@ g.PremiumUi = function()
 		local G = q.GetGameServerType()
 		local V = ((G == "Private" or G == "Reserved")) and "Private server detected." or (G == "Standard" and "Public server detected." or "Server type could not be detected.")
 		u:AddLabel({
-			Text = V;
+			Text = V,
 			DoesWrap = true
 		})
 		u:AddToggle("server_project_kick_public_ui", {
 			Text = "Kick If Public Server",
 			Default = h.server_project_kick_public == true,
-			Tooltip = "Kicks you when this account joins a public server.";
+			Tooltip = "Kicks you when this account joins a public server.",
 			Callback = function(G)
 				h.server_project_kick_public = G == true
 				a.Save.SaveData()
@@ -38697,8 +38697,8 @@ g.PremiumUi = function()
 					c = tostring(c or "")
 					local J = Z.StackKeepOverrides.GetKeepAmountStackKeepOverrides(y, c) or tonumber(h.stack_keep_overrides[V]) or 0
 					local T = E:AddToggle(string.format("stack_keep_active_%d_%d", i, G), {
-						Text = string.format("%s: %s <font color=\'#7CFC00\'>Keep: %d</font>", y, c, J);
-						Default = true,
+						Text = string.format("%s: %s <font color=\'#7CFC00\'>Keep: %d</font>", y, c, J),
+						Default = true;
 						Tooltip = "Disable this keep override.",
 						Callback = function(G)
 							if G then
@@ -38722,7 +38722,7 @@ g.PremiumUi = function()
 		})
 		local q = E:AddToggle("stack_keep_overrides_enabled_ui", {
 			Text = "Enable Stack Keep Overrides";
-			Default = h.stack_keep_overrides_enabled == true,
+			Default = h.stack_keep_overrides_enabled == true;
 			Tooltip = "Stops supported systems from using selected seeds or gear after the keep amount is reached.",
 			Callback = function(G)
 				if not g.GetCheckIfPro() then
@@ -38753,11 +38753,11 @@ g.PremiumUi = function()
 			end
 		})
 		c = E:AddValueDropdown("stack_keep_override_item_ui", {
-			Values = {},
-			Default = "";
-			Multi = false,
+			Values = {};
+			Default = "",
+			Multi = false;
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\142\146 Item";
 			Tooltip = "Select the item to keep in your bag.";
 			Changed = function(G)
@@ -38769,12 +38769,12 @@ g.PremiumUi = function()
 		})
 		d()
 		J = E:AddInput("stack_keep_override_amount_ui", {
-			Text = "\240\159\147\140 Keep Amount";
-			Default = tostring(y),
+			Text = "\240\159\147\140 Keep Amount",
+			Default = tostring(y);
 			Numeric = true,
 			AllowEmpty = false,
-			Finished = true;
-			ClearTextOnFocus = false,
+			Finished = true,
+			ClearTextOnFocus = false;
 			Placeholder = "30",
 			Tooltip = "The system will stop using this item when the count is this amount or lower.",
 			Callback = function(G)
@@ -38820,10 +38820,10 @@ g.PremiumUi = function()
 		})
 		local G
 		G = i:AddValueDropdown("potted_weather_guard_selected_plants_ui", {
-			Values = {},
-			Default = {};
+			Values = {};
+			Default = {},
 			Multi = true;
-			Searchable = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\170\180 Plant Types",
 			Tooltip = "Selected grown plants will be protected during the chosen weather.",
@@ -38838,7 +38838,7 @@ g.PremiumUi = function()
 		G:SetValues(Z.GardenItems.PottedPlantWeatherGuard.GetSelectedPlantDropdownPottedPlantWeatherGuard())
 		G:SetValue(h.potted_weather_guard_selected_plants)
 		local V = i:AddButton({
-			Text = "\226\156\133 All",
+			Text = "\226\156\133 All";
 			Func = function()
 				h.potted_weather_guard_selected_plants = Z.PlantShovel.GetAllPlantTypeSelection()
 				G:SetValue(h.potted_weather_guard_selected_plants)
@@ -38855,13 +38855,13 @@ g.PremiumUi = function()
 		})
 		local y
 		y = i:AddValueDropdown("potted_weather_guard_weather_selected_ui", {
-			Values = Z.WeatherTriggers.GetDropdownWeatherTriggers();
-			Default = {},
-			Multi = true;
-			Searchable = true,
+			Values = Z.WeatherTriggers.GetDropdownWeatherTriggers(),
+			Default = {};
+			Multi = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 8,
-			Text = "\240\159\140\166\239\184\143 Weather To Hide During";
-			Tooltip = "Plants are stored while any selected weather or time cycle is active.",
+			Text = "\240\159\140\166\239\184\143 Weather To Hide During",
+			Tooltip = "Plants are stored while any selected weather or time cycle is active.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -38876,12 +38876,12 @@ g.PremiumUi = function()
 		j = i:AddInput("potted_weather_guard_fruit_min_kg_ui", {
 			Text = "\226\154\150\239\184\143 Min Fruit Kg";
 			Default = tostring(h.potted_weather_guard_fruit_min_kg);
-			Numeric = false,
+			Numeric = false;
 			AllowEmpty = false,
 			Finished = true,
 			ClearTextOnFocus = false,
-			Placeholder = "0";
-			Tooltip = "Only pick up plants with at least one matching fruit at or above this kg. Restore ignores this filter.",
+			Placeholder = "0",
+			Tooltip = "Only pick up plants with at least one matching fruit at or above this kg. Restore ignores this filter.";
 			Callback = function(G)
 				local V = f(G)
 				if not V or V < 0 then
@@ -38902,8 +38902,8 @@ g.PremiumUi = function()
 			Default = tostring(h.potted_weather_guard_fruit_max_kg);
 			Numeric = false;
 			AllowEmpty = false;
-			Finished = true,
-			ClearTextOnFocus = false;
+			Finished = true;
+			ClearTextOnFocus = false,
 			Placeholder = "99";
 			Tooltip = "Only pick up plants with at least one matching fruit at or below this kg. Restore ignores this filter.";
 			Callback = function(G)
@@ -38920,13 +38920,13 @@ g.PremiumUi = function()
 		})
 		local J
 		J = i:AddValueDropdown("potted_weather_guard_plant_mutations_ui", {
-			Values = Z.GardenItems.PottedPlantWeatherGuard.GetPlantMutationDropdownPottedPlantWeatherGuard();
+			Values = Z.GardenItems.PottedPlantWeatherGuard.GetPlantMutationDropdownPottedPlantWeatherGuard(),
 			Default = {};
 			Multi = true;
 			Searchable = true;
-			MaxVisibleDropdownItems = 10,
+			MaxVisibleDropdownItems = 10;
 			Text = "\240\159\167\172 Plant Mutations / Variants",
-			Tooltip = "Only pick up plants with selected plant mutations or variants. Empty allows all.";
+			Tooltip = "Only pick up plants with selected plant mutations or variants. Empty allows all.",
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -38943,12 +38943,12 @@ g.PremiumUi = function()
 				"Saved Location"
 			}, {
 				"Random"
-			}),
-			Default = h.potted_weather_guard_place_mode or "Saved Location";
-			Multi = false,
+			});
+			Default = h.potted_weather_guard_place_mode or "Saved Location",
+			Multi = false;
 			Searchable = false,
 			MaxVisibleDropdownItems = 8,
-			Text = "\240\159\147\141 Restore Location";
+			Text = "\240\159\147\141 Restore Location",
 			Tooltip = "Choose where matching pots are placed after the selected weather ends.";
 			Callback = function(G)
 				if type(G) ~= "string" or G == "" then
@@ -38976,7 +38976,7 @@ g.PremiumUi = function()
 		})
 		i:AddButton({
 			Text = "\240\159\147\140 Copy Current CFrame";
-			Tooltip = "Stand where the stacked pots should be placed.",
+			Tooltip = "Stand where the stacked pots should be placed.";
 			Func = function()
 				local G, V = Z.GardenItems.PottedPlantWeatherGuard.SaveCurrentCFramePottedPlantWeatherGuard()
 				g.Notify(V, 3)
@@ -38993,11 +38993,11 @@ g.PremiumUi = function()
 		u = i:AddInput("potted_weather_guard_max_per_cycle_ui", {
 			Text = "\240\159\148\129 Max Per Cycle",
 			Default = tostring(h.potted_weather_guard_max_per_cycle),
-			Numeric = true;
-			AllowEmpty = false,
-			Finished = true;
-			ClearTextOnFocus = false,
-			Placeholder = "3";
+			Numeric = true,
+			AllowEmpty = false;
+			Finished = true,
+			ClearTextOnFocus = false;
+			Placeholder = "3",
 			Tooltip = "Maximum plants or pots handled each cycle.";
 			Callback = function(G)
 				local V = z(G)
@@ -39016,10 +39016,10 @@ g.PremiumUi = function()
 			Default = tostring(h.potted_weather_guard_action_delay);
 			Numeric = false;
 			AllowEmpty = false;
-			Finished = true,
-			ClearTextOnFocus = false;
-			Placeholder = "0.3",
-			Tooltip = "Delay between each pot pickup or placement.";
+			Finished = true;
+			ClearTextOnFocus = false,
+			Placeholder = "0.3";
+			Tooltip = "Delay between each pot pickup or placement.",
 			Callback = function(G)
 				local V = tonumber(G)
 				if not V or V < .001 or V > 5 then
@@ -39035,7 +39035,7 @@ g.PremiumUi = function()
 		E = i:AddInput("potted_weather_guard_y_step_ui", {
 			Text = "\226\134\149\239\184\143 Stack Y Step";
 			Default = tostring(h.potted_weather_guard_y_step);
-			Numeric = false,
+			Numeric = false;
 			AllowEmpty = false,
 			Finished = true,
 			ClearTextOnFocus = false,
@@ -39055,7 +39055,7 @@ g.PremiumUi = function()
 		})
 		i:AddDivider()
 		local H = i:AddButton({
-			Text = "\240\159\147\166 Pick All Potted Plants";
+			Text = "\240\159\147\166 Pick All Potted Plants",
 			Func = function()
 				local G, V = Z.GardenItems.PottedPlantWeatherGuard.StartPickAllPottedPlantsPottedPlantWeatherGuard()
 				g.Notify(V, 3)
@@ -39069,7 +39069,7 @@ g.PremiumUi = function()
 			end
 		})
 		i:AddButton({
-			Text = "\226\143\185\239\184\143 Cancel Pot Action",
+			Text = "\226\143\185\239\184\143 Cancel Pot Action";
 			Func = function()
 				local G, V = Z.GardenItems.PottedPlantWeatherGuard.CancelManualActionPottedPlantWeatherGuard()
 				g.Notify(V, 3)
@@ -39078,8 +39078,8 @@ g.PremiumUi = function()
 		i:AddDivider()
 		i:AddToggle("potted_weather_guard_enabled_ui", {
 			Text = "\240\159\155\161\239\184\143 Enable Pot Weather Guard";
-			Default = h.potted_weather_guard_enabled == true,
-			Tooltip = "Protects selected plants during selected weather, then stacks them back after it ends.";
+			Default = h.potted_weather_guard_enabled == true;
+			Tooltip = "Protects selected plants during selected weather, then stacks them back after it ends.",
 			Callback = function(G)
 				h.potted_weather_guard_enabled = G == true
 				Z.GardenItems.PottedPlantWeatherGuard.ResetStackPlacementPottedPlantWeatherGuard()
@@ -39101,7 +39101,7 @@ g.PremiumUi = function()
 			})
 		end
 		c:AddLabel({
-			Text = "Uses full backpack only. When enabled, normal Sell All is blocked so cash-out cannot reject because of sold fruits.";
+			Text = "Uses full backpack only. When enabled, normal Sell All is blocked so cash-out cannot reject because of sold fruits.",
 			DoesWrap = true
 		})
 		local G
@@ -39129,7 +39129,7 @@ g.PremiumUi = function()
 			j = false
 		end
 		G = c:AddInput("double_or_nothing_target_streak_ui", {
-			Text = "\240\159\148\165 Target Streak",
+			Text = "\240\159\148\165 Target Streak";
 			Default = tostring(h.double_or_nothing_target_streak),
 			Numeric = true,
 			AllowEmpty = false,
@@ -39155,10 +39155,10 @@ g.PremiumUi = function()
 		i(h.double_or_nothing_target_streak)
 		V = c:AddInput("double_or_nothing_roll_delay_ui", {
 			Text = "\226\154\161 Roll Delay",
-			Default = tostring(h.double_or_nothing_roll_delay);
-			Numeric = false,
+			Default = tostring(h.double_or_nothing_roll_delay),
+			Numeric = false;
 			AllowEmpty = false,
-			Finished = true;
+			Finished = true,
 			ClearTextOnFocus = false;
 			Placeholder = "0.15";
 			Tooltip = "Small delay between rolls. Increase if remotes reject.";
@@ -39181,7 +39181,7 @@ g.PremiumUi = function()
 		local T
 		T = c:AddToggle("double_or_nothing_enabled_ui", {
 			Text = "\240\159\142\178 Enable Double or Nothing";
-			Default = h.auto_double_or_nothing == true,
+			Default = h.auto_double_or_nothing == true;
 			Tooltip = "Runs on full backpack and blocks normal Sell All while active.",
 			DisabledTooltip = g.GetProMessage(),
 			Callback = function(G)
@@ -39196,7 +39196,7 @@ g.PremiumUi = function()
 		c:AddToggle("double_or_nothing_webhook_win_ui", {
 			Text = "\226\156\133 Webhook Wins";
 			Default = h.double_or_nothing_webhook_win == true;
-			Tooltip = "Sends a webhook after successful cash-out.",
+			Tooltip = "Sends a webhook after successful cash-out.";
 			Callback = function(G)
 				h.double_or_nothing_webhook_win = G == true
 				a.Save.SaveData()
@@ -39205,7 +39205,7 @@ g.PremiumUi = function()
 		c:AddToggle("double_or_nothing_webhook_loss_ui", {
 			Text = "\240\159\146\165 Webhook Losses";
 			Default = h.double_or_nothing_webhook_loss == true;
-			Tooltip = "Sends a webhook when Double or Nothing busts.",
+			Tooltip = "Sends a webhook when Double or Nothing busts.";
 			Callback = function(G)
 				h.double_or_nothing_webhook_loss = G == true
 				a.Save.SaveData()
@@ -39232,14 +39232,14 @@ g.PremiumUi = function()
 	end
 	if j then
 		j:AddLabel({
-			Text = "<b><font color=\'#FFD700\'>\226\173\144 Premium Ultra Mode</font></b>\n<font color=\'#7CFC00\'>Works:</font> fast fruit collection, farm details, fruit/plant counts, pets, shops, mail.\n<font color=\'#FFAA55\'>Limited:</font> shovel, trowel, plant-target water/sprinklers, seed spacing if plant protection is off.\n<font color=\'#FF5555\'>Important:</font> rejoin if plant models were already removed.";
+			Text = "<b><font color=\'#FFD700\'>\226\173\144 Premium Ultra Mode</font></b>\n<font color=\'#7CFC00\'>Works:</font> fast fruit collection, farm details, fruit/plant counts, pets, shops, mail.\n<font color=\'#FFAA55\'>Limited:</font> shovel, trowel, plant-target water/sprinklers, seed spacing if plant protection is off.\n<font color=\'#FF5555\'>Important:</font> rejoin if plant models were already removed.",
 			DoesWrap = true
 		})
 		j:AddToggle("premium_prevent_destroy_plants_ui", {
-			Text = "\240\159\155\161\239\184\143 Don\'t Destroy Plants";
-			Default = h.fruit_collect_prevent_destroy_plants,
+			Text = "\240\159\155\161\239\184\143 Don\'t Destroy Plants",
+			Default = h.fruit_collect_prevent_destroy_plants;
 			Tooltip = "Keeps plant models available for systems that need them while using premium speed mode.",
-			DisabledTooptip = g.GetProMessage();
+			DisabledTooptip = g.GetProMessage(),
 			Callback = function(G)
 				h.fruit_collect_prevent_destroy_plants = G
 				a.Save.SaveData()
@@ -39251,8 +39251,8 @@ g.PremiumUi = function()
 		local G
 		G = j:AddToggle("premiumperformancenolimit-", {
 			Text = "<font color=\'#FF0000\'>\226\154\161 No Limits </font> <font color=\'#FF00C8\'>PRO</font>";
-			Default = h.fruit_collect_nolimits,
-			Tooltip = "This may cause lag. Set timers to lowest.";
+			Default = h.fruit_collect_nolimits;
+			Tooltip = "This may cause lag. Set timers to lowest.",
 			DisabledTooptip = g.GetProMessage();
 			Callback = function(G)
 				h.fruit_collect_nolimits = G
@@ -39261,10 +39261,10 @@ g.PremiumUi = function()
 		})
 		local V
 		V = j:AddToggle("premiumperformance-", {
-			Text = "<font color=\'#FFD700\'>\240\159\154\128 Ultra Mode</font> <font color=\'#FF00C8\'>PRO</font>",
+			Text = "<font color=\'#FFD700\'>\240\159\154\128 Ultra Mode</font> <font color=\'#FF00C8\'>PRO</font>";
 			Default = h.high_mode,
 			Tooltip = "Premium speed mode for faster fruit collection. Plant models are kept when Don\'t Destroy Plants is enabled.",
-			DisabledTooptip = g.GetProMessage();
+			DisabledTooptip = g.GetProMessage(),
 			Callback = function(G)
 				h.high_mode = G
 				a.Save.SaveDataSync()
@@ -39296,12 +39296,12 @@ g.PremiumUi = function()
 		local G
 		G = J:AddValueDropdown("sprinkler_place_selected_ui", {
 			Values = {},
-			Default = {};
-			Multi = true,
+			Default = {},
+			Multi = true;
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\146\166 Sprinklers To Place";
-			Tooltip = "Selected sprinklers will be kept at their target amount.",
+			Tooltip = "Selected sprinklers will be kept at their target amount.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -39321,7 +39321,7 @@ g.PremiumUi = function()
 			end
 		})
 		V:AddButton({
-			Text = "\240\159\167\185 Clear";
+			Text = "\240\159\167\185 Clear",
 			Func = function()
 				h.sprinkler_place_selected = {}
 				G:SetValue({})
@@ -39338,7 +39338,7 @@ g.PremiumUi = function()
 			Finished = true,
 			ClearTextOnFocus = false,
 			Placeholder = "Amount per sprinkler",
-			Tooltip = "Places more when a selected sprinkler falls below this amount.";
+			Tooltip = "Places more when a selected sprinkler falls below this amount.",
 			Callback = function(G)
 				local V = z(G)
 				if not V or V <= 0 then
@@ -39354,13 +39354,13 @@ g.PremiumUi = function()
 		local j
 		j = J:AddDropdown("sprinkler_place_mode_ui", {
 			Values = Z.Farm.GetPlacementModeOptionsFarm(true, nil, {
-				"Plant Target";
+				"Plant Target",
 				"Saved Position"
-			}),
-			Default = h.sprinkler_place_mode;
+			});
+			Default = h.sprinkler_place_mode,
 			Multi = false;
-			Text = "\240\159\147\141 Placement Mode",
-			Tooltip = "Choose where sprinklers should be placed.";
+			Text = "\240\159\147\141 Placement Mode";
+			Tooltip = "Choose where sprinklers should be placed.",
 			Callback = function(G)
 				if type(G) ~= "string" or G == "" then
 					return
@@ -39372,13 +39372,13 @@ g.PremiumUi = function()
 		j:SetValue(h.sprinkler_place_mode)
 		local i
 		i = J:AddValueDropdown("sprinkler_place_target_plant_ui", {
-			Values = {},
-			Default = "";
-			Multi = false,
+			Values = {};
+			Default = "",
+			Multi = false;
 			Searchable = true,
 			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\140\177 Target Plant";
-			Tooltip = "Plant Target mode places sprinklers around this plant type.",
+			Text = "\240\159\140\177 Target Plant",
+			Tooltip = "Plant Target mode places sprinklers around this plant type.";
 			Changed = function(G)
 				if type(G) ~= "string" then
 					return
@@ -39390,7 +39390,7 @@ g.PremiumUi = function()
 		i:SetValues(Z.SeedData.GetSeedDataListDropDown())
 		i:SetValue(h.sprinkler_place_target_plant)
 		local c = J:AddLabel({
-			Text = Z.SprinklerPlacer.GetSavedPositionText(),
+			Text = Z.SprinklerPlacer.GetSavedPositionText();
 			DoesWrap = true
 		})
 		J:AddButton({
@@ -39411,11 +39411,11 @@ g.PremiumUi = function()
 		local T
 		T = J:AddValueDropdown("sprinkler_place_weather_selected_ui", {
 			Values = Z.WeatherTriggers.GetDropdownWeatherTriggers(),
-			Default = {};
+			Default = {},
 			Multi = true;
-			Searchable = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 8,
-			Text = "\240\159\140\166\239\184\143 Weather Trigger";
+			Text = "\240\159\140\166\239\184\143 Weather Trigger",
 			Tooltip = "No selection allows any weather.";
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -39428,8 +39428,8 @@ g.PremiumUi = function()
 		T:SetValue(h.sprinkler_place_weather_selected)
 		J:AddToggle("sprinkler_place_weather_enabled_ui", {
 			Text = "\240\159\140\166\239\184\143 Use Weather Trigger";
-			Default = h.sprinkler_place_weather_enabled,
-			Tooltip = "Only places sprinklers during selected weather or time cycle.";
+			Default = h.sprinkler_place_weather_enabled;
+			Tooltip = "Only places sprinklers during selected weather or time cycle.",
 			Callback = function(G)
 				h.sprinkler_place_weather_enabled = G == true
 				a.Save.SaveData()
@@ -39437,9 +39437,9 @@ g.PremiumUi = function()
 		})
 		J:AddDivider()
 		J:AddToggle("sprinkler_place_teleport_ui", {
-			Text = "\240\159\147\161 Auto Teleport",
+			Text = "\240\159\147\161 Auto Teleport";
 			Default = h.sprinkler_place_teleport,
-			Tooltip = "Leave disabled to attempt placement from anywhere. Enable it to teleport near the placement position.";
+			Tooltip = "Leave disabled to attempt placement from anywhere. Enable it to teleport near the placement position.",
 			Callback = function(G)
 				h.sprinkler_place_teleport = G
 				if not G then
@@ -39452,7 +39452,7 @@ g.PremiumUi = function()
 		d = J:AddToggle("sprinkler_replace_near_expiry_ui", {
 			Text = "\240\159\148\129 Replace Near Expiry";
 			Default = h.sprinkler_replace_near_expiry_enabled;
-			Tooltip = "Places a replacement when a selected sprinkler has under 5 seconds left.",
+			Tooltip = "Places a replacement when a selected sprinkler has under 5 seconds left.";
 			DisabledTooltip = g.GetProMessage(),
 			Callback = function(G)
 				h.sprinkler_replace_near_expiry_enabled = G == true
@@ -39463,7 +39463,7 @@ g.PremiumUi = function()
 		local u
 		u = J:AddToggle("enable_sprinkler_placer_ui", {
 			Text = "\240\159\146\166 Enable Sprinkler System";
-			Default = h.auto_sprinkler_place,
+			Default = h.auto_sprinkler_place;
 			Tooltip = "Automatically places selected sprinklers when their amount is too low.",
 			DisabledTooltip = g.GetProMessage(),
 			Callback = function(G)
@@ -39487,7 +39487,7 @@ g.PremiumUi = function()
 		local c
 		local J
 		r:AddLabel({
-			Text = "\240\159\146\161 Set a different target for individual sprinklers.";
+			Text = "\240\159\146\161 Set a different target for individual sprinklers.",
 			DoesWrap = true
 		})
 		local function T()
@@ -39538,7 +39538,7 @@ g.PremiumUi = function()
 			table.sort(V)
 			if # V == 0 then
 				local G = r:AddLabel({
-					Text = "<font color=\'#888888\'>No active sprinkler overrides</font>",
+					Text = "<font color=\'#888888\'>No active sprinkler overrides</font>";
 					DoesWrap = true
 				})
 				table.insert(j, G)
@@ -39548,8 +39548,8 @@ g.PremiumUi = function()
 					local J
 					J = r:AddToggle(string.format("sprinkler_active_override_%d_%d", i, V), {
 						Text = string.format("\240\159\146\166 %s <font color=\'#7CFC00\'>Target: %d</font>", y, c);
-						Default = true,
-						Tooltip = "Disable this sprinkler override.";
+						Default = true;
+						Tooltip = "Disable this sprinkler override.",
 						Callback = function(V)
 							if V then
 								return
@@ -39571,13 +39571,13 @@ g.PremiumUi = function()
 		end
 		local E
 		E = r:AddValueDropdown("sprinkler_override_select_ui", {
-			Values = {},
+			Values = {};
 			Default = "",
 			Multi = false,
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\146\166 Select Sprinkler";
-			Tooltip = "Select a sprinkler to configure its target.",
+			Tooltip = "Select a sprinkler to configure its target.";
 			Changed = function(V)
 				if type(V) ~= "string" or V == "" then
 					return
@@ -39588,13 +39588,13 @@ g.PremiumUi = function()
 		})
 		E:SetValues(Z.SprinklerPlacer.GetDropdown())
 		c = r:AddInput("sprinkler_override_target_ui", {
-			Text = "\240\159\142\175 Target Amount",
+			Text = "\240\159\142\175 Target Amount";
 			Default = tostring(V),
-			Numeric = true;
+			Numeric = true,
 			AllowEmpty = true;
 			Finished = true;
 			ClearTextOnFocus = false;
-			Placeholder = "Enter target amount",
+			Placeholder = "Enter target amount";
 			Tooltip = "Sets how many of this sprinkler should remain active.",
 			Callback = function(j)
 				if y then
@@ -39620,9 +39620,9 @@ g.PremiumUi = function()
 			end
 		})
 		J = r:AddToggle("sprinkler_override_enable_ui", {
-			Text = "\240\159\146\165 Enable Override",
+			Text = "\240\159\146\165 Enable Override";
 			Default = false,
-			Tooltip = "Use the custom target for the selected sprinkler.";
+			Tooltip = "Use the custom target for the selected sprinkler.",
 			Callback = function(j)
 				if y then
 					return
@@ -39660,22 +39660,23 @@ g.PremiumUi = function()
 end
 g.GardenItemsUi = function()
 	local G = d:AddTab({
-		Name = "Garden Items";
-		Description = "Collect garden drops",
+		Name = "Garden Items",
+		Description = "Collect garden drops";
 		Icon = "package-open"
 	})
 	local V = G:AddLeftGroupbox("Auto Collect", "hand")
-	local y = G:AddRightGroupbox("Weather Kick Rejoin", "cloud-lightning")
-	local j = G:AddLeftGroupbox("Farm Positions", "map-pin")
-	local i = G:AddRightGroupbox("Garden Expansion", "expand")
-	local c = G:AddLeftGroupbox("Pet Max Inventory", "paw-print")
-	if j then
-		local G = j:AddValueDropdown("farm_default_placement_ui", {
-			Values = Z.Farm.GetDefaultPlacementOptionsFarm();
+	local j = G:AddRightGroupbox("Weather Kick Rejoin", "cloud-lightning")
+	local i = G:AddLeftGroupbox("Farm Positions", "map-pin")
+	local c = G:AddRightGroupbox("Plant Merge", "git-merge")
+	local J = G:AddRightGroupbox("Garden Expansion", "expand")
+	local T = G:AddLeftGroupbox("Pet Max Inventory", "paw-print")
+	if i then
+		local G = i:AddValueDropdown("farm_default_placement_ui", {
+			Values = Z.Farm.GetDefaultPlacementOptionsFarm(),
 			Default = Z.Farm.GetDefaultPlacementFarm();
-			Multi = false,
-			Searchable = false;
-			MaxVisibleDropdownItems = # W.Options,
+			Multi = false;
+			Searchable = false,
+			MaxVisibleDropdownItems = # W.Options;
 			Text = "\240\159\147\141 Default placement",
 			Tooltip = "Used whenever a system is set to Default Placement.",
 			Callback = function(G)
@@ -39698,9 +39699,9 @@ g.GardenItemsUi = function()
 			end
 		})
 		G:SetValue(Z.Farm.GetDefaultPlacementFarm())
-		local V = j:AddButton({
-			Text = "\240\159\145\129\239\184\143 Show positions",
-			Tooltip = "Shows every available farm placement on your garden.";
+		local V = i:AddButton({
+			Text = "\240\159\145\129\239\184\143 Show positions";
+			Tooltip = "Shows every available farm placement on your garden.",
 			Func = function()
 				local G, V = Z.Farm.ShowPositionVisualsFarm()
 				if G then
@@ -39712,23 +39713,23 @@ g.GardenItemsUi = function()
 		})
 		V:AddButton({
 			Text = "\240\159\167\185 Clear positions",
-			Tooltip = "Removes the farm placement markers.";
+			Tooltip = "Removes the farm placement markers.",
 			Func = function()
 				Z.Farm.ClearPositionVisualsFarm()
 			end
 		})
 	end
-	if y then
-		y:AddLabel({
-			Text = "Kicks when selected weather is active.<br/>Waits until it ends, then rejoins if Rejoin is on.<br/>Works in public and private servers.";
+	if j then
+		j:AddLabel({
+			Text = "Kicks when selected weather is active.<br/>Waits until it ends, then rejoins if Rejoin is on.<br/>Works in public and private servers.",
 			DoesWrap = true
 		})
 		local G
-		G = y:AddValueDropdown("weather_kick_selected_ui", {
-			Values = Z.WeatherKickRejoin.GetDropdownWeatherKickRejoin(),
+		G = j:AddValueDropdown("weather_kick_selected_ui", {
+			Values = Z.WeatherKickRejoin.GetDropdownWeatherKickRejoin();
 			Default = {},
-			Multi = true;
-			Searchable = true,
+			Multi = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 8,
 			Text = "\240\159\140\166\239\184\143 Select Weathers",
 			Tooltip = "Kicks when any selected weather becomes active.",
@@ -39741,19 +39742,19 @@ g.GardenItemsUi = function()
 			end
 		})
 		G:SetValue(h.weather_kick_selected)
-		y:AddToggle("weather_kick_rejoin_enabled_ui", {
-			Text = "\240\159\148\129 Rejoin",
-			Default = h.weather_kick_rejoin_enabled == true;
+		j:AddToggle("weather_kick_rejoin_enabled_ui", {
+			Text = "\240\159\148\129 Rejoin";
+			Default = h.weather_kick_rejoin_enabled == true,
 			Tooltip = "Rejoins after the selected weather ends.";
 			Callback = function(G)
 				h.weather_kick_rejoin_enabled = G == true
 				a.Save.SaveDataSync()
 			end
 		})
-		y:AddToggle("weather_kick_enabled_ui", {
-			Text = "\226\155\136\239\184\143 Auto Kick if Weather Detected",
-			Default = h.weather_kick_enabled == true;
-			Tooltip = "Kicks when selected weather is active.",
+		j:AddToggle("weather_kick_enabled_ui", {
+			Text = "\226\155\136\239\184\143 Auto Kick if Weather Detected";
+			Default = h.weather_kick_enabled == true,
+			Tooltip = "Kicks when selected weather is active.";
 			Callback = function(G)
 				h.weather_kick_enabled = G == true
 				if h.weather_kick_enabled ~= true then
@@ -39767,6 +39768,191 @@ g.GardenItemsUi = function()
 		})
 	end
 	if c then
+		local G = Z.FruitFiltersDataSync
+		local V = y.MergeFlags
+		local j
+		local i
+		local J
+		local T = false
+		local d = 10
+		local u = "\240\159\140\152 Select Two Plants"
+		local function q()
+			if type(G) ~= "table" then
+				return {}
+			end
+			if G.Started ~= true and type(G.StartSync) == "function" then
+				G.StartSync()
+			end
+			if type(G.SyncFromGarden) == "function" then
+				G.SyncFromGarden(false, true)
+			end
+			if type(G.Plants) ~= "table" then
+				return {}
+			end
+			return G.Plants
+		end
+		local function E()
+			local G = tostring(j.Value or "")
+			local y = tostring(i.Value or "")
+			if G == "" or y == "" or G == y then
+				return nil
+			end
+			local Z = q()
+			local c = Z[G]
+			local J = Z[y]
+			if type(c) ~= "table" or type(J) ~= "table" then
+				return nil
+			end
+			if type(V) ~= "table" or type(V.GetMergeResult) ~= "function" then
+				return nil
+			end
+			local T = V.GetMergeResult(c.PlantName, J.PlantName)
+			if type(T) ~= "string" or T == "" then
+				return nil
+			end
+			return T, c, J, G, y
+		end
+		local function a(y)
+			if type(V) ~= "table" or type(V.Recipes) ~= "table" or type(V.GetMergeResult) ~= "function" then
+				return {}
+			end
+			local Z = q()
+			local j = {}
+			for G in pairs(V.Recipes) do
+				local V, y = (tostring(G)):match("^(.-)%+(.+)$")
+				if V and y then
+					j[V] = true
+					j[y] = true
+				end
+			end
+			y = tostring(y or "")
+			local i = Z[y]
+			local c = type(i) == "table" and tostring(i.PlantName or "") or ""
+			local J = {}
+			for Z, i in pairs(Z) do
+				Z = tostring(Z or "")
+				local T = type(i) == "table" and tostring(i.PlantName or "") or ""
+				if Z == "" or Z == y or type(i) ~= "table" or i.Removed == true or i.IsPotted == true or j[T] ~= true then
+					continue
+				end
+				if c ~= "" and type(V.GetMergeResult(c, T)) ~= "string" then
+					continue
+				end
+				local d = type(G) == "table" and (type(G.IsPlantReady) == "function" and G.IsPlantReady(i) == true)
+				local u = d and "Ready" or "Growing"
+				local q = d and "#7CFC00" or "#FFCC66"
+				local g = # Z > 8 and Z:sub(- 8) or Z
+				J[# J + 1] = {
+					Text = string.format("%s <font color=\'%s\'>%s</font> <font color=\'#888888\'>%s</font>", T, q, u, g);
+					Value = Z;
+					Ready = d;
+					Name = T
+				}
+			end
+			table.sort(J, function(G, V)
+				if G.Ready ~= V.Ready then
+					return G.Ready
+				end
+				if G.Name ~= V.Name then
+					return G.Name < V.Name
+				end
+				return G.Value < V.Value
+			end)
+			return J
+		end
+		local function H()
+			local G = E()
+			local V = u
+			if G then
+				V = "\240\159\140\152 Merge Selected \226\134\146 " .. G
+			end
+			J:SetText(V)
+		end
+		local function r()
+			j:SetValues(a(nil))
+			i:SetValues(a(j.Value))
+			H()
+		end
+		c:AddLabel({
+			Text = "Only valid merge plants are shown. Growth status is displayed beside each plant.";
+			DoesWrap = true
+		})
+		j = c:AddValueDropdown("plant_merge_first_ui", {
+			Values = {},
+			Default = nil;
+			Multi = false;
+			Searchable = true;
+			MaxVisibleDropdownItems = d,
+			Text = "\240\159\140\177 Plant A";
+			Tooltip = "Select the first plant.",
+			Callback = r
+		})
+		i = c:AddValueDropdown("plant_merge_second_ui", {
+			Values = {},
+			Default = nil,
+			Multi = false;
+			Searchable = true;
+			MaxVisibleDropdownItems = d;
+			Text = "\240\159\140\177 Plant B",
+			Tooltip = "Only plants compatible with Plant A are shown.";
+			Callback = H
+		})
+		c:AddButton({
+			Text = "\240\159\148\132 Reload Plants";
+			Tooltip = "Refreshes available plants and growth status.";
+			Func = r
+		})
+		J = c:AddButton({
+			Text = u,
+			Tooltip = "Merges the selected fully grown plants.";
+			Func = function()
+				if T then
+					return
+				end
+				local V, Z, c, d, u = E()
+				if not V then
+					g.Notify("Select two plants from a valid merge recipe", 3)
+					return
+				end
+				if Z.IsPotted == true or c.IsPotted == true then
+					g.Notify("Potted plants cannot be merged", 3)
+					return
+				end
+				if type(G) ~= "table" or type(G.IsPlantReady) ~= "function" or not G.IsPlantReady(Z) or not G.IsPlantReady(c) then
+					g.Notify("Both selected plants must be fully grown", 3)
+					return
+				end
+				local q = y.Networking and (y.Networking.Garden and y.Networking.Garden.RequestMerge)
+				if not q or type(q.Fire) ~= "function" then
+					g.Notify("Plant merging is unavailable", 3)
+					return
+				end
+				T = true
+				J:SetDisabled(true)
+				local a, r, Y = pcall(q.Fire, q, d, u)
+				T = false
+				J:SetDisabled(false)
+				Y = tostring(Y or "")
+				if not a then
+					Y = "Merge request failed"
+				end
+				if a and (r ~= true and Y == "") then
+					Y = "Merge rejected"
+				end
+				if a and (r == true and Y == "") then
+					Y = "Merge started: " .. V
+				end
+				g.Notify(Y, 4)
+				if a and r == true then
+					j:SetValue(nil, true)
+					i:SetValue(nil, true)
+				end
+				H()
+			end
+		})
+		r()
+	end
+	if T then
 		local G
 		local V
 		local y = false
@@ -39779,7 +39965,7 @@ g.GardenItemsUi = function()
 			local y = math.clamp(math.floor(tonumber(G) or h.auto_expand_pet_inventory_max_upgrade or 1), 1, V)
 			return string.format("\240\159\144\190 Max Upgrades (%d/%d)", y, V)
 		end
-		local function J(V)
+		local function c(V)
 			if not G then
 				return
 			end
@@ -39788,7 +39974,7 @@ g.GardenItemsUi = function()
 			G:SetText(i(V))
 			y = false
 		end
-		local function T(G)
+		local function J(G)
 			local V = tonumber(G)
 			if not V then
 				V = E.Currency.ParseMoney(tostring(G or h.pet_inventory_min_sheckles or 0))
@@ -39802,24 +39988,24 @@ g.GardenItemsUi = function()
 			end
 			j = true
 			V:SetValue(E.Currency.FormatMoney(G))
-			V:SetText(T(G))
+			V:SetText(J(G))
 			j = false
 		end
 		local u = Z.GardenItems.PetMaxInventorySystem.GetMaximumUpgradePetMaxInventorySystem()
 		local q = Z.GardenItems.PetMaxInventorySystem.GetNextPricePetMaxInventorySystem(Z.GardenItems.PetMaxInventorySystem.GetBaseMaxPetMaxInventorySystem()) or 200000
-		c:AddLabel({
+		T:AddLabel({
 			Text = string.format("Starts at <font color=\'#7CFC00\'>1/%d</font>. First upgrade is <font color=\'#00FF00\'>$%s</font>.", math.max(u, 1), E.Currency.FormatMoney(q));
 			DoesWrap = true
 		})
-		G = c:AddInput("auto_expand_pet_inventory_max_upgrade_ui", {
-			Text = i(h.auto_expand_pet_inventory_max_upgrade);
+		G = T:AddInput("auto_expand_pet_inventory_max_upgrade_ui", {
+			Text = i(h.auto_expand_pet_inventory_max_upgrade),
 			Default = tostring(h.auto_expand_pet_inventory_max_upgrade);
 			Numeric = true;
 			AllowEmpty = false,
-			Finished = true;
-			ClearTextOnFocus = false;
+			Finished = true,
+			ClearTextOnFocus = false,
 			Placeholder = "1 to 3";
-			Tooltip = "Press Enter to set how many pet slot upgrades to buy.",
+			Tooltip = "Press Enter to set how many pet slot upgrades to buy.";
 			Callback = function(G)
 				if y then
 					return
@@ -39828,17 +40014,17 @@ g.GardenItemsUi = function()
 				local j = z(G)
 				if not j or j < 1 or j > V then
 					g.Notify("Pet upgrades must be between 1 and " .. tostring(V), 3)
-					J(h.auto_expand_pet_inventory_max_upgrade)
+					c(h.auto_expand_pet_inventory_max_upgrade)
 					return
 				end
 				h.auto_expand_pet_inventory_max_upgrade = j
-				J(j)
+				c(j)
 				a.Save.SaveData()
 			end
 		})
-		c:AddToggle("auto_expand_pet_inventory_enabled_ui", {
-			Text = "\240\159\144\190 Enable Auto Pet Slots",
-			Default = h.auto_expand_pet_inventory;
+		T:AddToggle("auto_expand_pet_inventory_enabled_ui", {
+			Text = "\240\159\144\190 Enable Auto Pet Slots";
+			Default = h.auto_expand_pet_inventory,
 			Tooltip = "Automatically buys pet slot upgrades when affordable.",
 			Callback = function(G)
 				h.auto_expand_pet_inventory = G == true
@@ -39848,29 +40034,29 @@ g.GardenItemsUi = function()
 				a.Save.SaveData()
 			end
 		})
-		c:AddToggle("pet_inventory_min_sheckles_enabled_ui", {
+		T:AddToggle("pet_inventory_min_sheckles_enabled_ui", {
 			Text = "\240\159\146\176 Enable Sheckles Reserve";
-			Default = h.pet_inventory_min_sheckles_enabled == true;
+			Default = h.pet_inventory_min_sheckles_enabled == true,
 			Tooltip = "Keeps this much money saved before buying pet slots.";
 			Callback = function(G)
 				h.pet_inventory_min_sheckles_enabled = G == true
 				a.Save.SaveData()
 			end
 		})
-		V = c:AddInput("pet_inventory_min_sheckles_ui", {
-			Text = T(h.pet_inventory_min_sheckles);
-			Default = E.Currency.FormatMoney(h.pet_inventory_min_sheckles),
-			Numeric = false;
+		V = T:AddInput("pet_inventory_min_sheckles_ui", {
+			Text = J(h.pet_inventory_min_sheckles),
+			Default = E.Currency.FormatMoney(h.pet_inventory_min_sheckles);
+			Numeric = false,
 			AllowEmpty = true;
 			Finished = true,
-			ClearTextOnFocus = false,
+			ClearTextOnFocus = false;
 			Placeholder = "0 or 2m";
 			Tooltip = "Press Enter to update. 0 disables the amount check.",
 			Changed = function(G)
 				if j then
 					return
 				end
-				V:SetText(T(G))
+				V:SetText(J(G))
 			end;
 			Callback = function(G)
 				if j then
@@ -39889,13 +40075,13 @@ g.GardenItemsUi = function()
 			end
 		})
 	end
-	if i then
+	if J then
 		local G
-		G = i:AddInput("auto_expand_garden_max_slot_ui", {
-			Text = "\240\159\143\161 Maximum Slot",
+		G = J:AddInput("auto_expand_garden_max_slot_ui", {
+			Text = "\240\159\143\161 Maximum Slot";
 			Default = tostring(h.auto_expand_garden_max_slot);
-			Numeric = true;
-			AllowEmpty = false,
+			Numeric = true,
+			AllowEmpty = false;
 			Finished = true,
 			ClearTextOnFocus = false,
 			Placeholder = "Maximum expansion slot";
@@ -39912,9 +40098,9 @@ g.GardenItemsUi = function()
 				a.Save.SaveDataSync()
 			end
 		})
-		i:AddToggle("auto_expand_garden_enabled_ui", {
-			Text = "\240\159\143\161 Enable Auto Expand";
-			Default = h.auto_expand_garden,
+		J:AddToggle("auto_expand_garden_enabled_ui", {
+			Text = "\240\159\143\161 Enable Auto Expand",
+			Default = h.auto_expand_garden;
 			Tooltip = "Automatically purchases affordable garden expansions.",
 			Callback = function(G)
 				h.auto_expand_garden = G
@@ -39927,8 +40113,8 @@ g.GardenItemsUi = function()
 	end
 	if V then
 		V:AddToggle("garden_items_use_player_walk_ui", {
-			Text = "\240\159\154\182 Use Player Walk";
-			Default = h.garden_items_use_player_walk,
+			Text = "\240\159\154\182 Use Player Walk",
+			Default = h.garden_items_use_player_walk;
 			Tooltip = "Walks to seeds first, then snaps when close.";
 			Callback = function(G)
 				h.garden_items_use_player_walk = G
@@ -39937,15 +40123,15 @@ g.GardenItemsUi = function()
 		})
 		V:AddToggle("auto_collect_drop_seeds", {
 			Text = "\240\159\140\177 Auto Collect Dropped Seeds",
-			Default = h.auto_collect_drop_seeds;
-			Tooltip = "Collects seeds dropped by your pets or player.",
+			Default = h.auto_collect_drop_seeds,
+			Tooltip = "Collects seeds dropped by your pets or player.";
 			Callback = function(G)
 				h.auto_collect_drop_seeds = G
 				a.Save.SaveDataSync()
 			end
 		})
 		V:AddToggle("garden_items_auto_collect_event_seeds", {
-			Text = "\240\159\140\136 Auto Collect Gold & Rainbow Seeds",
+			Text = "\240\159\140\136 Auto Collect Gold & Rainbow Seeds";
 			Default = h.auto_collect_event_seeds;
 			Tooltip = "Collects Gold and Rainbow seeds dropped by the event.";
 			Callback = function(G)
@@ -39986,9 +40172,9 @@ g.PlantsUi = function()
 			end
 		})
 		u:AddToggle("backpack_fruit_total_value_esp_enabled_ui", {
-			Text = "\240\159\146\142 Inventory Total Value",
+			Text = "\240\159\146\142 Inventory Total Value";
 			Default = h.backpack_fruit_total_value_esp_enabled;
-			Tooltip = "Shows total estimated value of all fruits in your inventory.";
+			Tooltip = "Shows total estimated value of all fruits in your inventory.",
 			Callback = function(G)
 				h.backpack_fruit_total_value_esp_enabled = G == true
 				if h.backpack_fruit_total_value_esp_enabled then
@@ -40001,7 +40187,7 @@ g.PlantsUi = function()
 			end
 		})
 		u:AddButton({
-			Text = "\240\159\148\132 Refresh Prices",
+			Text = "\240\159\148\132 Refresh Prices";
 			Func = function()
 				if Z.BuySelectFruit and type(Z.BuySelectFruit.EnsureFruitStockReadyBuySelectFruit) == "function" then
 					Z.BuySelectFruit.EnsureFruitStockReadyBuySelectFruit(true)
@@ -40020,9 +40206,9 @@ g.PlantsUi = function()
 		j = G:AddValueDropdown(V .. "_names_ui", {
 			Values = {},
 			Default = {},
-			Multi = true,
-			Searchable = true;
-			MaxVisibleDropdownItems = 10;
+			Multi = true;
+			Searchable = true,
+			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\141\137 Fruits";
 			Tooltip = "No selection matches every fruit.",
 			Changed = function(G)
@@ -40058,12 +40244,12 @@ g.PlantsUi = function()
 		})
 		local c
 		c = G:AddInput(V .. "_min_kg_ui", {
-			Text = "\226\154\150\239\184\143 Min KG";
-			Default = tostring(h[y.minKg]),
-			Numeric = true;
+			Text = "\226\154\150\239\184\143 Min KG",
+			Default = tostring(h[y.minKg]);
+			Numeric = true,
 			AllowEmpty = true,
-			Finished = true;
-			ClearTextOnFocus = false;
+			Finished = true,
+			ClearTextOnFocus = false,
 			Placeholder = "0",
 			Tooltip = "Only fruits at or above this KG.";
 			Callback = function(G)
@@ -40079,14 +40265,14 @@ g.PlantsUi = function()
 		})
 		local J
 		J = G:AddInput(V .. "_max_kg_ui", {
-			Text = "\226\154\150\239\184\143 Max KG";
+			Text = "\226\154\150\239\184\143 Max KG",
 			Default = tostring(h[y.maxKg]);
 			Numeric = true,
-			AllowEmpty = true;
+			AllowEmpty = true,
 			Finished = true;
 			ClearTextOnFocus = false;
 			Placeholder = "100000000",
-			Tooltip = "Only fruits at or below this KG.",
+			Tooltip = "Only fruits at or below this KG.";
 			Callback = function(G)
 				local V = f(G)
 				if not V or V < 0 then
@@ -40100,13 +40286,13 @@ g.PlantsUi = function()
 		})
 		local T
 		T = G:AddValueDropdown(V .. "_mutations_ui", {
-			Values = Z.FruitFilters.GetMutationNames(),
-			Default = {},
-			Multi = true;
+			Values = Z.FruitFilters.GetMutationNames();
+			Default = {};
+			Multi = true,
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\167\172 Mutations";
-			Tooltip = "No selection matches every mutation.",
+			Tooltip = "No selection matches every mutation.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -40119,12 +40305,12 @@ g.PlantsUi = function()
 		local d
 		d = G:AddValueDropdown(V .. "_variants_ui", {
 			Values = Z.FruitFilters.GetVariantNames(),
-			Default = {},
-			Multi = true;
+			Default = {};
+			Multi = true,
 			Searchable = false,
-			MaxVisibleDropdownItems = 5,
-			Text = "\240\159\140\136 Variants",
-			Tooltip = "No selection matches every variant.",
+			MaxVisibleDropdownItems = 5;
+			Text = "\240\159\140\136 Variants";
+			Tooltip = "No selection matches every variant.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -40136,12 +40322,12 @@ g.PlantsUi = function()
 		d:SetValue(h[y.variants])
 		local u
 		u = G:AddInput(V .. "_max_value_ui", {
-			Text = "\240\159\146\176 Max Value";
-			Default = tostring(h[y.maxValue]),
+			Text = "\240\159\146\176 Max Value",
+			Default = tostring(h[y.maxValue]);
 			Numeric = false,
 			AllowEmpty = true;
-			Finished = true,
-			ClearTextOnFocus = false,
+			Finished = true;
+			ClearTextOnFocus = false;
 			Placeholder = "0 = ignore";
 			Tooltip = "Only fruits at or below this value. Use 0 to ignore.";
 			Callback = function(G)
@@ -40166,15 +40352,15 @@ g.PlantsUi = function()
 		})
 		r(q, "auto_fruit_favourite", {
 			names = "auto_fruit_favourite_names";
-			minKg = "auto_fruit_favourite_min_kg";
-			maxKg = "auto_fruit_favourite_max_kg",
+			minKg = "auto_fruit_favourite_min_kg",
+			maxKg = "auto_fruit_favourite_max_kg";
 			mutations = "auto_fruit_favourite_mutations",
-			variants = "auto_fruit_favourite_variants",
+			variants = "auto_fruit_favourite_variants";
 			maxValue = "auto_fruit_favourite_max_value"
 		})
 		q:AddDivider()
 		q:AddToggle("auto_fruit_favourite_enabled_ui", {
-			Text = "\226\173\144 Auto Favourite";
+			Text = "\226\173\144 Auto Favourite",
 			Default = h.auto_fruit_favourite_enabled,
 			Tooltip = "Favourites fruits that match the auto filters.",
 			Callback = function(G)
@@ -40194,20 +40380,20 @@ g.PlantsUi = function()
 	end
 	if H then
 		H:AddLabel({
-			Text = "Manual favourite tools use their own filters and run only when you press a button.";
+			Text = "Manual favourite tools use their own filters and run only when you press a button.",
 			DoesWrap = true
 		})
 		r(H, "manual_fruit_favourite", {
-			names = "manual_fruit_favourite_names";
+			names = "manual_fruit_favourite_names",
 			minKg = "manual_fruit_favourite_min_kg";
 			maxKg = "manual_fruit_favourite_max_kg",
-			mutations = "manual_fruit_favourite_mutations";
-			variants = "manual_fruit_favourite_variants",
+			mutations = "manual_fruit_favourite_mutations",
+			variants = "manual_fruit_favourite_variants";
 			maxValue = "manual_fruit_favourite_max_value"
 		})
 		H:AddDivider()
 		H:AddButton({
-			Text = "\226\173\144 Favourite Matching Now";
+			Text = "\226\173\144 Favourite Matching Now",
 			Func = function()
 				Z.FruitFavouriteManager.RunManualFavouriteFruitFavouriteManager(true)
 			end
@@ -40224,17 +40410,17 @@ g.PlantsUi = function()
 	end
 	if J then
 		g.PlantFruitEspUi.StatusLabel = J:AddLabel({
-			Text = g.PlantFruitEspStatusText ~= "" and g.PlantFruitEspStatusText or "<font color=\'#888888\'>ESP idle</font>";
+			Text = g.PlantFruitEspStatusText ~= "" and g.PlantFruitEspStatusText or "<font color=\'#888888\'>ESP idle</font>",
 			DoesWrap = true
 		})
 		J:AddLabel({
-			Text = "Small ESP labels for fruits and plants. Fruit labels use kg range; plant labels show length.",
+			Text = "Small ESP labels for fruits and plants. Fruit labels use kg range; plant labels show length.";
 			DoesWrap = true
 		})
 		J:AddToggle("live_plants_board_enabled_ui", {
 			Text = "\240\159\147\139 Show Live Plants",
-			Default = false;
-			Tooltip = "Shows live data for the selected plant names during this session only.",
+			Default = false,
+			Tooltip = "Shows live data for the selected plant names during this session only.";
 			Callback = function(G)
 				g.LivePlantsBoardEnabled = G == true
 				Z.LivePlantsBoard.RefreshLivePlantsBoard()
@@ -40244,8 +40430,8 @@ g.PlantsUi = function()
 		G = J:AddValueDropdown("plant_fruit_esp_names_ui", {
 			Values = {};
 			Default = {},
-			Multi = true,
-			Searchable = true,
+			Multi = true;
+			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\140\177 Plant / Fruit Names",
 			Tooltip = "No selection shows every ESP label. Select names to use the live board.",
@@ -40290,10 +40476,10 @@ g.PlantsUi = function()
 		J:AddDivider()
 		local y
 		y = J:AddInput("plant_fruit_esp_min_kg_ui", {
-			Text = "\226\172\135\239\184\143 Minimum KG";
-			Default = tostring(h.plant_fruit_esp_min_kg),
+			Text = "\226\172\135\239\184\143 Minimum KG",
+			Default = tostring(h.plant_fruit_esp_min_kg);
 			Numeric = true,
-			AllowEmpty = true;
+			AllowEmpty = true,
 			Finished = true,
 			ClearTextOnFocus = false,
 			Placeholder = "0",
@@ -40315,11 +40501,11 @@ g.PlantsUi = function()
 		})
 		local j
 		j = J:AddInput("plant_fruit_esp_max_kg_ui", {
-			Text = "\226\172\134\239\184\143 Maximum KG",
+			Text = "\226\172\134\239\184\143 Maximum KG";
 			Default = tostring(h.plant_fruit_esp_max_kg),
-			Numeric = true,
+			Numeric = true;
 			AllowEmpty = true;
-			Finished = true,
+			Finished = true;
 			ClearTextOnFocus = false;
 			Placeholder = "999999",
 			Callback = function(G)
@@ -40343,10 +40529,10 @@ g.PlantsUi = function()
 			Text = "\240\159\147\143 Max Distance";
 			Default = tostring(h.plant_fruit_esp_max_distance),
 			Numeric = true,
-			AllowEmpty = true,
+			AllowEmpty = true;
 			Finished = true,
 			ClearTextOnFocus = false,
-			Placeholder = "250";
+			Placeholder = "250",
 			Callback = function(G)
 				local V = z(G)
 				if not V or V < 25 then
@@ -40360,18 +40546,18 @@ g.PlantsUi = function()
 		})
 		J:AddDivider()
 		J:AddToggle("plant_fruit_esp_fruit_enabled_ui", {
-			Text = "\240\159\141\137 Fruit KG ESP",
+			Text = "\240\159\141\137 Fruit KG ESP";
 			Default = h.plant_fruit_esp_fruit_enabled,
-			Tooltip = "Shows small kg labels on fruits that match the filters.";
+			Tooltip = "Shows small kg labels on fruits that match the filters.",
 			Callback = function(G)
 				h.plant_fruit_esp_fruit_enabled = G == true
 				a.Save.SaveData()
 			end
 		})
 		J:AddToggle("plant_fruit_esp_plant_enabled_ui", {
-			Text = "\240\159\140\177 Plant Length ESP";
+			Text = "\240\159\140\177 Plant Length ESP",
 			Default = h.plant_fruit_esp_plant_enabled,
-			Tooltip = "Shows small length labels on plants that match the selected names.",
+			Tooltip = "Shows small length labels on plants that match the selected names.";
 			Callback = function(G)
 				h.plant_fruit_esp_plant_enabled = G == true
 				a.Save.SaveData()
@@ -40381,13 +40567,13 @@ g.PlantsUi = function()
 	if i then
 		local G
 		G = i:AddValueDropdown("water_plant_selected_cans_ui", {
-			Values = {},
+			Values = {};
 			Default = {},
-			Multi = true;
-			Searchable = true;
+			Multi = true,
+			Searchable = true,
 			MaxVisibleDropdownItems = 6,
-			Text = "\240\159\146\167 Watering Cans";
-			Tooltip = "Select watering cans to use. No selection uses any available can.";
+			Text = "\240\159\146\167 Watering Cans",
+			Tooltip = "Select watering cans to use. No selection uses any available can.",
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -40405,8 +40591,8 @@ g.PlantsUi = function()
 			}, {
 				"Plant Target";
 				"Custom Position"
-			});
-			Default = h.water_plant_mode,
+			}),
+			Default = h.water_plant_mode;
 			Multi = false,
 			Text = "\240\159\147\141 Water Target";
 			Tooltip = "Choose where the watering can should be used.",
@@ -40421,13 +40607,13 @@ g.PlantsUi = function()
 		V:SetValue(h.water_plant_mode)
 		local y
 		y = i:AddValueDropdown("water_plant_target_plant_ui", {
-			Values = {},
-			Default = "";
-			Multi = false;
+			Values = {};
+			Default = "",
+			Multi = false,
 			Searchable = true,
-			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\140\177 Target Plant";
-			Tooltip = "Plant Target mode waters any plant of this type.",
+			MaxVisibleDropdownItems = 10;
+			Text = "\240\159\140\177 Target Plant",
+			Tooltip = "Plant Target mode waters any plant of this type.";
 			Changed = function(G)
 				if type(G) ~= "string" then
 					return
@@ -40443,7 +40629,7 @@ g.PlantsUi = function()
 			DoesWrap = true
 		})
 		i:AddButton({
-			Text = "\240\159\147\140 Copy Current Position";
+			Text = "\240\159\147\140 Copy Current Position",
 			Tooltip = "Stand inside your farm where the watering can should be used.",
 			Func = function()
 				local G, y = Z.WaterPlants.SaveCurrentPosition()
@@ -40459,13 +40645,13 @@ g.PlantsUi = function()
 		i:AddDivider()
 		local c
 		c = i:AddValueDropdown("water_plant_weather_selected_ui", {
-			Values = Z.WeatherTriggers.GetDropdownWeatherTriggers(),
-			Default = {},
+			Values = Z.WeatherTriggers.GetDropdownWeatherTriggers();
+			Default = {};
 			Multi = true,
-			Searchable = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 8;
 			Text = "\240\159\140\166\239\184\143 Weather Trigger";
-			Tooltip = "No selection allows any weather.";
+			Tooltip = "No selection allows any weather.",
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -40478,7 +40664,7 @@ g.PlantsUi = function()
 		i:AddToggle("water_plant_weather_enabled_ui", {
 			Text = "\240\159\140\166\239\184\143 Use Weather Trigger",
 			Default = h.water_plant_weather_enabled;
-			Tooltip = "Only waters plants during selected weather or time cycle.",
+			Tooltip = "Only waters plants during selected weather or time cycle.";
 			Callback = function(G)
 				h.water_plant_weather_enabled = G == true
 				a.Save.SaveData()
@@ -40487,14 +40673,14 @@ g.PlantsUi = function()
 		i:AddDivider()
 		local J
 		J = i:AddInput("water_plant_delay_ui", {
-			Text = "\226\143\177\239\184\143 Use Delay",
-			Default = tostring(h.water_plant_delay),
-			Numeric = true;
+			Text = "\226\143\177\239\184\143 Use Delay";
+			Default = tostring(h.water_plant_delay);
+			Numeric = true,
 			AllowEmpty = false,
 			Finished = true,
 			ClearTextOnFocus = false,
 			Placeholder = "0";
-			Tooltip = "Seconds to wait before watering again. 0 disables this delay.",
+			Tooltip = "Seconds to wait before watering again. 0 disables this delay.";
 			Callback = function(G)
 				local V = tonumber(G)
 				if not V or V < 0 then
@@ -40522,9 +40708,9 @@ g.PlantsUi = function()
 			end
 		})
 		i:AddToggle("auto_water_plants_ui", {
-			Text = "\240\159\146\167 Enable Water Plants",
+			Text = "\240\159\146\167 Enable Water Plants";
 			Default = h.auto_water_plants,
-			Tooltip = "Automatically uses watering cans at the selected target.";
+			Tooltip = "Automatically uses watering cans at the selected target.",
 			Callback = function(G)
 				h.auto_water_plants = G
 				if not G then
@@ -40537,17 +40723,17 @@ g.PlantsUi = function()
 	end
 	if j then
 		j:AddLabel({
-			Text = "\240\159\147\141 Moves selected plants to one position. No selection means all plants.",
+			Text = "\240\159\147\141 Moves selected plants to one position. No selection means all plants.";
 			DoesWrap = true
 		})
 		local G
 		G = j:AddValueDropdown("trowel_plant_types_ui", {
-			Values = {};
+			Values = {},
 			Default = {};
-			Multi = true,
+			Multi = true;
 			Searchable = true;
 			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\140\177 Plant Types";
+			Text = "\240\159\140\177 Plant Types",
 			Tooltip = "Selected plants will be moved. No selection moves all plants.";
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -40568,7 +40754,7 @@ g.PlantsUi = function()
 			end
 		})
 		V:AddButton({
-			Text = "\240\159\167\185 Clear",
+			Text = "\240\159\167\185 Clear";
 			Func = function()
 				h.trowel_plant_types = {}
 				G:SetValue({})
@@ -40587,10 +40773,10 @@ g.PlantsUi = function()
 			Values = Z.Farm.GetPlacementModeOptionsFarm(true, nil, {
 				"Saved Position"
 			}),
-			Default = y;
-			Multi = false;
-			Text = "\240\159\147\141 Move Target",
-			Tooltip = "Choose where selected plants are moved.";
+			Default = y,
+			Multi = false,
+			Text = "\240\159\147\141 Move Target";
+			Tooltip = "Choose where selected plants are moved.",
 			Callback = function(G)
 				if G == "Saved Position" then
 					h.trowel_use_fixed_spot = false
@@ -40609,7 +40795,7 @@ g.PlantsUi = function()
 			DoesWrap = true
 		})
 		j:AddButton({
-			Text = "\240\159\147\141 Copy Current Position";
+			Text = "\240\159\147\141 Copy Current Position",
 			Tooltip = "Stand inside either plant area before saving.",
 			Func = function()
 				local G, V = Z.Trowel.SavePlayerPosition()
@@ -40624,7 +40810,7 @@ g.PlantsUi = function()
 		j:AddDivider()
 		j:AddToggle("auto_trowel_plants_ui", {
 			Text = "\240\159\147\141 Enable Move Plants",
-			Default = h.auto_trowel_plants;
+			Default = h.auto_trowel_plants,
 			Tooltip = "Continuously moves selected plants to the target position.";
 			Callback = function(G)
 				h.auto_trowel_plants = G == true
@@ -40643,7 +40829,7 @@ g.PlantsUi = function()
 			DoesWrap = true
 		})
 		y:AddLabel({
-			Text = "Single-harvest plants are excluded. The keep amount applies separately to every selected plant type.";
+			Text = "Single-harvest plants are excluded. The keep amount applies separately to every selected plant type.",
 			DoesWrap = true
 		})
 		y:AddDivider()
@@ -40651,11 +40837,11 @@ g.PlantsUi = function()
 		G = y:AddValueDropdown("shovel_plant_types_ui", {
 			Values = {},
 			Default = {};
-			Multi = true,
-			Searchable = true;
+			Multi = true;
+			Searchable = true,
 			MaxVisibleDropdownItems = 10;
-			Text = "\240\159\140\177 Plant Type";
-			Tooltip = "Select plant types that may be permanently removed.";
+			Text = "\240\159\140\177 Plant Type",
+			Tooltip = "Select plant types that may be permanently removed.",
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -40684,8 +40870,8 @@ g.PlantsUi = function()
 			end
 		})
 		y:AddButton({
-			Text = "\240\159\148\132 Reload Plant Counts",
-			Tooltip = "Refreshes the current plant amounts shown in the dropdown.",
+			Text = "\240\159\148\132 Reload Plant Counts";
+			Tooltip = "Refreshes the current plant amounts shown in the dropdown.";
 			Func = function()
 				G:SetValues(Z.PlantShovel.GetPlantTypeDropdown())
 				G:SetValue(h.shovel_plant_types)
@@ -40698,11 +40884,11 @@ g.PlantsUi = function()
 		j = y:AddInput("shovel_plant_min_height_ui", {
 			Text = i,
 			Default = tostring(h.shovel_plant_min_height),
-			Numeric = true,
+			Numeric = true;
 			AllowEmpty = true,
-			Finished = true,
+			Finished = true;
 			ClearTextOnFocus = false,
-			Placeholder = "Minimum Height";
+			Placeholder = "Minimum Height",
 			Callback = function(G)
 				local V = f(G)
 				if not V or V < 0 then
@@ -40730,10 +40916,10 @@ g.PlantsUi = function()
 		local J = "\226\172\134\239\184\143 <font color=\'#FF6B6B\'>Maximum</font> Height"
 		c = y:AddInput("shovel_plant_max_height_ui", {
 			Text = J;
-			Default = tostring(h.shovel_plant_max_height),
-			Numeric = true,
+			Default = tostring(h.shovel_plant_max_height);
+			Numeric = true;
 			AllowEmpty = true,
-			Finished = true,
+			Finished = true;
 			ClearTextOnFocus = false;
 			Placeholder = "Maximum Height";
 			Callback = function(G)
@@ -40763,12 +40949,12 @@ g.PlantsUi = function()
 		local d
 		d = y:AddValueDropdown("shovel_plant_variants_ui", {
 			Values = {};
-			Default = {},
-			Multi = true,
-			Searchable = true;
+			Default = {};
+			Multi = true;
+			Searchable = true,
 			MaxVisibleDropdownItems = 10,
 			Text = "\226\156\168 Variant",
-			Tooltip = "No selection means all variants, including plants without a mutation.",
+			Tooltip = "No selection means all variants, including plants without a mutation.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -40781,11 +40967,11 @@ g.PlantsUi = function()
 		d:SetValue(h.shovel_plant_variants)
 		local u
 		u = y:AddValueDropdown("shovel_plant_variant_blacklist_ui", {
-			Values = Z.Mutations.GetNames();
+			Values = Z.Mutations.GetNames(),
 			Default = {};
-			Multi = true,
-			Searchable = true,
-			MaxVisibleDropdownItems = 10,
+			Multi = true;
+			Searchable = true;
+			MaxVisibleDropdownItems = 10;
 			Text = "\240\159\155\161\239\184\143 Protect Plant Variants";
 			Tooltip = "Plants containing selected variants will never be shoveled.",
 			Changed = function(G)
@@ -40799,7 +40985,7 @@ g.PlantsUi = function()
 		u:SetValue(h.shovel_plant_variant_blacklist)
 		y:AddToggle("shovel_growing_plants_ui", {
 			Text = "<font color=\'#FFAA55\'>\240\159\140\177 Shovel Growing Plants</font>",
-			Default = h.shovel_growing_plants,
+			Default = h.shovel_growing_plants;
 			Tooltip = "Also removes plants where Age is lower than MaxAge.";
 			Callback = function(G)
 				h.shovel_growing_plants = G
@@ -40810,13 +40996,13 @@ g.PlantsUi = function()
 		local q
 		local E = "\240\159\155\161\239\184\143 Max <font color=\'#7CFC00\'>Plants To Keep</font>"
 		q = y:AddInput("shovel_plants_keep_ui", {
-			Text = E;
+			Text = E,
 			Default = tostring(h.shovel_plants_keep);
 			Numeric = true,
 			AllowEmpty = true;
-			Finished = true;
-			ClearTextOnFocus = false;
-			Placeholder = "Plants to keep per type";
+			Finished = true,
+			ClearTextOnFocus = false,
+			Placeholder = "Plants to keep per type",
 			Tooltip = "Enter 0 to remove all eligible plants. The keep amount applies separately to each selected plant type.";
 			Callback = function(G)
 				local V = z(G)
@@ -40838,9 +41024,9 @@ g.PlantsUi = function()
 		y:AddDivider()
 		local H
 		H = y:AddToggle("enable_plant_shovel_ui", {
-			Text = "<font color=\'#FF3333\'><b>\226\154\160\239\184\143 Enable Plant Shovel</b></font>";
+			Text = "<font color=\'#FF3333\'><b>\226\154\160\239\184\143 Enable Plant Shovel</b></font>",
 			Default = h.auto_shovel_plants,
-			Tooltip = "Permanently removes entire plants matching the selected filters.",
+			Tooltip = "Permanently removes entire plants matching the selected filters.";
 			Callback = function(G)
 				if G == h.auto_shovel_plants then
 					return
@@ -40874,12 +41060,12 @@ g.PlantsUi = function()
 		})
 		local G
 		G = V:AddValueDropdown("shovel_fruit_types", {
-			Values = {};
-			Default = {};
+			Values = {},
+			Default = {},
 			Multi = true;
 			Text = "\240\159\141\142 Fruit Type",
-			Tooltip = "Only selected fruit types will be removed.",
-			Searchable = true,
+			Tooltip = "Only selected fruit types will be removed.";
+			Searchable = true;
 			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -40892,7 +41078,7 @@ g.PlantsUi = function()
 		G:SetValues(Z.ShovelFruits.GetFruitTypeDropdown())
 		G:SetValue(h.shovel_fruit_types)
 		local y = V:AddButton({
-			Text = "\226\156\133 <font color=\'#7CFF8A\'><b>All</b></font>";
+			Text = "\226\156\133 <font color=\'#7CFF8A\'><b>All</b></font>",
 			Func = function()
 				local V = Z.ShovelFruits.GetAllFruitTypeSelection()
 				h.shovel_fruit_types = V
@@ -40901,7 +41087,7 @@ g.PlantsUi = function()
 			end
 		})
 		y:AddButton({
-			Text = "\240\159\167\185 <font color=\'#FFB86B\'><b>Clear</b></font>";
+			Text = "\240\159\167\185 <font color=\'#FFB86B\'><b>Clear</b></font>",
 			Func = function()
 				h.shovel_fruit_types = {}
 				G:SetValue({})
@@ -40912,11 +41098,11 @@ g.PlantsUi = function()
 		local j
 		j = V:AddValueDropdown("shovel_mutation_whitelist", {
 			Values = Z.ShovelFruits.GetMutationNames();
-			Default = {},
+			Default = {};
 			Multi = true,
 			Text = "\226\156\133 Whitelist Mutations",
 			Tooltip = "When used, only fruits containing at least one selected mutation will be removed.";
-			Searchable = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -40931,11 +41117,11 @@ g.PlantsUi = function()
 		i = V:AddValueDropdown("shovel_mutation_blacklist", {
 			Values = Z.ShovelFruits.GetMutationNames();
 			Default = {};
-			Multi = true;
+			Multi = true,
 			Text = "\226\155\148 Blacklist Mutations";
-			Tooltip = "Fruits containing any selected mutation will never be removed. Blacklist wins.";
-			Searchable = true;
-			MaxVisibleDropdownItems = 10,
+			Tooltip = "Fruits containing any selected mutation will never be removed. Blacklist wins.",
+			Searchable = true,
+			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -40949,13 +41135,13 @@ g.PlantsUi = function()
 		local c
 		local J = "\226\172\135\239\184\143 <font color=\'#7CFC00\'>Minimum</font> Weight [KG]"
 		c = V:AddInput("shovel_min_weight", {
-			Text = J,
-			Default = tostring(h.shovel_min_weight);
-			Numeric = true,
+			Text = J;
+			Default = tostring(h.shovel_min_weight),
+			Numeric = true;
 			AllowEmpty = true;
 			Finished = true;
-			ClearTextOnFocus = false;
-			Placeholder = "Minimum Weight",
+			ClearTextOnFocus = false,
+			Placeholder = "Minimum Weight";
 			Callback = function(G)
 				local V = f(G)
 				if not V then
@@ -40989,9 +41175,9 @@ g.PlantsUi = function()
 		T = V:AddInput("shovel_max_weight", {
 			Text = d;
 			Default = tostring(h.shovel_max_weight),
-			Numeric = true,
-			AllowEmpty = true;
-			Finished = true;
+			Numeric = true;
+			AllowEmpty = true,
+			Finished = true,
 			ClearTextOnFocus = false,
 			Placeholder = "Maximum Weight",
 			Callback = function(G)
@@ -41028,7 +41214,7 @@ g.PlantsUi = function()
 			Values = Z.ShovelFruits.GetVariantNames();
 			Default = {},
 			Multi = true,
-			Text = "\226\156\168 Variant";
+			Text = "\226\156\168 Variant",
 			Tooltip = "Normal, Gold or Rainbow. No selection removes nothing.";
 			Searchable = false,
 			MaxVisibleDropdownItems = 5;
@@ -41044,8 +41230,8 @@ g.PlantsUi = function()
 		V:AddDivider()
 		V:AddToggle("enable_shovel_fruits", {
 			Text = "<font color=\'#FF6B6B\'>Enable Shovel</font>",
-			Default = h.auto_shovel_fruits;
-			Tooltip = "Permanently removes fruits matching all configured filters.",
+			Default = h.auto_shovel_fruits,
+			Tooltip = "Permanently removes fruits matching all configured filters.";
 			Callback = function(G)
 				h.auto_shovel_fruits = G == true
 				if not G then
@@ -41058,21 +41244,21 @@ g.PlantsUi = function()
 end
 g.AutomationUi = function()
 	local G = d:AddTab({
-		Name = "Automation",
-		Description = "Smart automation";
+		Name = "Automation";
+		Description = "Smart automation",
 		Icon = "bot"
 	})
 	local V = G:AddLeftGroupbox("Total Control", "bot")
 	local y = G:AddLeftGroupbox("Smart Seeding", "sparkles")
 	if V then
 		V:AddLabel({
-			Text = "Runs the AFK controller and keeps the main toggle enabled after rejoin.";
+			Text = "Runs the AFK controller and keeps the main toggle enabled after rejoin.",
 			DoesWrap = true
 		})
 		V:AddToggle("total_control_session_enabled_ui", {
 			Text = "\240\159\167\160 Total Control";
 			Default = h.total_control_enabled == true,
-			Tooltip = "Keeps Total Control enabled after rejoin. Internal strategy state is still session-only.";
+			Tooltip = "Keeps Total Control enabled after rejoin. Internal strategy state is still session-only.",
 			Callback = function(G)
 				Z.TotalControl.SetEnabledTotalControl(G == true)
 			end
@@ -41088,22 +41274,22 @@ g.AutomationUi = function()
 			DoesWrap = true
 		})
 		y:AddButton({
-			Text = "\226\150\182\239\184\143 Start Smart Seeding",
+			Text = "\226\150\182\239\184\143 Start Smart Seeding";
 			Tooltip = "Checks required settings once, then starts smart seeding.";
 			Func = function()
 				Z.SmartSeedProgression.StartSmartSeedProgression(true)
 			end
 		})
 		y:AddButton({
-			Text = "\226\143\185\239\184\143 Stop Smart Seeding",
-			Tooltip = "Stops smart seeding.",
+			Text = "\226\143\185\239\184\143 Stop Smart Seeding";
+			Tooltip = "Stops smart seeding.";
 			Func = function()
 				Z.SmartSeedProgression.StopSmartSeedProgression()
 			end
 		})
 		y:AddDivider()
 		y:AddToggle("smart_seed_progression_mutation_seeds_enabled_ui", {
-			Text = "\240\159\167\172 Use Mutation Seeds";
+			Text = "\240\159\167\172 Use Mutation Seeds",
 			Default = h.smart_seed_progression_mutation_seeds_enabled,
 			Tooltip = "Allows smart seeding to use special mutation seeds before normal seeds.";
 			Callback = function(G)
@@ -41113,10 +41299,10 @@ g.AutomationUi = function()
 		})
 		local G
 		G = y:AddValueDropdown("smart_seed_progression_prevent_placement_ui", {
-			Values = Z.SmartSeedProgression.GetPlantValuesSmartSeedProgression(),
+			Values = Z.SmartSeedProgression.GetPlantValuesSmartSeedProgression();
 			Default = {},
-			Multi = true;
-			Searchable = true;
+			Multi = true,
+			Searchable = true,
 			MaxVisibleDropdownItems = 10;
 			Text = "\240\159\154\171 Prevent Seed Placement",
 			Tooltip = "Selected seeds will never be planted by smart seeding.";
@@ -41133,11 +41319,11 @@ g.AutomationUi = function()
 		V = y:AddValueDropdown("smart_seed_progression_prevent_plants_ui", {
 			Values = Z.SmartSeedProgression.GetPlantValuesSmartSeedProgression(),
 			Default = {};
-			Multi = true,
-			Searchable = true,
+			Multi = true;
+			Searchable = true;
 			MaxVisibleDropdownItems = 10;
 			Text = "\240\159\155\161\239\184\143 Prevent Shovel Plants";
-			Tooltip = "Selected plants will never be replaced by smart seeding.";
+			Tooltip = "Selected plants will never be replaced by smart seeding.",
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -41149,13 +41335,13 @@ g.AutomationUi = function()
 		V:SetValue(h.smart_seed_progression_prevent_shovel_plants)
 		local j
 		j = y:AddValueDropdown("smart_seed_progression_prevent_rarity_ui", {
-			Values = Z.SmartSeedProgression.GetRarityValuesSmartSeedProgression(),
+			Values = Z.SmartSeedProgression.GetRarityValuesSmartSeedProgression();
 			Default = {};
 			Multi = true;
 			Searchable = false,
 			MaxVisibleDropdownItems = 8;
 			Text = "\240\159\146\142 Prevent Shovel Rarity";
-			Tooltip = "Plants with selected rarities will never be replaced.",
+			Tooltip = "Plants with selected rarities will never be replaced.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -41167,8 +41353,8 @@ g.AutomationUi = function()
 		j:SetValue(h.smart_seed_progression_prevent_shovel_rarity)
 		y:AddDivider()
 		y:AddToggle("smart_seed_progression_debug_ui", {
-			Text = "\240\159\144\158 Debug",
-			Default = false;
+			Text = "\240\159\144\158 Debug";
+			Default = false,
 			Tooltip = "Shows extra smart seeding details until you rejoin.",
 			Callback = function(G)
 				g.SmartSeedProgressionDebug = G == true
@@ -41176,14 +41362,14 @@ g.AutomationUi = function()
 			end
 		})
 		g.SmartSeedProgressionUiRefs.DebugLabel = y:AddLabel({
-			Text = Z.SmartSeedProgression.GetDebugUiTextSmartSeedProgression(),
+			Text = Z.SmartSeedProgression.GetDebugUiTextSmartSeedProgression();
 			DoesWrap = true
 		})
 	end
 end
 g.AutoUi = function()
 	local G = d:AddTab({
-		Name = "Seed Placer",
+		Name = "Seed Placer";
 		Description = "Places selected seeds";
 		Icon = "sprout"
 	})
@@ -41198,7 +41384,7 @@ g.AutoUi = function()
 		local J
 		local T
 		y:AddLabel({
-			Text = "\240\159\146\161 Set a different planting target for individual seeds.";
+			Text = "\240\159\146\161 Set a different planting target for individual seeds.",
 			DoesWrap = true
 		})
 		local function d()
@@ -41259,7 +41445,7 @@ g.AutoUi = function()
 					local T
 					T = y:AddToggle(string.format("seed_active_override_%d_%d", c, V), {
 						Text = string.format("\240\159\140\177 %s <font color=\'#7CFC00\'>Target: %d</font>", j, J);
-						Default = true;
+						Default = true,
 						Tooltip = "Disable this seed override.";
 						Callback = function(V)
 							if V then
@@ -41284,11 +41470,11 @@ g.AutoUi = function()
 		H = y:AddValueDropdown("seed_placer_override_seed", {
 			Values = {},
 			Default = "";
-			Multi = false;
-			Searchable = true;
+			Multi = false,
+			Searchable = true,
 			MaxVisibleDropdownItems = 10;
-			Text = "\240\159\140\177 Select Seed",
-			Tooltip = "Select a seed to configure its target.";
+			Text = "\240\159\140\177 Select Seed";
+			Tooltip = "Select a seed to configure its target.",
 			Changed = function(V)
 				if type(V) ~= "string" or V == "" then
 					return
@@ -41300,13 +41486,13 @@ g.AutoUi = function()
 		H:SetValues(Z.SeedData.GetSeedDataListDropDown())
 		J = y:AddInput("seed_placer_override_target", {
 			Text = "\240\159\142\175 Target Amount";
-			Default = tostring(V),
-			Numeric = true;
+			Default = tostring(V);
+			Numeric = true,
 			AllowEmpty = true,
-			Finished = true,
+			Finished = true;
 			ClearTextOnFocus = false,
-			Placeholder = "Enter target amount";
-			Tooltip = "Sets how many of this seed should remain planted.";
+			Placeholder = "Enter target amount",
+			Tooltip = "Sets how many of this seed should remain planted.",
 			Callback = function(y)
 				if j then
 					return
@@ -41331,9 +41517,9 @@ g.AutoUi = function()
 			end
 		})
 		T = y:AddToggle("seed_placer_enable_selected_override", {
-			Text = "\240\159\146\165 Enable Override";
+			Text = "\240\159\146\165 Enable Override",
 			Default = false;
-			Tooltip = "Use the custom target for the selected seed.",
+			Tooltip = "Use the custom target for the selected seed.";
 			Callback = function(y)
 				if j then
 					return
@@ -41371,13 +41557,13 @@ g.AutoUi = function()
 	if V then
 		local G
 		G = V:AddValueDropdown("seed_placer_selected_seeds", {
-			Values = {};
-			Default = {},
+			Values = {},
+			Default = {};
 			Multi = true;
-			Text = "\240\159\140\177 Seeds to Plant",
-			Tooltip = "Only selected seeds will be planted.",
-			Searchable = true;
-			MaxVisibleDropdownItems = 10,
+			Text = "\240\159\140\177 Seeds to Plant";
+			Tooltip = "Only selected seeds will be planted.";
+			Searchable = true,
+			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -41389,7 +41575,7 @@ g.AutoUi = function()
 		G:SetValues(Z.SeedData.GetSeedDataListDropDown())
 		G:SetValue(h.allowed_seedsplace)
 		local y = V:AddButton({
-			Text = "\226\156\133 All";
+			Text = "\226\156\133 All",
 			Tooltip = "Selects every seed.";
 			Func = function()
 				h.allowed_seedsplace = Z.Seeder.GetAllSeedSelection()
@@ -41398,7 +41584,7 @@ g.AutoUi = function()
 			end
 		})
 		y:AddButton({
-			Text = "\240\159\167\185 Clear";
+			Text = "\240\159\167\185 Clear",
 			Tooltip = "Clears the selected seeds.";
 			Func = function()
 				h.allowed_seedsplace = {}
@@ -41410,14 +41596,14 @@ g.AutoUi = function()
 		local j
 		local i = "\240\159\142\175 Target Plants"
 		j = V:AddInput("seed_placer_default_target", {
-			Text = i,
-			Default = tostring(h.seed_place_default_target),
+			Text = i;
+			Default = tostring(h.seed_place_default_target);
 			Numeric = true;
-			AllowEmpty = true,
+			AllowEmpty = true;
 			Finished = true,
-			ClearTextOnFocus = false,
+			ClearTextOnFocus = false;
 			Placeholder = "Plants per selected seed";
-			Tooltip = "Plants each selected seed until this amount is on your farm.",
+			Tooltip = "Plants each selected seed until this amount is on your farm.";
 			Callback = function(G)
 				local V = z(G)
 				if not V or V <= 0 then
@@ -41439,13 +41625,13 @@ g.AutoUi = function()
 		local J = "\240\159\140\179 Maximum Garden Plants"
 		c = V:AddInput("seed_placer_max_garden_plants", {
 			Text = J;
-			Default = tostring(h.seed_place_max_garden_plants),
+			Default = tostring(h.seed_place_max_garden_plants);
 			Numeric = true,
 			AllowEmpty = true,
 			Finished = true,
 			ClearTextOnFocus = false;
 			Placeholder = "Maximum plants in garden";
-			Tooltip = "Stops placing seeds when the garden reaches this amount.";
+			Tooltip = "Stops placing seeds when the garden reaches this amount.",
 			Callback = function(G)
 				local V = z(G)
 				if not V or V < 0 then
@@ -41466,13 +41652,13 @@ g.AutoUi = function()
 		local T
 		local d = "\226\154\161 Delay Between Placements"
 		T = V:AddInput("seed_placer_delay", {
-			Text = d,
+			Text = d;
 			Default = tostring(h.seed_place_delay);
 			Numeric = true;
 			AllowEmpty = true,
 			Finished = true;
-			ClearTextOnFocus = false;
-			Placeholder = "Example: 0.3",
+			ClearTextOnFocus = false,
+			Placeholder = "Example: 0.3";
 			Tooltip = "Lower values place seeds faster. Minimum 0.05 seconds.";
 			Callback = function(G)
 				local V = f(G)
@@ -41498,11 +41684,11 @@ g.AutoUi = function()
 				"Random"
 			}, {
 				"Saved Position"
-			});
+			}),
 			Default = h.seed_place_mode;
-			Multi = false,
-			Text = "\240\159\147\141 Placement Mode";
-			Tooltip = "Choose where selected seeds will be planted.";
+			Multi = false;
+			Text = "\240\159\147\141 Placement Mode",
+			Tooltip = "Choose where selected seeds will be planted.",
 			Callback = function(G)
 				if type(G) ~= "string" or G == "" then
 					return
@@ -41517,7 +41703,7 @@ g.AutoUi = function()
 			DoesWrap = true
 		})
 		V:AddButton({
-			Text = "\240\159\147\140 Save Current Position";
+			Text = "\240\159\147\140 Save Current Position",
 			Tooltip = "Stand inside your farm where seeds should be planted.",
 			Func = function()
 				local G, V = Z.Seeder.SaveCurrentPosition()
@@ -41544,8 +41730,8 @@ g.AutoUi = function()
 		})
 		V:AddDivider()
 		V:AddToggle("seed_placer_stack_mode", {
-			Text = "\240\159\167\188 Layers Stack Mode",
-			Default = h.seed_place_stack_mode;
+			Text = "\240\159\167\188 Layers Stack Mode";
+			Default = h.seed_place_stack_mode,
 			Tooltip = "Saved or fixed farm positions place plants in closely stacked layers.";
 			Callback = function(G)
 				h.seed_place_stack_mode = G
@@ -41555,8 +41741,8 @@ g.AutoUi = function()
 		})
 		V:AddToggle("seed_placer_stack_modeunderground", {
 			Text = "\240\159\145\189 Stack Underground",
-			Default = h.seed_place_stack_mode_underground;
-			Tooltip = "Saved or fixed farm positions can stack underground.",
+			Default = h.seed_place_stack_mode_underground,
+			Tooltip = "Saved or fixed farm positions can stack underground.";
 			Callback = function(G)
 				h.seed_place_stack_mode_underground = G
 				Z.Seeder.StackIndex = 0
@@ -41565,9 +41751,9 @@ g.AutoUi = function()
 		})
 		V:AddDivider()
 		V:AddToggle("enable_seed_placer", {
-			Text = "\240\159\140\177 Enable Seed Placer";
+			Text = "\240\159\140\177 Enable Seed Placer",
 			Default = h.auto_seedplace;
-			Tooltip = "Continuously plants selected seeds up to their target amount.",
+			Tooltip = "Continuously plants selected seeds up to their target amount.";
 			Callback = function(G)
 				h.auto_seedplace = G
 				if not G then
@@ -41678,9 +41864,9 @@ g.PetUi = function()
 					local c = i and Z.PetFinderPremium.CountOwnedForRule(y, i) or 0
 					local d
 					d = j:AddToggle(string.format("pet_finder_active_rule_%d_%d", T, V), {
-						Text = string.format("\240\159\144\190 %s <font color=\'#7CFC00\'>%d/%d</font>\n<font color=\'#CFCFCF\'>Sizes: %s | Variants: %s</font>", Z.PetFinderPremium.GetDisplayName(y), c, i.target, Y(i.sizes), Y(i.variants)),
+						Text = string.format("\240\159\144\190 %s <font color=\'#7CFC00\'>%d/%d</font>\n<font color=\'#CFCFCF\'>Sizes: %s | Variants: %s</font>", Z.PetFinderPremium.GetDisplayName(y), c, i.target, Y(i.sizes), Y(i.variants));
 						Default = true;
-						Tooltip = "Disable this pet buy rule.",
+						Tooltip = "Disable this pet buy rule.";
 						Callback = function(V)
 							if V then
 								return
@@ -41702,9 +41888,9 @@ g.PetUi = function()
 		end
 		d = j:AddValueDropdown("pet_finder_premium_pet_ui", {
 			Values = {};
-			Default = "",
+			Default = "";
 			Multi = false;
-			Searchable = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 10;
 			Text = "\240\159\144\190 Select Pet",
 			Tooltip = "Select a pet to add or edit.",
@@ -41718,13 +41904,13 @@ g.PetUi = function()
 		})
 		d:SetValues(Z.PetFinderPremium.GetPetDropdown())
 		u = j:AddValueDropdown("pet_finder_premium_sizes_ui", {
-			Values = {};
-			Default = {};
+			Values = {},
+			Default = {},
 			Multi = true,
 			Searchable = true;
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\147\143 Pet Sizes",
-			Tooltip = "Leave empty to buy any size.",
+			Tooltip = "Leave empty to buy any size.";
 			Changed = function(G)
 				if c or type(G) ~= "table" then
 					return
@@ -41736,13 +41922,13 @@ g.PetUi = function()
 		})
 		u:SetValues(Z.PetFinderPremium.GetSizeValues())
 		q = j:AddValueDropdown("pet_finder_premium_variants_ui", {
-			Values = {},
-			Default = {},
-			Multi = true;
+			Values = {};
+			Default = {};
+			Multi = true,
 			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Text = "\240\159\140\136 Pet Variants",
-			Tooltip = "Leave empty to buy Normal or Rainbow pets.",
+			Tooltip = "Leave empty to buy Normal or Rainbow pets.";
 			Changed = function(G)
 				if c or type(G) ~= "table" then
 					return
@@ -41754,12 +41940,12 @@ g.PetUi = function()
 		})
 		q:SetValues(Z.PetFinderPremium.GetVariantValues())
 		E = j:AddInput("pet_finder_premium_target_ui", {
-			Text = "\240\159\142\175 Target Amount";
-			Default = "999";
+			Text = "\240\159\142\175 Target Amount",
+			Default = "999",
 			Numeric = true;
-			AllowEmpty = true;
+			AllowEmpty = true,
 			Finished = true;
-			ClearTextOnFocus = false;
+			ClearTextOnFocus = false,
 			Placeholder = "Owned target amount";
 			Tooltip = "Stops buying this pet when the matching inventory amount is reached.";
 			Callback = function(y)
@@ -41785,7 +41971,7 @@ g.PetUi = function()
 		H = j:AddToggle("pet_finder_premium_rule_enabled_ui", {
 			Text = "\226\158\149 Enable Buy Rule",
 			Default = false,
-			Tooltip = "Adds the selected pet settings to the active buy list.",
+			Tooltip = "Adds the selected pet settings to the active buy list.";
 			Callback = function(j)
 				if c then
 					return
@@ -41815,7 +42001,7 @@ g.PetUi = function()
 		})
 		j:AddDivider()
 		j:AddLabel({
-			Text = "= <font color=\'#7CFC00\'>Active Pet Buy List</font> =",
+			Text = "= <font color=\'#7CFC00\'>Active Pet Buy List</font> =";
 			DoesWrap = true
 		})
 		g.PetFinderPremiumUi.RefreshRules = N
@@ -41847,7 +42033,7 @@ g.PetUi = function()
 			local y = Z.TotalControl.IsEnabledTotalControl() and (type(X.cache.pet_purchase_log) == "table" and X.cache.pet_purchase_log) or type(h.pet_finder_purchase_log) == "table" and h.pet_finder_purchase_log or {}
 			if # y == 0 then
 				local V = i:AddLabel({
-					Text = "<font color=\'#888888\'>No pet purchases recorded</font>",
+					Text = "<font color=\'#888888\'>No pet purchases recorded</font>";
 					DoesWrap = true
 				})
 				table.insert(G, V)
@@ -41867,7 +42053,7 @@ g.PetUi = function()
 		end
 		i:AddButton({
 			Text = "\240\159\167\185 Clear Purchase Log";
-			Tooltip = "Clears the saved pet purchase history.";
+			Tooltip = "Clears the saved pet purchase history.",
 			Func = function()
 				h.pet_finder_purchase_log = {}
 				a.Save.SaveDataSync()
@@ -41888,12 +42074,12 @@ g.PetUi = function()
 		local y
 		y = V:AddInput("pet_finder_premium_hop_minutes_ui", {
 			Text = G(),
-			Default = tostring(h.pet_finder_hop_minutes);
-			Numeric = true,
-			AllowEmpty = true,
-			Finished = true,
+			Default = tostring(h.pet_finder_hop_minutes),
+			Numeric = true;
+			AllowEmpty = true;
+			Finished = true;
 			ClearTextOnFocus = false;
-			Placeholder = "Minimum 1 minute",
+			Placeholder = "Minimum 1 minute";
 			Tooltip = "How long to watch the current server before hopping.";
 			Callback = function(V)
 				local j = z(V)
@@ -41910,7 +42096,7 @@ g.PetUi = function()
 		})
 		V:AddToggle("pet_finder_premium_auto_hop_ui", {
 			Text = "\240\159\154\128 Auto Hop Server";
-			Default = h.pet_finder_auto_hop;
+			Default = h.pet_finder_auto_hop,
 			Tooltip = "Hops after the selected watch timer when no matching pet is ready.",
 			Callback = function(G)
 				h.pet_finder_auto_hop = G
@@ -41920,8 +42106,8 @@ g.PetUi = function()
 		})
 		local j
 		j = V:AddToggle("pet_finder_premium_enabled_ui", {
-			Text = "\240\159\144\190 Enable Pet Finder Premium",
-			Default = h.pet_finder_enabled;
+			Text = "\240\159\144\190 Enable Pet Finder Premium";
+			Default = h.pet_finder_enabled,
 			Tooltip = "Automatically buys pets from your enabled buy list.",
 			DisabledTooltip = g.GetProMessage();
 			Callback = function(G)
@@ -41940,7 +42126,7 @@ g.PetUi = function()
 	end
 	if y then
 		y:AddLabel({
-			Text = "\240\159\144\190 Returns you to the farm centre when you are too far away.";
+			Text = "\240\159\144\190 Returns you to the farm centre when you are too far away.",
 			DoesWrap = true
 		})
 		local function G()
@@ -41948,14 +42134,14 @@ g.PetUi = function()
 		end
 		local V
 		V = y:AddInput("pet_return_farm_timer_ui", {
-			Text = G();
-			Default = tostring(h.pet_return_farm_timer),
+			Text = G(),
+			Default = tostring(h.pet_return_farm_timer);
 			Numeric = true;
 			AllowEmpty = true,
 			Finished = true;
-			ClearTextOnFocus = false;
+			ClearTextOnFocus = false,
 			Placeholder = "Minimum 3 seconds";
-			Tooltip = "How often to check if you are too far from the farm.",
+			Tooltip = "How often to check if you are too far from the farm.";
 			Callback = function(y)
 				local j = z(y)
 				if not j or j < 3 then
@@ -41987,8 +42173,8 @@ g.PetUi = function()
 end
 g.CollectUi = function()
 	local G = d:AddTab({
-		Name = "Fruit Collect";
-		Description = "Fruit Collection";
+		Name = "Fruit Collect",
+		Description = "Fruit Collection",
 		Icon = "store"
 	})
 	local V = G:AddLeftGroupbox("Fruit Collector", "badge-dollar-sign")
@@ -42002,13 +42188,13 @@ g.CollectUi = function()
 		})
 		local G
 		G = y:AddValueDropdown("buy_select_garden_fruit_v1", {
-			Values = {},
-			Default = {},
-			Multi = true;
-			Text = "\240\159\141\142 Garden Fruits",
+			Values = {};
+			Default = {};
+			Multi = true,
+			Text = "\240\159\141\142 Garden Fruits";
 			Tooltip = "Choose exact garden fruits to collect.",
-			Searchable = true;
-			MaxVisibleDropdownItems = 10;
+			Searchable = true,
+			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				g.BuySelectFruitSelected = G or {}
 			end
@@ -42023,7 +42209,7 @@ g.CollectUi = function()
 		})
 		y:AddButton({
 			Text = "\226\156\133 Collect Selected";
-			Tooltip = "Collects selected fruits that are ready.",
+			Tooltip = "Collects selected fruits that are ready.";
 			Func = function()
 				task.spawn(function()
 					local V, y = pcall(function()
@@ -42039,7 +42225,7 @@ g.CollectUi = function()
 			end
 		})
 		g.BuySelectFruitUi.StatusLabel = y:AddLabel({
-			Text = "Ready",
+			Text = "Ready";
 			DoesWrap = true
 		})
 		Z.BuySelectFruit.RefreshDropdownBuySelectFruit(G, false)
@@ -42048,11 +42234,11 @@ g.CollectUi = function()
 		local G
 		G = V:AddValueDropdown("dd_collect_frutisx22", {
 			Values = {};
-			Default = {},
-			Multi = true;
-			Text = "\240\159\140\177 Collect Fruits";
-			Tooltip = "Selected Fruits will be collected if they are ready.";
-			Searchable = true;
+			Default = {};
+			Multi = true,
+			Text = "\240\159\140\177 Collect Fruits",
+			Tooltip = "Selected Fruits will be collected if they are ready.",
+			Searchable = true,
 			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if not G then
@@ -42066,8 +42252,8 @@ g.CollectUi = function()
 		G:SetValues(Z.FruitFilters.GetFruitTypeDropdownWithFarmCounts())
 		G:SetValue(h.collect_fruit_list)
 		V:AddButton({
-			Text = "\226\153\187\239\184\143 Reload Fruit List",
-			Tooltip = "Refreshes farm fruit counts in the list.";
+			Text = "\226\153\187\239\184\143 Reload Fruit List";
+			Tooltip = "Refreshes farm fruit counts in the list.",
 			Func = function()
 				G:SetValues(Z.FruitFilters.GetFruitTypeDropdownWithFarmCounts())
 				G:SetValue(h.collect_fruit_list)
@@ -42076,7 +42262,7 @@ g.CollectUi = function()
 		})
 		V:AddToggle("collection_teleportcollect", {
 			Text = "<font color=\'#FFFFFF\'>\240\159\147\161 Auto Teleport</font>";
-			Default = h.collection_teleport;
+			Default = h.collection_teleport,
 			Tooltip = "Teleports back to your garden if you are out of collection range.",
 			Callback = function(G)
 				h.collection_teleport = G
@@ -42088,18 +42274,18 @@ g.CollectUi = function()
 				{
 					Text = "Default",
 					Value = "Default"
-				};
+				},
 				{
 					Text = "Highest Price > Lowest",
 					Value = "Highest Price > Lowest"
-				},
+				};
 				{
-					Text = "Lowest Price > Highest";
+					Text = "Lowest Price > Highest",
 					Value = "Lowest Price > Highest"
 				}
-			};
-			Default = h.collect_sort_mode;
-			Multi = false;
+			},
+			Default = h.collect_sort_mode,
+			Multi = false,
 			Text = "\240\159\146\176 Collect Sort";
 			Tooltip = "Choose which ready fruits are collected first.";
 			Searchable = false,
@@ -42122,9 +42308,9 @@ g.CollectUi = function()
 			end
 		})
 		V:AddToggle("lite_fruit_collection_ui", {
-			Text = "\226\173\144 <font color=\'#FFD700\'>[Total Control [LITE]]</font> Fruit Collection",
+			Text = "\226\173\144 <font color=\'#FFD700\'>[Total Control [LITE]]</font> Fruit Collection";
 			Default = h.lite_fruit_collection == true,
-			Tooltip = "Uses a lower CPU collection mode for low FPS farming.",
+			Tooltip = "Uses a lower CPU collection mode for low FPS farming.";
 			Callback = function(G)
 				h.lite_fruit_collection = G == true
 				Z.LiteFruitCollection.OnChangedValuesLiteMode()
@@ -42133,12 +42319,12 @@ g.CollectUi = function()
 		})
 		V:AddSlider("lite_fruit_collection_speed_ui", {
 			Text = "\226\156\168 Collection Power",
-			Default = math.clamp(tonumber(h.lite_fruit_collection_speed) or 40, 0, 100),
-			Min = 0;
+			Default = math.clamp(tonumber(h.lite_fruit_collection_speed) or 40, 0, 100);
+			Min = 0,
 			Max = 100,
-			Rounding = 0,
+			Rounding = 0;
 			Suffix = "%";
-			Tooltip = "Higher power collects faster but may use more CPU.";
+			Tooltip = "Higher power collects faster but may use more CPU.",
 			Callback = function(G)
 				h.lite_fruit_collection_speed = math.clamp(math.floor(tonumber(G) or 40), 0, 100)
 				Z.LiteFruitCollection.OnChangedValuesLiteMode()
@@ -42146,9 +42332,9 @@ g.CollectUi = function()
 			end
 		})
 		V:AddToggle("enablefruitcollector", {
-			Text = "<font color=\'#CF02B0\'>\240\159\154\128 Fast Fruit Collector</font>",
-			Default = h.auto_collect_fruit_enabled,
-			Tooltip = "Collects fruits and teleports you to the farm.";
+			Text = "<font color=\'#CF02B0\'>\240\159\154\128 Fast Fruit Collector</font>";
+			Default = h.auto_collect_fruit_enabled;
+			Tooltip = "Collects fruits and teleports you to the farm.",
 			Callback = function(G)
 				h.auto_collect_fruit_enabled = G
 				Z.LiteFruitCollection.OnChangedValuesLiteMode()
@@ -42177,7 +42363,7 @@ g.CollectUi = function()
 		local N
 		local W
 		i:AddLabel({
-			Text = "\240\159\146\161 Selected fruits use these custom collect rules. Other fruits keep normal collector behaviour.";
+			Text = "\240\159\146\161 Selected fruits use these custom collect rules. Other fruits keep normal collector behaviour.",
 			DoesWrap = true
 		})
 		local function X()
@@ -42277,7 +42463,7 @@ g.CollectUi = function()
 			local V = Z.FruitCollectOverrides.GetSortedOverridesFruitCollectOverrides()
 			if # V == 0 then
 				local G = i:AddLabel({
-					Text = "<font color=\'#888888\'>No active fruit overrides</font>",
+					Text = "<font color=\'#888888\'>No active fruit overrides</font>";
 					DoesWrap = true
 				})
 				table.insert(q, G)
@@ -42287,7 +42473,7 @@ g.CollectUi = function()
 					local c = Z.FruitCollectOverrides.GetOverrideUiKeyFruitCollectOverrides(j) .. ("_" .. (tostring(E) .. ("_" .. tostring(V))))
 					local J = i:AddToggle(c, {
 						Text = Z.FruitCollectOverrides.GetOverrideSummaryFruitCollectOverrides(j, y.rule),
-						Default = type(y.rule) == "table" and y.rule.enabled ~= false,
+						Default = type(y.rule) == "table" and y.rule.enabled ~= false;
 						Tooltip = "Enable or disable this fruit override.";
 						Callback = function(G)
 							if u then
@@ -42298,7 +42484,7 @@ g.CollectUi = function()
 					})
 					local T = i:AddButton({
 						Text = "\240\159\151\145 Remove Override",
-						Tooltip = "Removes this fruit override.",
+						Tooltip = "Removes this fruit override.";
 						Func = function()
 							Z.FruitCollectOverrides.RemoveOverrideFruitCollectOverrides(j)
 							if G == j then
@@ -42307,7 +42493,7 @@ g.CollectUi = function()
 						end
 					})
 					local d = i:AddLabel({
-						Text = "<font color=\'#444444\'>\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128</font>";
+						Text = "<font color=\'#444444\'>\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128</font>",
 						DoesWrap = false
 					})
 					table.insert(q, J)
@@ -42321,13 +42507,13 @@ g.CollectUi = function()
 		end
 		g.FruitCollectOverrideUiRefs.RefreshOverridesFruitCollectOverrides = m
 		a = i:AddValueDropdown("collect_override_fruit_name", {
-			Values = {};
-			Default = "";
+			Values = {},
+			Default = "",
 			Multi = false,
-			Searchable = true;
-			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\140\177 Select Fruit",
-			Tooltip = "Select the fruit that should use custom collect rules.";
+			Searchable = true,
+			MaxVisibleDropdownItems = 10;
+			Text = "\240\159\140\177 Select Fruit";
+			Tooltip = "Select the fruit that should use custom collect rules.",
 			Changed = function(y)
 				if type(y) ~= "string" or y == "" then
 					return
@@ -42340,12 +42526,12 @@ g.CollectUi = function()
 			end
 		})
 		H = i:AddValueDropdown("collect_override_multi_fruit_names", {
-			Values = {},
+			Values = {};
 			Default = {},
 			Multi = true;
-			Searchable = true;
-			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\140\177 Select Multiple Fruits";
+			Searchable = true,
+			MaxVisibleDropdownItems = 10;
+			Text = "\240\159\140\177 Select Multiple Fruits",
 			Tooltip = "When any fruits are selected here, the same override is saved for all of them and the single fruit selector is ignored.",
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -42370,12 +42556,12 @@ g.CollectUi = function()
 		})
 		r = i:AddValueDropdown("collect_override_if_mutations", {
 			Values = Z.FruitCollectOverrides.GetMutationDropdownFruitCollectOverrides();
-			Default = {};
+			Default = {},
 			Multi = true,
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
-			Text = "\226\156\133 Collect If Mutation",
-			Tooltip = "Only this fruit needs one of these mutations. Empty allows any mutation unless blocked.",
+			MaxVisibleDropdownItems = 10,
+			Text = "\226\156\133 Collect If Mutation";
+			Tooltip = "Only this fruit needs one of these mutations. Empty allows any mutation unless blocked.";
 			Changed = function(G)
 				if u or type(G) ~= "table" then
 					return
@@ -42384,11 +42570,11 @@ g.CollectUi = function()
 			end
 		})
 		Y = i:AddValueDropdown("collect_override_block_mutations", {
-			Values = Z.FruitCollectOverrides.GetMutationDropdownFruitCollectOverrides(),
-			Default = {},
-			Multi = true,
-			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			Values = Z.FruitCollectOverrides.GetMutationDropdownFruitCollectOverrides();
+			Default = {};
+			Multi = true;
+			Searchable = true;
+			MaxVisibleDropdownItems = 10,
 			Text = "\226\155\148 Don\'t Collect If Mutation";
 			Tooltip = "This fruit will not be collected when it has any selected mutation.",
 			Changed = function(G)
@@ -42404,8 +42590,8 @@ g.CollectUi = function()
 			Numeric = true;
 			AllowEmpty = true,
 			Finished = true;
-			ClearTextOnFocus = false,
-			Placeholder = "Minimum KG",
+			ClearTextOnFocus = false;
+			Placeholder = "Minimum KG";
 			Tooltip = "This fruit must be at least this KG.",
 			Changed = function(G)
 				if e then
@@ -42434,19 +42620,19 @@ g.CollectUi = function()
 			end
 		})
 		s = i:AddInput("collect_override_max_weight", {
-			Text = l(J),
+			Text = l(J);
 			Default = tostring(J);
-			Numeric = true,
+			Numeric = true;
 			AllowEmpty = true,
 			Finished = true,
-			ClearTextOnFocus = false,
+			ClearTextOnFocus = false;
 			Placeholder = "Maximum KG";
-			Tooltip = "This fruit must be at most this KG.";
+			Tooltip = "This fruit must be at most this KG.",
 			Changed = function(G)
 				if s then
 					s:SetText(l(G))
 				end
-			end;
+			end,
 			Callback = function(G)
 				if u then
 					return
@@ -42471,7 +42657,7 @@ g.CollectUi = function()
 		N = i:AddToggle("collect_override_lower_kg_fruits", {
 			Text = "\240\159\141\143 Collect Lower KG Fruits";
 			Default = T;
-			Tooltip = "Collects this fruit normally when it is below the override minimum KG.";
+			Tooltip = "Collects this fruit normally when it is below the override minimum KG.",
 			Callback = function(G)
 				if u then
 					return
@@ -42480,9 +42666,9 @@ g.CollectUi = function()
 			end
 		})
 		W = i:AddToggle("collect_override_protect_kg_range", {
-			Text = "\240\159\155\161 Keep/Protect this KG range";
+			Text = "\240\159\155\161 Keep/Protect this KG range",
 			Default = d,
-			Tooltip = "Keeps matching fruit in this KG range instead of collecting it. Selected mutations narrow what is protected.",
+			Tooltip = "Keeps matching fruit in this KG range instead of collecting it. Selected mutations narrow what is protected.";
 			Callback = function(G)
 				if u then
 					return
@@ -42491,7 +42677,7 @@ g.CollectUi = function()
 			end
 		})
 		i:AddButton({
-			Text = "\226\158\149 Add / Update Override",
+			Text = "\226\158\149 Add / Update Override";
 			Tooltip = "Saves the custom rule for the selected fruit. Multiple selected fruits are updated together.";
 			Func = function()
 				local V = B()
@@ -42527,7 +42713,7 @@ g.CollectUi = function()
 	end
 	if j then
 		j:AddLabel({
-			Text = "\226\132\185\239\184\143 Press Enter after changing KG values. Empty mutation or variant lists collect everything unless protected below.";
+			Text = "\226\132\185\239\184\143 Press Enter after changing KG values. Empty mutation or variant lists collect everything unless protected below.",
 			DoesWrap = true
 		})
 		local G
@@ -42547,10 +42733,10 @@ g.CollectUi = function()
 			return string.format("\226\172\134\239\184\143 Max Weight %.2fKG", V)
 		end
 		G = j:AddInput("collect_min_weight", {
-			Text = y(h.collect_min_weight);
-			Default = tostring(h.collect_min_weight),
-			Numeric = true;
-			AllowEmpty = true;
+			Text = y(h.collect_min_weight),
+			Default = tostring(h.collect_min_weight);
+			Numeric = true,
+			AllowEmpty = true,
 			Finished = true;
 			ClearTextOnFocus = false,
 			Placeholder = "Press Enter to update",
@@ -42588,14 +42774,14 @@ g.CollectUi = function()
 			end
 		})
 		V = j:AddInput("collect_max_weight", {
-			Text = i(h.collect_max_weight),
+			Text = i(h.collect_max_weight);
 			Default = tostring(h.collect_max_weight),
-			Numeric = true;
-			AllowEmpty = true;
-			Finished = true,
+			Numeric = true,
+			AllowEmpty = true,
+			Finished = true;
 			ClearTextOnFocus = false,
 			Placeholder = "Press Enter to update",
-			Tooltip = "Press Enter to update. Fruits above this KG will not be collected.",
+			Tooltip = "Press Enter to update. Fruits above this KG will not be collected.";
 			Changed = function(G)
 				if V then
 					V:SetText(i(G))
@@ -42631,13 +42817,13 @@ g.CollectUi = function()
 		j:AddDivider()
 		local c
 		c = j:AddValueDropdown("collect_mutation_whitelist", {
-			Values = Z.FruitFilters.GetMutationNames();
-			Default = {};
-			Multi = true,
-			Text = "\226\156\133 Only Mutations";
+			Values = Z.FruitFilters.GetMutationNames(),
+			Default = {},
+			Multi = true;
+			Text = "\226\156\133 Only Mutations",
 			Tooltip = "Only collect fruits with selected mutations. Empty allows all mutations.",
 			Searchable = true,
-			MaxVisibleDropdownItems = 10,
+			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -42651,11 +42837,11 @@ g.CollectUi = function()
 		local J
 		J = j:AddValueDropdown("collect_mutation_blacklist", {
 			Values = Z.FruitFilters.GetMutationNames();
-			Default = {},
-			Multi = true,
+			Default = {};
+			Multi = true;
 			Text = "\226\155\148 Block Mutations";
 			Tooltip = "Selected mutations will not be collected.",
-			Searchable = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -42670,13 +42856,13 @@ g.CollectUi = function()
 		j:AddDivider()
 		local T
 		T = j:AddValueDropdown("collect_variant_whitelist", {
-			Values = Z.FruitFilters.GetVariantNames();
+			Values = Z.FruitFilters.GetVariantNames(),
 			Default = {};
-			Multi = true,
-			Text = "\226\156\133 Only Variants",
+			Multi = true;
+			Text = "\226\156\133 Only Variants";
 			Tooltip = "Only collect selected variants. Empty allows all variants.",
-			Searchable = false;
-			MaxVisibleDropdownItems = 5,
+			Searchable = false,
+			MaxVisibleDropdownItems = 5;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -42692,9 +42878,9 @@ g.CollectUi = function()
 			Values = Z.FruitFilters.GetVariantNames();
 			Default = {};
 			Multi = true,
-			Text = "\240\159\155\161\239\184\143 Protect Variants",
+			Text = "\240\159\155\161\239\184\143 Protect Variants";
 			Tooltip = "Selected variants will not be collected.",
-			Searchable = false;
+			Searchable = false,
 			MaxVisibleDropdownItems = 5,
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -42711,7 +42897,7 @@ end
 g.Shopui = function()
 	local G = d:AddTab({
 		Name = "Shop",
-		Description = "Shop";
+		Description = "Shop",
 		Icon = "store"
 	})
 	local V = G:AddLeftGroupbox("Seed Shop", "sprout")
@@ -42730,9 +42916,9 @@ g.Shopui = function()
 			return
 		end
 		G:AddToggle(y .. "_enabled", {
-			Text = "\240\159\146\176 Enable Sheckles Reserve";
-			Default = h[V .. "_min_sheckles_enabled"] == true;
-			Tooltip = "When enabled, the shop keeps this much money saved and only spends above it.";
+			Text = "\240\159\146\176 Enable Sheckles Reserve",
+			Default = h[V .. "_min_sheckles_enabled"] == true,
+			Tooltip = "When enabled, the shop keeps this much money saved and only spends above it.",
 			Callback = function(G)
 				h[V .. "_min_sheckles_enabled"] = G == true
 				a.Save.SaveDataSync()
@@ -42756,11 +42942,11 @@ g.Shopui = function()
 		end
 		Z = G:AddInput(y, {
 			Text = i(V, h[V .. "_min_sheckles"]),
-			Default = E.Currency.FormatMoney(h[V .. "_min_sheckles"]);
+			Default = E.Currency.FormatMoney(h[V .. "_min_sheckles"]),
 			Numeric = false;
 			AllowEmpty = true,
 			Finished = true,
-			ClearTextOnFocus = false;
+			ClearTextOnFocus = false,
 			Placeholder = "0 or 67m";
 			Tooltip = "Press Enter to update. 0 disables the amount check.";
 			Changed = function(G)
@@ -42801,9 +42987,9 @@ g.Shopui = function()
 		})
 		local Z
 		Z = G:AddDropdown(y, {
-			Values = Y.ShopTrigger.GetValuesShopTrigger(),
-			Default = tostring(h[V .. "_trigger_name"] or "Any Time");
-			Multi = false,
+			Values = Y.ShopTrigger.GetValuesShopTrigger();
+			Default = tostring(h[V .. "_trigger_name"] or "Any Time"),
+			Multi = false;
 			Text = "\240\159\140\166\239\184\143 Trigger",
 			Tooltip = "Choose when this shop is allowed to buy.",
 			Callback = function(G)
@@ -42829,7 +43015,7 @@ g.Shopui = function()
 			end
 		})
 		j:AddButton({
-			Text = "\240\159\167\185 Clear",
+			Text = "\240\159\167\185 Clear";
 			Func = function()
 				h[y] = {}
 				V:SetValue({})
@@ -42839,18 +43025,18 @@ g.Shopui = function()
 	end
 	if V then
 		V:AddLabel({
-			Text = "\226\132\185\239\184\143 Select the seeds you want to buy. Nothing is bought unless it is selected.",
+			Text = "\226\132\185\239\184\143 Select the seeds you want to buy. Nothing is bought unless it is selected.";
 			DoesWrap = true
 		})
 		local G
 		G = V:AddValueDropdown("seedshop_buy_selected_v2", {
-			Values = {},
-			Default = {},
-			Multi = true,
+			Values = {};
+			Default = {};
+			Multi = true;
 			Text = "\226\156\133 Buy Selected Seeds";
 			Tooltip = "Selected seeds will be purchased when in stock.",
 			Searchable = true,
-			MaxVisibleDropdownItems = 10,
+			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -42863,8 +43049,8 @@ g.Shopui = function()
 		G:SetValue(h.seed_shop_buy_selected)
 		T(V, G, "seed_shop_buy_selected", g.SeedShopDataList)
 		V:AddToggle("seedshopautobuyenabled", {
-			Text = "<font color=\'#FFFFFF\'>\240\159\140\177 Enable Seed Shop</font>";
-			Default = h.enabled_seed_shop,
+			Text = "<font color=\'#FFFFFF\'>\240\159\140\177 Enable Seed Shop</font>",
+			Default = h.enabled_seed_shop;
 			Tooltip = "When enabled, buys selected seeds only.",
 			Callback = function(G)
 				h.enabled_seed_shop = G == true
@@ -42876,18 +43062,18 @@ g.Shopui = function()
 	end
 	if y then
 		y:AddLabel({
-			Text = "\226\132\185\239\184\143 Select the gear you want to buy. Nothing is bought unless it is selected.";
+			Text = "\226\132\185\239\184\143 Select the gear you want to buy. Nothing is bought unless it is selected.",
 			DoesWrap = true
 		})
 		local G
 		G = y:AddValueDropdown("gearshop_buy_selected_v2", {
-			Values = {},
+			Values = {};
 			Default = {};
-			Multi = true,
-			Text = "\226\156\133 Buy Selected Gear";
+			Multi = true;
+			Text = "\226\156\133 Buy Selected Gear",
 			Tooltip = "Selected gear will be purchased when in stock.",
 			Searchable = true,
-			MaxVisibleDropdownItems = 10,
+			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -42900,8 +43086,8 @@ g.Shopui = function()
 		G:SetValue(h.gear_shop_buy_selected)
 		T(y, G, "gear_shop_buy_selected", g.AllGearShopData)
 		y:AddToggle("dd_gearshop_enabled_v2", {
-			Text = "<font color=\'#FFFFFF\'>\240\159\148\171 Enable Gear Shop</font>";
-			Default = h.enabled_gear_shop;
+			Text = "<font color=\'#FFFFFF\'>\240\159\148\171 Enable Gear Shop</font>",
+			Default = h.enabled_gear_shop,
 			Tooltip = "When enabled, buys selected gear only.";
 			Callback = function(G)
 				h.enabled_gear_shop = G == true
@@ -42918,11 +43104,11 @@ g.Shopui = function()
 		})
 		local G
 		G = j:AddValueDropdown("crateshop_buy_selected_v1", {
-			Values = {};
+			Values = {},
 			Default = {};
 			Multi = true;
 			Text = "\226\156\133 Buy Selected Crates",
-			Tooltip = "Selected crates will be purchased when in stock.",
+			Tooltip = "Selected crates will be purchased when in stock.";
 			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
@@ -42938,8 +43124,8 @@ g.Shopui = function()
 		T(j, G, "crate_shop_buy_selected", g.CrateShopDataList)
 		j:AddToggle("crateshopautobuyenabled_v1", {
 			Text = "<font color=\'#FFFFFF\'>\240\159\147\166 Enable Crate Shop</font>";
-			Default = h.enabled_crate_shop,
-			Tooltip = "When enabled, buys selected crates only.";
+			Default = h.enabled_crate_shop;
+			Tooltip = "When enabled, buys selected crates only.",
 			Callback = function(G)
 				h.enabled_crate_shop = G == true
 				a.Save.SaveData()
@@ -42952,7 +43138,7 @@ end
 g.AuctioneerUi = function()
 	local G = d:AddTab({
 		Name = "Auctioneer " .. g.GetProLabel();
-		Description = "Auto buy selected auction items.";
+		Description = "Auto buy selected auction items.",
 		Icon = "gavel"
 	})
 	local V = G:AddLeftGroupbox("<font color=\'#FF3333\'>Fast Auction</font>", "zap")
@@ -42974,29 +43160,29 @@ g.AuctioneerUi = function()
 	end
 	if V then
 		V:AddLabel({
-			Text = "Buys any affordable live auction item immediately once it reaches the selected discount. The highest current price is attempted first.";
+			Text = "Buys any affordable live auction item immediately once it reaches the selected discount. The highest current price is attempted first.",
 			DoesWrap = true
 		})
 		if not q then
 			V:AddLabel({
-				Text = g.GetProMessage(),
+				Text = g.GetProMessage();
 				DoesWrap = true
 			})
 		end
 		g.FastAuctionUiRefs.StatusLabel = V:AddLabel({
-			Text = g.FastAuctionStatusText ~= "" and g.FastAuctionStatusText or "<font color=\'#888888\'>Ready.</font>";
+			Text = g.FastAuctionStatusText ~= "" and g.FastAuctionStatusText or "<font color=\'#888888\'>Ready.</font>",
 			DoesWrap = true
 		})
 		local G
 		G = V:AddInput("fast_auction_min_percent_ui", {
 			Text = string.format("Minimum discount: %d%%", math.clamp(math.floor(tonumber(h.fast_auction_min_percent) or 50), 0, 100)),
 			Default = tostring(h.fast_auction_min_percent),
-			Numeric = true;
+			Numeric = true,
 			AllowEmpty = false;
 			Finished = true;
 			ClearTextOnFocus = false,
 			Placeholder = "50",
-			Tooltip = "0% allows the starting price. Higher percentages wait for a cheaper live price.";
+			Tooltip = "0% allows the starting price. Higher percentages wait for a cheaper live price.",
 			Callback = function(V)
 				local y = z(V)
 				if y == nil or y < 0 or y > 100 then
@@ -43011,10 +43197,10 @@ g.AuctioneerUi = function()
 		})
 		H(G)
 		local y = V:AddToggle("fast_auction_enabled_ui", {
-			Text = "\226\154\161 Auto buy affordable items",
+			Text = "\226\154\161 Auto buy affordable items";
 			Default = h.fast_auction_enabled == true;
 			Tooltip = "Immediately attempts the most expensive affordable live item that meets the discount.";
-			DisabledTooltip = g.GetProMessage(),
+			DisabledTooltip = g.GetProMessage();
 			Callback = function(G)
 				h.fast_auction_enabled = G == true
 				if h.fast_auction_enabled == true then
@@ -43036,12 +43222,12 @@ g.AuctioneerUi = function()
 		})
 		if not q then
 			Z:AddLabel({
-				Text = g.GetProMessage(),
+				Text = g.GetProMessage();
 				DoesWrap = true
 			})
 		end
 		g.FastAuctionUiRefs.ManualStatusLabel = Z:AddLabel({
-			Text = "<font color=\'#888888\'>Waiting for live auction items.</font>";
+			Text = "<font color=\'#888888\'>Waiting for live auction items.</font>",
 			DoesWrap = true
 		})
 		g.FastAuctionUiRefs.ManualGroup = Z
@@ -43067,10 +43253,10 @@ g.AuctioneerUi = function()
 			})
 		end
 		local G = j:AddToggle("auctioneer_preview_only_ui", {
-			Text = "\240\159\145\128 Preview Only";
-			Default = h.auctioneer_preview_only == true;
+			Text = "\240\159\145\128 Preview Only",
+			Default = h.auctioneer_preview_only == true,
 			Tooltip = "Shows what would be bought without spending sheckles.",
-			DisabledTooltip = g.GetProMessage(),
+			DisabledTooltip = g.GetProMessage();
 			Callback = function(G)
 				h.auctioneer_preview_only = G == true
 				a.Save.SaveDataSync()
@@ -43082,10 +43268,10 @@ g.AuctioneerUi = function()
 			Text = r(h.auctioneer_min_sheckles),
 			Default = E.Currency.FormatMoney(h.auctioneer_min_sheckles),
 			Numeric = false,
-			AllowEmpty = true;
-			Finished = true;
-			ClearTextOnFocus = false,
-			Placeholder = "0 or 50m",
+			AllowEmpty = true,
+			Finished = true,
+			ClearTextOnFocus = false;
+			Placeholder = "0 or 50m";
 			Tooltip = "Only buys when your current sheckles are at least this amount. 0 disables this check.",
 			Callback = function(G)
 				local y = (tostring(G or "")):match("^%s*(.-)%s*$") or ""
@@ -43103,13 +43289,13 @@ g.AuctioneerUi = function()
 		H(V)
 		local y
 		y = j:AddInput("auctioneer_min_percent_ui", {
-			Text = e(h.auctioneer_min_percent);
-			Default = tostring(h.auctioneer_min_percent);
+			Text = e(h.auctioneer_min_percent),
+			Default = tostring(h.auctioneer_min_percent),
 			Numeric = true;
-			AllowEmpty = true;
+			AllowEmpty = true,
 			Finished = true,
 			ClearTextOnFocus = false;
-			Placeholder = "50",
+			Placeholder = "50";
 			Tooltip = "Selected items buy when auction discount reaches this percent. 90%+ is near the lowest price range.";
 			Callback = function(G)
 				local V = z(G)
@@ -43125,10 +43311,10 @@ g.AuctioneerUi = function()
 		})
 		H(y)
 		local Z = j:AddToggle("auctioneer_enabled_ui", {
-			Text = "\240\159\148\168 Enable Auctioneer",
-			Default = h.auctioneer_enabled == true;
-			Tooltip = "Automatically buys selected auction items when their rule is reached.";
-			DisabledTooltip = g.GetProMessage(),
+			Text = "\240\159\148\168 Enable Auctioneer";
+			Default = h.auctioneer_enabled == true,
+			Tooltip = "Automatically buys selected auction items when their rule is reached.",
+			DisabledTooltip = g.GetProMessage();
 			Callback = function(G)
 				h.auctioneer_enabled = G == true
 				if G == true then
@@ -43141,10 +43327,10 @@ g.AuctioneerUi = function()
 		})
 		H(Z)
 		local i = j:AddToggle("auctioneer_webhook_success_ui", {
-			Text = "\226\156\133 Webhook Buys",
+			Text = "\226\156\133 Webhook Buys";
 			Default = h.auctioneer_webhook_success == true,
 			Tooltip = "Sends a webhook when Auctioneer buys an item.";
-			DisabledTooltip = g.GetProMessage();
+			DisabledTooltip = g.GetProMessage(),
 			Callback = function(G)
 				h.auctioneer_webhook_success = G == true
 				a.Save.SaveDataSync()
@@ -43153,9 +43339,9 @@ g.AuctioneerUi = function()
 		H(i)
 		local c = j:AddToggle("auctioneer_webhook_fail_ui", {
 			Text = "\226\157\140 Webhook Fails",
-			Default = h.auctioneer_webhook_fail == true,
-			Tooltip = "Sends a webhook when an Auctioneer buy is rejected.",
-			DisabledTooltip = g.GetProMessage(),
+			Default = h.auctioneer_webhook_fail == true;
+			Tooltip = "Sends a webhook when an Auctioneer buy is rejected.";
+			DisabledTooltip = g.GetProMessage();
 			Callback = function(G)
 				h.auctioneer_webhook_fail = G == true
 				a.Save.SaveDataSync()
@@ -43165,19 +43351,19 @@ g.AuctioneerUi = function()
 	end
 	if i then
 		i:AddLabel({
-			Text = "Select what Auctioneer can buy. Blocked items are always skipped.";
+			Text = "Select what Auctioneer can buy. Blocked items are always skipped.",
 			DoesWrap = true
 		})
 		local G
 		local V
 		G = i:AddValueDropdown("auctioneer_buy_selected_ui", {
 			Values = {};
-			Default = {},
+			Default = {};
 			Multi = true,
 			Searchable = true;
-			MaxVisibleDropdownItems = 10,
-			Text = "\226\156\133 Buy Selected Items",
-			Tooltip = "Only selected auction items can be bought. Empty selection buys nothing.";
+			MaxVisibleDropdownItems = 10;
+			Text = "\226\156\133 Buy Selected Items";
+			Tooltip = "Only selected auction items can be bought. Empty selection buys nothing.",
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -43189,12 +43375,12 @@ g.AuctioneerUi = function()
 		g.AuctioneerUiRefs.ItemDropdown = G
 		H(G)
 		V = i:AddValueDropdown("auctioneer_blacklisted_items_ui", {
-			Values = {};
-			Default = {},
-			Multi = true;
-			Searchable = true,
+			Values = {},
+			Default = {};
+			Multi = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\154\171 Block Items";
+			Text = "\240\159\154\171 Block Items",
 			Tooltip = "Auctioneer will never buy blocked item names, even if they are selected above.",
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -43208,7 +43394,7 @@ g.AuctioneerUi = function()
 		H(V)
 		local Z = i:AddButton({
 			Text = "\240\159\142\175 Select Pet Lures",
-			Tooltip = "Adds all Pet Lures to the selected auction items.";
+			Tooltip = "Adds all Pet Lures to the selected auction items.",
 			Func = function()
 				if type(h.auctioneer_buy_selected) ~= "table" then
 					h.auctioneer_buy_selected = {}
@@ -43230,8 +43416,8 @@ g.AuctioneerUi = function()
 		})
 		H(Z)
 		local j = i:AddButton({
-			Text = "\226\156\133 Select All",
-			Tooltip = "Selects all known Auctioneer items.",
+			Text = "\226\156\133 Select All";
+			Tooltip = "Selects all known Auctioneer items.";
 			Func = function()
 				local V = {}
 				for G, y in ipairs(Y.Auctioneer.GetItemDropdownAuctioneer()) do
@@ -43247,8 +43433,8 @@ g.AuctioneerUi = function()
 		})
 		H(j)
 		local c = i:AddButton({
-			Text = "\240\159\167\185 Clear Selected";
-			Tooltip = "Clears selected auction items.";
+			Text = "\240\159\167\185 Clear Selected",
+			Tooltip = "Clears selected auction items.",
 			Func = function()
 				h.auctioneer_buy_selected = {}
 				G:SetValue({})
@@ -43257,8 +43443,8 @@ g.AuctioneerUi = function()
 		})
 		H(c)
 		local J = i:AddButton({
-			Text = "\240\159\167\185 Clear Blocked",
-			Tooltip = "Clears blocked auction items.";
+			Text = "\240\159\167\185 Clear Blocked";
+			Tooltip = "Clears blocked auction items.",
 			Func = function()
 				h.auctioneer_blacklisted_items = {}
 				V:SetValue({})
@@ -43297,12 +43483,12 @@ g.AuctioneerUi = function()
 		end
 		j = c:AddValueDropdown("auctioneer_override_item_ui", {
 			Values = {};
-			Default = "";
+			Default = "",
 			Multi = false;
 			Searchable = true,
-			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\142\175 Override Item",
-			Tooltip = "Choose the item to edit or create an override for.";
+			MaxVisibleDropdownItems = 10;
+			Text = "\240\159\142\175 Override Item";
+			Tooltip = "Choose the item to edit or create an override for.",
 			Changed = function(V)
 				G = tostring(V or "")
 				d(G)
@@ -43312,12 +43498,12 @@ g.AuctioneerUi = function()
 		H(j)
 		i = c:AddInput("auctioneer_override_price_ui", {
 			Text = "\240\159\146\176 Buy Under Price";
-			Default = "0",
+			Default = "0";
 			Numeric = false,
 			AllowEmpty = true,
-			Finished = true;
+			Finished = true,
 			ClearTextOnFocus = false,
-			Placeholder = "0 or 10b",
+			Placeholder = "0 or 10b";
 			Tooltip = "If above 0, this item buys only when the auction price is below this amount.",
 			Callback = function(G)
 				local y = (tostring(G or "")):match("^%s*(.-)%s*$") or ""
@@ -43333,13 +43519,13 @@ g.AuctioneerUi = function()
 		H(i)
 		J = c:AddInput("auctioneer_override_percent_ui", {
 			Text = "\240\159\147\137 Override Percent";
-			Default = "50";
+			Default = "50",
 			Numeric = true,
 			AllowEmpty = true,
-			Finished = true,
-			ClearTextOnFocus = false;
-			Placeholder = "50",
-			Tooltip = "Used only when Buy Under Price is 0.",
+			Finished = true;
+			ClearTextOnFocus = false,
+			Placeholder = "50";
+			Tooltip = "Used only when Buy Under Price is 0.";
 			Callback = function(G)
 				local V = z(G)
 				if V == nil or V < 0 or V > 100 then
@@ -43355,9 +43541,9 @@ g.AuctioneerUi = function()
 			Text = "\240\159\147\166 Max Buy Stock",
 			Default = "99999";
 			Numeric = true,
-			AllowEmpty = true;
+			AllowEmpty = true,
 			Finished = true,
-			ClearTextOnFocus = false;
+			ClearTextOnFocus = false,
 			Placeholder = "99999";
 			Tooltip = "Maximum buys for this item during the current auction restock.",
 			Callback = function(G)
@@ -43372,8 +43558,8 @@ g.AuctioneerUi = function()
 		})
 		H(T)
 		local u = c:AddButton({
-			Text = "\226\156\133 Enable Item";
-			Tooltip = "Enables this item override and selects the item for buying.";
+			Text = "\226\156\133 Enable Item",
+			Tooltip = "Enables this item override and selects the item for buying.",
 			Func = function()
 				local j, i = Y.Auctioneer.SaveOverrideAuctioneer(G, V, y, Z)
 				g.Notify(j and "Auction override enabled" or tostring(i or "Could not enable override"), j and 2 or 3)
@@ -43432,8 +43618,8 @@ g.AuctioneerUi = function()
 				}
 				i.Toggle = J:AddToggle(j, {
 					Text = Y.Auctioneer.GetOverrideSummaryAuctioneer(Z, y.rule);
-					Default = type(y.rule) == "table" and y.rule.enabled ~= false,
-					Tooltip = "Enable or disable this item override.",
+					Default = type(y.rule) == "table" and y.rule.enabled ~= false;
+					Tooltip = "Enable or disable this item override.";
 					Callback = function(G)
 						if g.AuctioneerUiRefs.RefreshingOverrideRowsAuctioneer then
 							return
@@ -43443,7 +43629,7 @@ g.AuctioneerUi = function()
 				})
 				H(i.Toggle)
 				i.DeleteButton = J:AddButton({
-					Text = "\240\159\151\145 Remove Override";
+					Text = "\240\159\151\145 Remove Override",
 					Tooltip = "Removes this item override.",
 					Func = function()
 						Y.Auctioneer.RemoveOverrideAuctioneer(Z)
@@ -43490,12 +43676,12 @@ g.AuctioneerUi = function()
 	end
 	if T then
 		g.AuctioneerUiRefs.LiveLotsLabel = T:AddLabel({
-			Text = "<font color=\'#888888\'>Waiting for auction lots.</font>",
+			Text = "<font color=\'#888888\'>Waiting for auction lots.</font>";
 			DoesWrap = true
 		})
 		local G = T:AddButton({
 			Text = "\240\159\148\132 Refresh Live Lots",
-			Tooltip = "Checks the current auction board.";
+			Tooltip = "Checks the current auction board.",
 			Func = function()
 				Y.Auctioneer.RequestSnapshotAuctioneer("manual")
 			end
@@ -43525,7 +43711,7 @@ end
 g.SellingUi = function()
 	local G = d:AddTab({
 		Name = "Sell Manager",
-		Description = "Sell pets, fruits and more.",
+		Description = "Sell pets, fruits and more.";
 		Icon = "store"
 	})
 	local V = G:AddLeftGroupbox("Sell Fruits", "badge-dollar-sign")
@@ -43540,7 +43726,7 @@ g.SellingUi = function()
 		V:AddToggle("daily_deal_status_enabled_ui", {
 			Text = "\226\173\144 Show Daily Deal Status",
 			Default = h.daily_deal_status_enabled == true,
-			Tooltip = "Shows whether Daily Deal is ready or on cooldown without using it.";
+			Tooltip = "Shows whether Daily Deal is ready or on cooldown without using it.",
 			Callback = function(G)
 				h.daily_deal_status_enabled = G == true
 				Z.SellManager.DailyDealNextCheckAt = 0
@@ -43550,8 +43736,8 @@ g.SellingUi = function()
 		})
 		V:AddToggle("auto_use_daily_deal_ui", {
 			Text = "\226\173\144 Save & Use Daily Deal";
-			Default = h.auto_use_daily_deal;
-			Tooltip = "Saves the Daily Deal until your fruit backpack is full. Set a min value to use it early once the backpack value is high enough.",
+			Default = h.auto_use_daily_deal,
+			Tooltip = "Saves the Daily Deal until your fruit backpack is full. Set a min value to use it early once the backpack value is high enough.";
 			Callback = function(G)
 				h.auto_use_daily_deal = G == true
 				Z.SellManager.DailyDealNextCheckAt = 0
@@ -43561,13 +43747,13 @@ g.SellingUi = function()
 		})
 		local y
 		y = V:AddInput("daily_deal_min_backpack_value_ui", {
-			Text = G(h.daily_deal_min_backpack_value),
-			Default = E.Currency.FormatMoney(h.daily_deal_min_backpack_value);
+			Text = G(h.daily_deal_min_backpack_value);
+			Default = E.Currency.FormatMoney(h.daily_deal_min_backpack_value),
 			Numeric = false,
 			AllowEmpty = true,
 			Finished = true;
-			ClearTextOnFocus = false;
-			Placeholder = "0 or 50m";
+			ClearTextOnFocus = false,
+			Placeholder = "0 or 50m",
 			Tooltip = "Only uses Daily Deal when the current Daily Deal value reaches this amount. 0 keeps full-backpack saving.",
 			Callback = function(V)
 				local Z = (tostring(V or "")):match("^%s*(.-)%s*$") or ""
@@ -43583,7 +43769,7 @@ g.SellingUi = function()
 			end
 		})
 		V:AddToggle("sell_when_backpack_full_ui", {
-			Text = "\240\159\142\146 Sell When Backpack Is Full",
+			Text = "\240\159\142\146 Sell When Backpack Is Full";
 			Default = h.sell_when_backpack_full,
 			Tooltip = "Automatically sells fruits when your backpack is full.";
 			Callback = function(G)
@@ -43593,7 +43779,7 @@ g.SellingUi = function()
 		})
 		V:AddToggle("autopsellfruitsturbo", {
 			Text = "<font color=\'#CF02B0\'>\226\154\161 Turbo Sell</font>",
-			Default = h.turbo_sell,
+			Default = h.turbo_sell;
 			Tooltip = "Sells really fast";
 			Callback = function(G)
 				h.turbo_sell = G
@@ -43603,7 +43789,7 @@ g.SellingUi = function()
 		V:AddToggle("autopsellfruits", {
 			Text = "<font color=\'#CF02B0\'>\240\159\146\176 Enable Auto Sell</font>";
 			Default = h.auto_sell_sellallinventory,
-			Tooltip = "Sells your fruits.",
+			Tooltip = "Sells your fruits.";
 			Callback = function(G)
 				h.auto_sell_sellallinventory = G
 				a.Save.SaveData()
@@ -43613,7 +43799,7 @@ g.SellingUi = function()
 	if j then
 		j:AddToggle("sell_multiplier_enabled_ui", {
 			Text = "\240\159\147\136 Enable Multiplier Selling",
-			Default = h.sell_multiplier_enabled == true,
+			Default = h.sell_multiplier_enabled == true;
 			Tooltip = "Sells selected fruits one by one only when their live multiplier reaches the rule.";
 			Callback = function(G)
 				h.sell_multiplier_enabled = G == true
@@ -43626,7 +43812,7 @@ g.SellingUi = function()
 		})
 		j:AddToggle("sell_multiplier_collect_only_ui", {
 			Text = "\240\159\140\177 Apply to Fruit Collection Only";
-			Default = h.sell_multiplier_collect_only == true;
+			Default = h.sell_multiplier_collect_only == true,
 			Tooltip = "Leaves matching fruits on the farm until their multiplier reaches the rule.";
 			Callback = function(G)
 				h.sell_multiplier_collect_only = G == true
@@ -43635,7 +43821,7 @@ g.SellingUi = function()
 			end
 		})
 		j:AddToggle("sell_multiplier_show_live_ui", {
-			Text = "\240\159\147\139 Show Live Multipliers",
+			Text = "\240\159\147\139 Show Live Multipliers";
 			Default = h.sell_multiplier_show_live == true,
 			Tooltip = "Shows a right-side fruit multiplier board that can be hidden any time.";
 			Callback = function(G)
@@ -43645,13 +43831,13 @@ g.SellingUi = function()
 			end
 		})
 		local G = j:AddValueDropdown("sell_multiplier_board_fruits_ui", {
-			Values = Z.SeedData.GetSeedDataListDropDown(),
-			Default = {},
-			Multi = true;
+			Values = Z.SeedData.GetSeedDataListDropDown();
+			Default = {};
+			Multi = true,
 			Searchable = true;
-			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\147\139 Board Fruits";
-			Tooltip = "Only selected fruits appear on the live board. Empty shows all live fruit stock.",
+			MaxVisibleDropdownItems = 10;
+			Text = "\240\159\147\139 Board Fruits",
+			Tooltip = "Only selected fruits appear on the live board. Empty shows all live fruit stock.";
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -43664,20 +43850,20 @@ g.SellingUi = function()
 		G:SetValue(h.sell_multiplier_board_selected)
 		j:AddDivider()
 		j:AddLabel({
-			Text = "Create a fruit rule, then use the active rule toggles below to disable or remove it.";
+			Text = "Create a fruit rule, then use the active rule toggles below to disable or remove it.",
 			DoesWrap = true
 		})
 		local V = ""
 		local y = 1
 		local i = 0
 		local c = j:AddValueDropdown("sell_multiplier_rule_fruit_ui", {
-			Values = Z.SeedData.GetSeedDataListDropDown();
+			Values = Z.SeedData.GetSeedDataListDropDown(),
 			Default = "";
-			Multi = false,
-			Searchable = true;
+			Multi = false;
+			Searchable = true,
 			MaxVisibleDropdownItems = 10;
 			Text = "\240\159\140\177 Rule Fruit",
-			Tooltip = "Choose the fruit to sell by multiplier.";
+			Tooltip = "Choose the fruit to sell by multiplier.",
 			Changed = function(G)
 				V = tostring(G or "")
 			end
@@ -43685,11 +43871,11 @@ g.SellingUi = function()
 		local J = j:AddValueDropdown("sell_multiplier_rule_value_ui", {
 			Values = Z.SellMultiplierOverrides.GetMultiplierDropdownSellMultiplierOverrides();
 			Default = "1";
-			Multi = false,
-			Searchable = false;
+			Multi = false;
+			Searchable = false,
 			MaxVisibleDropdownItems = 5;
-			Text = "\240\159\147\136 Sell At Multiplier";
-			Tooltip = "Selected fruit sells when the live multiplier is this value or higher.",
+			Text = "\240\159\147\136 Sell At Multiplier",
+			Tooltip = "Selected fruit sells when the live multiplier is this value or higher.";
 			Changed = function(G)
 				y = math.clamp(tonumber(G) or 1, 1, 5)
 			end
@@ -43698,13 +43884,13 @@ g.SellingUi = function()
 		local T
 		T = j:AddInput("sell_multiplier_rule_min_kg_ui", {
 			Text = "\226\154\150\239\184\143 Minimum KG: 0";
-			Default = "0";
-			Numeric = true;
-			AllowEmpty = false,
+			Default = "0",
+			Numeric = true,
+			AllowEmpty = false;
 			Finished = true;
 			ClearTextOnFocus = false;
-			Placeholder = "0",
-			Tooltip = "Only fruits at or above this weight use the multiplier rule.";
+			Placeholder = "0";
+			Tooltip = "Only fruits at or above this weight use the multiplier rule.",
 			Callback = function(G)
 				local V = tonumber(G)
 				if V == nil or V < 0 then
@@ -43717,7 +43903,7 @@ g.SellingUi = function()
 			end
 		})
 		j:AddButton({
-			Text = "\226\156\133 Enable Rule",
+			Text = "\226\156\133 Enable Rule";
 			Tooltip = "Adds or updates this fruit multiplier and KG rule.",
 			Func = function()
 				local G, j = Z.SellMultiplierOverrides.SaveOverrideSellMultiplierOverrides(V, y, i)
@@ -43755,8 +43941,8 @@ g.SellingUi = function()
 					fruitName = V
 				}
 				i.Toggle = j:AddToggle(y, {
-					Text = Z.SellMultiplierOverrides.GetOverrideSummarySellMultiplierOverrides(V, G.rule);
-					Default = type(G.rule) == "table" and G.rule.enabled ~= false,
+					Text = Z.SellMultiplierOverrides.GetOverrideSummarySellMultiplierOverrides(V, G.rule),
+					Default = type(G.rule) == "table" and G.rule.enabled ~= false;
 					Tooltip = "Enable or disable this multiplier rule.";
 					Callback = function(G)
 						if g.SellMultiplierOverrideUiRefs.RefreshingRowsSellMultiplierOverrides then
@@ -43767,7 +43953,7 @@ g.SellingUi = function()
 				})
 				i.DeleteButton = j:AddButton({
 					Text = "\240\159\151\145 Remove Rule",
-					Tooltip = "Removes this multiplier rule.",
+					Tooltip = "Removes this multiplier rule.";
 					Func = function()
 						Z.SellMultiplierOverrides.RemoveOverrideSellMultiplierOverrides(V)
 					end
@@ -43818,13 +44004,13 @@ g.SellingUi = function()
 		})
 		local G
 		G = y:AddValueDropdown("sell_fruit_filter_list", {
-			Values = {};
-			Default = {},
+			Values = {},
+			Default = {};
 			Multi = true,
-			Text = "\240\159\140\177 Sell Fruits";
+			Text = "\240\159\140\177 Sell Fruits",
 			Tooltip = "Only selected fruits will be sold when filters are enabled. Empty allows all fruit names.";
 			Searchable = true;
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -43837,7 +44023,7 @@ g.SellingUi = function()
 		G:SetValue(h.sell_fruit_list)
 		y:AddButton({
 			Text = "\226\153\187\239\184\143 Reload Sell List";
-			Tooltip = "Refreshes backpack fruit counts in the list.";
+			Tooltip = "Refreshes backpack fruit counts in the list.",
 			Func = function()
 				G:SetValues(Z.SellManager.GetSellFruitTypeDropdownWithBackpackCounts())
 				G:SetValue(h.sell_fruit_list)
@@ -43869,14 +44055,14 @@ g.SellingUi = function()
 			return string.format("\226\172\134\239\184\143 Max Sell %.2fKG", V)
 		end
 		V = y:AddInput("sell_min_weight", {
-			Text = i(h.sell_min_weight);
+			Text = i(h.sell_min_weight),
 			Default = tostring(h.sell_min_weight),
 			Numeric = true,
 			AllowEmpty = true;
-			Finished = true,
+			Finished = true;
 			ClearTextOnFocus = false;
-			Placeholder = "Press Enter to update";
-			Tooltip = "Press Enter to update. Fruits below this KG will not be sold.",
+			Placeholder = "Press Enter to update",
+			Tooltip = "Press Enter to update. Fruits below this KG will not be sold.";
 			Changed = function(G)
 				if V then
 					V:SetText(i(G))
@@ -43909,13 +44095,13 @@ g.SellingUi = function()
 			end
 		})
 		j = y:AddInput("sell_max_weight", {
-			Text = c(h.sell_max_weight);
-			Default = tostring(h.sell_max_weight),
+			Text = c(h.sell_max_weight),
+			Default = tostring(h.sell_max_weight);
 			Numeric = true,
 			AllowEmpty = true;
 			Finished = true,
-			ClearTextOnFocus = false,
-			Placeholder = "Press Enter to update";
+			ClearTextOnFocus = false;
+			Placeholder = "Press Enter to update",
 			Tooltip = "Press Enter to update. Fruits above this KG will not be sold.";
 			Changed = function(G)
 				if j then
@@ -43951,10 +44137,10 @@ g.SellingUi = function()
 		y:AddDivider()
 		local J
 		J = y:AddValueDropdown("sell_mutation_whitelist", {
-			Values = Z.FruitFilters.GetMutationNames();
+			Values = Z.FruitFilters.GetMutationNames(),
 			Default = {},
 			Multi = true;
-			Text = "\226\156\133 Only Mutations";
+			Text = "\226\156\133 Only Mutations",
 			Tooltip = "Only sell fruits with selected mutations. Empty allows all mutations.";
 			Searchable = true,
 			MaxVisibleDropdownItems = 10;
@@ -43969,10 +44155,10 @@ g.SellingUi = function()
 		J:SetValue(h.sell_mutation_whitelist)
 		local T
 		T = y:AddValueDropdown("sell_mutation_blacklist", {
-			Values = Z.FruitFilters.GetMutationNames(),
+			Values = Z.FruitFilters.GetMutationNames();
 			Default = {},
 			Multi = true;
-			Text = "\226\155\148 Protect Mutations";
+			Text = "\226\155\148 Protect Mutations",
 			Tooltip = "Selected mutations will not be sold.";
 			Searchable = true,
 			MaxVisibleDropdownItems = 10;
@@ -43989,12 +44175,12 @@ g.SellingUi = function()
 		local d
 		d = y:AddValueDropdown("sell_variant_whitelist", {
 			Values = Z.FruitFilters.GetVariantNames(),
-			Default = {},
+			Default = {};
 			Multi = true;
-			Text = "\226\156\133 Only Variants",
-			Tooltip = "Only sell selected variants. Empty allows all variants.";
-			Searchable = false,
-			MaxVisibleDropdownItems = 5;
+			Text = "\226\156\133 Only Variants";
+			Tooltip = "Only sell selected variants. Empty allows all variants.",
+			Searchable = false;
+			MaxVisibleDropdownItems = 5,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -44012,7 +44198,7 @@ g.SellingUi = function()
 			Text = "\240\159\155\161\239\184\143 Protect Variants",
 			Tooltip = "Selected variants will not be sold.",
 			Searchable = false;
-			MaxVisibleDropdownItems = 5,
+			MaxVisibleDropdownItems = 5;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -44038,7 +44224,7 @@ g.SellingUi = function()
 			end
 		})
 		i:AddToggle("auto_sell_pets_ui", {
-			Text = "\240\159\144\190 Enable Pet Seller",
+			Text = "\240\159\144\190 Enable Pet Seller";
 			Default = h.auto_sell_pets;
 			Tooltip = "Sells only selected pets that pass all protection filters.",
 			Callback = function(G)
@@ -44048,8 +44234,8 @@ g.SellingUi = function()
 			end
 		})
 		i:AddToggle("pet_sell_duplicate_only_ui", {
-			Text = "\240\159\147\166 Duplicate Only",
-			Default = h.pet_sell_duplicate_only,
+			Text = "\240\159\147\166 Duplicate Only";
+			Default = h.pet_sell_duplicate_only;
 			Tooltip = "Keeps the chosen amount for each pet size and variant bucket.";
 			Callback = function(G)
 				h.pet_sell_duplicate_only = G
@@ -44060,12 +44246,12 @@ g.SellingUi = function()
 		G = i:AddInput("pet_sell_keep_amount_ui", {
 			Text = "\240\159\148\146 Keep Per Pet";
 			Default = tostring(h.pet_sell_keep_amount),
-			Numeric = true;
-			AllowEmpty = true,
+			Numeric = true,
+			AllowEmpty = true;
 			Finished = true;
 			ClearTextOnFocus = false;
 			Placeholder = "Keep amount",
-			Tooltip = "How many pets to keep in each name, size and variant bucket.";
+			Tooltip = "How many pets to keep in each name, size and variant bucket.",
 			Callback = function(V)
 				local y = z(V)
 				if y == nil or y < 0 then
@@ -44079,13 +44265,13 @@ g.SellingUi = function()
 		})
 		local V
 		V = i:AddInput("pet_sell_max_per_cycle_ui", {
-			Text = "\240\159\148\162 Max Per Cycle",
-			Default = tostring(h.pet_sell_max_per_cycle);
-			Numeric = true;
-			AllowEmpty = true,
+			Text = "\240\159\148\162 Max Per Cycle";
+			Default = tostring(h.pet_sell_max_per_cycle),
+			Numeric = true,
+			AllowEmpty = true;
 			Finished = true,
 			ClearTextOnFocus = false;
-			Placeholder = "Pets per cycle";
+			Placeholder = "Pets per cycle",
 			Tooltip = "Maximum pets sold each cycle.";
 			Callback = function(G)
 				local y = z(G)
@@ -44101,12 +44287,12 @@ g.SellingUi = function()
 		local y
 		y = i:AddInput("pet_sell_delay_ui", {
 			Text = "\226\143\177\239\184\143 Delay";
-			Default = tostring(h.pet_sell_delay);
+			Default = tostring(h.pet_sell_delay),
 			Numeric = true;
-			AllowEmpty = true,
+			AllowEmpty = true;
 			Finished = true;
 			ClearTextOnFocus = false;
-			Placeholder = "Seconds";
+			Placeholder = "Seconds",
 			Tooltip = "Delay between each pet sale.";
 			Callback = function(G)
 				local V = f(G)
@@ -44121,7 +44307,7 @@ g.SellingUi = function()
 		})
 		i:AddButton({
 			Text = "\226\153\187\239\184\143 Refresh Pet Lists";
-			Tooltip = "Refreshes all pet seller dropdowns.",
+			Tooltip = "Refreshes all pet seller dropdowns.";
 			Func = function()
 				if g.PetSellerUi.RefreshPetDropdowns then
 					g.PetSellerUi.RefreshPetDropdowns()
@@ -44138,13 +44324,13 @@ g.SellingUi = function()
 		local J
 		local T
 		G = c:AddValueDropdown("pet_sell_selected_ui", {
-			Values = {};
-			Default = {};
+			Values = {},
+			Default = {},
 			Multi = true;
 			Text = "\240\159\144\190 Pets To Sell",
-			Tooltip = "Only selected pets can be sold. Empty sells nothing.",
+			Tooltip = "Only selected pets can be sold. Empty sells nothing.";
 			Searchable = true;
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -44157,9 +44343,9 @@ g.SellingUi = function()
 		V = c:AddValueDropdown("pet_sell_protected_ui", {
 			Values = {},
 			Default = {};
-			Multi = true,
+			Multi = true;
 			Text = "\240\159\155\161\239\184\143 Protect Pet Names";
-			Tooltip = "Selected pet names will not be sold.",
+			Tooltip = "Selected pet names will not be sold.";
 			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
@@ -44171,13 +44357,13 @@ g.SellingUi = function()
 			end
 		})
 		y = c:AddValueDropdown("pet_sell_protected_ids_ui", {
-			Values = {},
-			Default = {};
+			Values = {};
+			Default = {},
 			Multi = true;
-			Text = "\240\159\148\144 Protect Exact Pets";
-			Tooltip = "Selected exact pet IDs will not be sold.";
+			Text = "\240\159\148\144 Protect Exact Pets",
+			Tooltip = "Selected exact pet IDs will not be sold.",
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -44218,8 +44404,8 @@ g.SellingUi = function()
 			end
 		end
 		c:AddDropdown("pet_sell_max_rarity_ui", {
-			Values = Z.PetSeller.RarityOrder;
-			Default = h.pet_sell_max_rarity;
+			Values = Z.PetSeller.RarityOrder,
+			Default = h.pet_sell_max_rarity,
 			Multi = false,
 			Text = "\226\173\144 Max Rarity To Sell",
 			Tooltip = "Pets above this rarity will not be sold.",
@@ -44233,16 +44419,16 @@ g.SellingUi = function()
 		})
 		c:AddToggle("pet_sell_protect_rainbow_ui", {
 			Text = "\240\159\140\136 Protect Rainbow",
-			Default = h.pet_sell_protect_rainbow;
-			Tooltip = "Rainbow pets will not be sold.";
+			Default = h.pet_sell_protect_rainbow,
+			Tooltip = "Rainbow pets will not be sold.",
 			Callback = function(G)
 				h.pet_sell_protect_rainbow = G
 				a.Save.SaveDataSync()
 			end
 		})
 		c:AddToggle("pet_sell_protect_big_huge_ui", {
-			Text = "\240\159\147\143 Protect Big/Huge",
-			Default = h.pet_sell_protect_big_huge,
+			Text = "\240\159\147\143 Protect Big/Huge";
+			Default = h.pet_sell_protect_big_huge;
 			Tooltip = "Big and Huge pets will not be sold.";
 			Callback = function(G)
 				h.pet_sell_protect_big_huge = G
@@ -44254,11 +44440,11 @@ g.SellingUi = function()
 			Text = "\240\159\146\184 Max Base Price";
 			Default = tostring(h.pet_sell_max_base_price);
 			Numeric = true;
-			AllowEmpty = true,
-			Finished = true;
+			AllowEmpty = true;
+			Finished = true,
 			ClearTextOnFocus = false;
-			Placeholder = "0 disables",
-			Tooltip = "Pets above this base price will not be sold. Use 0 to disable.";
+			Placeholder = "0 disables";
+			Tooltip = "Pets above this base price will not be sold. Use 0 to disable.",
 			Callback = function(G)
 				local V = z(G)
 				if V == nil or V < 0 then
@@ -44274,11 +44460,11 @@ g.SellingUi = function()
 		j = c:AddValueDropdown("pet_sell_size_whitelist_ui", {
 			Values = {},
 			Default = {},
-			Multi = true,
-			Text = "\226\156\133 Only Sizes";
-			Tooltip = "Only selected sizes can be sold. Empty allows all sizes.",
-			Searchable = false,
-			MaxVisibleDropdownItems = 5,
+			Multi = true;
+			Text = "\226\156\133 Only Sizes",
+			Tooltip = "Only selected sizes can be sold. Empty allows all sizes.";
+			Searchable = false;
+			MaxVisibleDropdownItems = 5;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -44290,9 +44476,9 @@ g.SellingUi = function()
 		i = c:AddValueDropdown("pet_sell_size_blacklist_ui", {
 			Values = {},
 			Default = {};
-			Multi = true,
+			Multi = true;
 			Text = "\240\159\155\161\239\184\143 Protect Sizes",
-			Tooltip = "Selected sizes will not be sold.",
+			Tooltip = "Selected sizes will not be sold.";
 			Searchable = false,
 			MaxVisibleDropdownItems = 5;
 			Changed = function(G)
@@ -44304,12 +44490,12 @@ g.SellingUi = function()
 			end
 		})
 		J = c:AddValueDropdown("pet_sell_variant_whitelist_ui", {
-			Values = {};
-			Default = {},
-			Multi = true;
+			Values = {},
+			Default = {};
+			Multi = true,
 			Text = "\226\156\133 Only Variants";
 			Tooltip = "Only selected variants can be sold. Empty allows all variants.";
-			Searchable = false;
+			Searchable = false,
 			MaxVisibleDropdownItems = 5,
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -44320,13 +44506,13 @@ g.SellingUi = function()
 			end
 		})
 		T = c:AddValueDropdown("pet_sell_variant_blacklist_ui", {
-			Values = {};
+			Values = {},
 			Default = {},
-			Multi = true;
+			Multi = true,
 			Text = "\240\159\155\161\239\184\143 Protect Variants",
 			Tooltip = "Selected variants will not be sold.",
-			Searchable = false;
-			MaxVisibleDropdownItems = 5,
+			Searchable = false,
+			MaxVisibleDropdownItems = 5;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -44360,7 +44546,7 @@ q.LoadSpyTool = function()
 end
 g.WebhooksUi = function()
 	local G = d:AddTab({
-		Name = "Webhooks";
+		Name = "Webhooks",
 		Description = "Webhook notifications";
 		Icon = "webhook"
 	})
@@ -44381,8 +44567,8 @@ g.WebhooksUi = function()
 		})
 		V:AddToggle("webhook_pet_buy_notifications", {
 			Text = "\240\159\144\190 Pet Purchases";
-			Default = h.webhook_pet_buys,
-			Tooltip = "Send a notification after a pet purchase is confirmed.";
+			Default = h.webhook_pet_buys;
+			Tooltip = "Send a notification after a pet purchase is confirmed.",
 			Callback = function(G)
 				h.webhook_pet_buys = G
 				if not G then
@@ -44397,7 +44583,7 @@ g.WebhooksUi = function()
 		V:AddToggle("webhook_mail_manual_notifications", {
 			Text = "\240\159\147\166 Manual Orders Completed",
 			Default = h.webhook_mail_manual;
-			Tooltip = "Send a notification when a manual order is fully delivered.",
+			Tooltip = "Send a notification when a manual order is fully delivered.";
 			Callback = function(G)
 				h.webhook_mail_manual = G
 				if not G then
@@ -44407,9 +44593,9 @@ g.WebhooksUi = function()
 			end
 		})
 		V:AddToggle("webhook_mail_auto_notifications", {
-			Text = "\226\154\153\239\184\143 Automatic Mail Sent";
-			Default = h.webhook_mail_auto,
-			Tooltip = "Send a notification after an automatic mail cycle completes.",
+			Text = "\226\154\153\239\184\143 Automatic Mail Sent",
+			Default = h.webhook_mail_auto;
+			Tooltip = "Send a notification after an automatic mail cycle completes.";
 			Callback = function(G)
 				h.webhook_mail_auto = G
 				if not G then
@@ -44420,7 +44606,7 @@ g.WebhooksUi = function()
 		})
 		V:AddToggle("webhook_mail_claim_notifications", {
 			Text = "\240\159\147\165 Incoming Mail Claimed",
-			Default = h.webhook_mail_claims,
+			Default = h.webhook_mail_claims;
 			Tooltip = "Send a notification after incoming mail is claimed.",
 			Callback = function(G)
 				h.webhook_mail_claims = G
@@ -44440,12 +44626,12 @@ g.WebhooksUi = function()
 		G = y:AddInput("webhook_url_input", {
 			Text = "\240\159\148\151 Webhook URL";
 			Default = tostring(h.webhook_url or "");
-			Numeric = false,
-			AllowEmpty = true;
+			Numeric = false;
+			AllowEmpty = true,
 			Finished = false;
-			ClearTextOnFocus = false,
-			Placeholder = "https://your-webhook-url";
-			Tooltip = "Enter the URL that will receive notifications.";
+			ClearTextOnFocus = false;
+			Placeholder = "https://your-webhook-url",
+			Tooltip = "Enter the URL that will receive notifications.",
 			Callback = function(V)
 				local y = (tostring(V or "")):match("^%s*(.-)%s*$") or ""
 				if y ~= "" and not Z.Webhooks.IsValidUrl(y) then
@@ -44464,8 +44650,8 @@ g.WebhooksUi = function()
 		})
 		y:AddToggle("webhook_enabled", {
 			Text = "Enable Webhooks";
-			Default = h.webhook_enabled;
-			Tooltip = "Enable or disable all webhook notifications",
+			Default = h.webhook_enabled,
+			Tooltip = "Enable or disable all webhook notifications";
 			Callback = function(G)
 				h.webhook_enabled = G
 				if not G then
@@ -44483,6 +44669,7 @@ g.WebhooksUi = function()
 	end
 end
 Z.GardenSyncDebug = {
+	BytesPerKilobyteGardenSyncDebug = 1024,
 	GetGardenSyncDebug = function()
 		local G = y.GardenSyncController
 		if type(G) ~= "table" or type(G.GetGarden) ~= "function" then
@@ -44495,7 +44682,20 @@ Z.GardenSyncDebug = {
 			return nil, "No garden sync data"
 		end
 		return Z, nil
-	end,
+	end;
+	GetEncodedGardenSyncDebug = function()
+		local G, V = Z.GardenSyncDebug.GetGardenSyncDebug()
+		if not G then
+			return nil, tostring(V or "No garden sync data")
+		end
+		local j, i = pcall(function()
+			return y.HttpService:JSONEncode(G)
+		end)
+		if not j or type(i) ~= "string" or i == "" then
+			return nil, "JSON encode failed"
+		end
+		return i, nil
+	end;
 	GetSavePathGardenSyncDebug = function()
 		local G = "exotichub99"
 		local V = G .. "/debug"
@@ -44518,41 +44718,50 @@ Z.GardenSyncDebug = {
 			g.Notify("writefile is not supported", 3)
 			return false
 		end
-		local V, j = Z.GardenSyncDebug.GetGardenSyncDebug()
+		local V, y = Z.GardenSyncDebug.GetEncodedGardenSyncDebug()
 		if not V then
 			if G then
-				G:SetText(tostring(j or "No garden sync data"))
+				G:SetText(tostring(y or "No garden sync data"))
 			end
-			g.Notify(tostring(j or "No garden sync data"), 3)
+			g.Notify(tostring(y or "No garden sync data"), 3)
 			return false
 		end
+		local j = Z.GardenSyncDebug.GetSavePathGardenSyncDebug()
 		local i, c = pcall(function()
-			return y.HttpService:JSONEncode(V)
+			writefile(j, V)
 		end)
-		if not i or type(c) ~= "string" or c == "" then
+		if not i then
 			if G then
-				G:SetText("JSON encode failed")
-			end
-			g.Notify("JSON encode failed", 3)
-			return false
-		end
-		local J = Z.GardenSyncDebug.GetSavePathGardenSyncDebug()
-		local T, d = pcall(function()
-			writefile(J, c)
-		end)
-		if not T then
-			if G then
-				G:SetText("Save failed: " .. tostring(d))
+				G:SetText("Save failed: " .. tostring(c))
 			end
 			g.Notify("Garden sync save failed", 3)
 			return false
 		end
 		if G then
-			G:SetText("Saved Garden Sync JSON\n" .. (J .. ("\nLength: " .. tostring(# c))))
+			G:SetText("Saved Garden Sync JSON\n" .. (j .. ("\nLength: " .. tostring(# V))))
 		end
 		g.Notify("Garden sync JSON saved", 2)
 		return true
 	end;
+	ShowGardenSyncSizeDebug = function(G)
+		local V, y = Z.GardenSyncDebug.GetEncodedGardenSyncDebug()
+		if not V then
+			if G then
+				G:SetText(tostring(y or "No garden sync data"))
+			end
+			g.Notify(tostring(y or "No garden sync data"), 3)
+			return false
+		end
+		local j = # V
+		local i = j / Z.GardenSyncDebug.BytesPerKilobyteGardenSyncDebug
+		local c = i / Z.GardenSyncDebug.BytesPerKilobyteGardenSyncDebug
+		local J = string.format("Garden data size\n%d bytes | %.2f KB | %.2f MB", j, i, c)
+		if G then
+			G:SetText(J)
+		end
+		g.Notify(string.format("Garden data size: %.2f MB", c), 3)
+		return true
+	end,
 	BuildGardenSyncDebugUi = function(G)
 		if not G then
 			return false
@@ -44565,17 +44774,23 @@ Z.GardenSyncDebug = {
 				Z.GardenSyncDebug.SaveGardenSyncJsonDebug(V)
 			end
 		})
+		G:AddButton({
+			Text = "Check Garden Data Size";
+			Func = function()
+				Z.GardenSyncDebug.ShowGardenSyncSizeDebug(V)
+			end
+		})
 		V = G:AddLabel({
-			Text = "Press save to write live garden sync JSON to file.";
+			Text = "Save the garden data or check its size.",
 			DoesWrap = true
 		})
 		return true
 	end
 }
 Z.FarmGridDebug = {
-	FolderNameFarmGridDebug = "ExoFarmGridDebug",
-	DotSizeFarmGridDebug = .18;
-	GridSpacingFarmGridDebug = .5,
+	FolderNameFarmGridDebug = "ExoFarmGridDebug";
+	DotSizeFarmGridDebug = .18,
+	GridSpacingFarmGridDebug = .5;
 	EdgePaddingFarmGridDebug = 0;
 	PlantBlockDistanceFarmGridDebug = .5,
 	ShowLabelsFarmGridDebug = false;
@@ -44586,7 +44801,7 @@ Z.FarmGridDebug = {
 			V:Destroy()
 		end
 		return true
-	end;
+	end,
 	GetPlantBlockPositionsFarmGridDebug = function()
 		local G = {}
 		local V = Z.FruitFiltersDataSync
@@ -44607,7 +44822,7 @@ Z.FarmGridDebug = {
 			end
 		end
 		return G
-	end;
+	end,
 	GetSprinklerBlockPositionsFarmGridDebug = function()
 		local G = {}
 		local V = Z.SprinklerPlacer.GetSprinklersFolder()
@@ -44652,7 +44867,7 @@ Z.FarmGridDebug = {
 		end
 		local Z = V > 0 and math.clamp(G / V, 0, 1) or 0
 		return Color3.fromRGB(math.floor(255 * Z), math.floor(255 * ((1 - Z))), 0)
-	end;
+	end,
 	CreateDotFarmGridDebug = function(G, V, y, j)
 		local i = Instance.new("Part")
 		i.Name = string.format("FarmGrid_%04d_%s_X%.1f_Z%.1f", V.index, V.areaName, V.localPosition.X, V.localPosition.Z)
@@ -44688,7 +44903,7 @@ Z.FarmGridDebug = {
 		J.TextScaled = true
 		J.TextStrokeTransparency = 0
 		J.Parent = c
-	end;
+	end,
 	SetLabelsVisibleFarmGridDebug = function(G)
 		Z.FarmGridDebug.ShowLabelsFarmGridDebug = G == true
 		local V = Z.Farm.GetOwnPlot()
@@ -44743,34 +44958,34 @@ Z.FarmGridDebug = {
 }
 g.TestGardenSync = {
 	Started = false;
-	RenderLoopRunning = false;
-	Connections = {},
-	Plants = {};
+	RenderLoopRunning = false,
+	Connections = {};
+	Plants = {},
 	Fruits = {},
 	RemovedFruits = {},
 	BaseWeightCache = {};
-	GenerationModuleCache = {};
-	WeightFormatCache = nil;
+	GenerationModuleCache = {},
+	WeightFormatCache = nil,
 	OvertimeFlagsCache = nil;
-	CalculateOvertimeGrowthCache = nil,
+	CalculateOvertimeGrowthCache = nil;
 	GrowRateDataCache = nil;
 	Label = nil,
 	Dropdown = nil,
-	WatchPlantId = "";
+	WatchPlantId = "",
 	RenderInterval = .35,
 	MaxPlants = 3,
 	MaxFruitsPerPlant = 12,
 	Colours = {
-		Title = "#7CFC00",
+		Title = "#7CFC00";
 		Plant = "#6EE7FF";
-		Fruit = "#FFFFFF";
+		Fruit = "#FFFFFF",
 		Ready = "#7CFC00",
-		Growing = "#FFD166";
+		Growing = "#FFD166",
 		Removed = "#FF5C5C",
 		Muted = "#AAAAAA",
-		Gold = "#FFD700";
+		Gold = "#FFD700",
 		Rainbow = "#FF66FF",
-		Normal = "#DADADA",
+		Normal = "#DADADA";
 		Kg = "#7CFC00",
 		Id = "#888888",
 		Bad = "#FF5C5C"
@@ -44783,18 +44998,18 @@ g.TestGardenSync = {
 	end,
 	S = function(G)
 		return tostring(G or "")
-	end;
+	end,
 	N = function(G, V)
 		local y = tonumber(G)
 		if y == nil then
 			return V or 0
 		end
 		return y
-	end,
+	end;
 	Round2 = function(G)
 		G = tonumber(G) or 0
 		return math.floor((G * 100) + .5) / 100
-	end,
+	end;
 	Round4 = function(G)
 		G = tonumber(G) or 0
 		return math.floor((G * 10000) + .5) / 10000
@@ -44805,7 +45020,7 @@ g.TestGardenSync = {
 			return G
 		end
 		return string.sub(G, 1, 8)
-	end;
+	end,
 	Html = function(G)
 		G = tostring(G or "")
 		G = G:gsub("&", "&amp;")
@@ -44813,7 +45028,7 @@ g.TestGardenSync = {
 		G = G:gsub(">", "&gt;")
 		G = G:gsub("\"", "&quot;")
 		return G
-	end,
+	end;
 	C = function(G, V)
 		return string.format("<font color=\"%s\">%s</font>", G or "#FFFFFF", g.TestGardenSync.Html(V))
 	end,
@@ -44860,9 +45075,9 @@ g.TestGardenSync = {
 				V[G] = y
 			elseif G == "Positions" then
 				V[G] = {
-					PosX = y.PosX,
-					PosY = y.PosY,
-					PosZ = y.PosZ,
+					PosX = y.PosX;
+					PosY = y.PosY;
+					PosZ = y.PosZ;
 					Rotation = y.Rotation
 				}
 			end
@@ -44888,7 +45103,7 @@ g.TestGardenSync = {
 			return V
 		end
 		return "Normal"
-	end;
+	end,
 	GetVariantColour = function(G)
 		if G == "Gold" then
 			return g.TestGardenSync.Colours.Gold
@@ -44897,7 +45112,7 @@ g.TestGardenSync = {
 			return g.TestGardenSync.Colours.Rainbow
 		end
 		return g.TestGardenSync.Colours.Normal
-	end;
+	end,
 	GetSharedModules = function()
 		return y.SharedModules or (y.ReplicatedStorage and y.ReplicatedStorage:FindFirstChild("SharedModules"))
 	end,
@@ -44918,7 +45133,7 @@ g.TestGardenSync = {
 			return Z
 		end
 		return nil
-	end,
+	end;
 	FormatKg = function(G)
 		G = tonumber(G) or 0
 		local V = g.TestGardenSync.GetWeightFormat()
@@ -44950,7 +45165,7 @@ g.TestGardenSync = {
 			return j
 		end
 		return nil
-	end,
+	end;
 	IsOvertimeEnabled = function()
 		local G = g.TestGardenSync.GetOvertimeFlags()
 		if type(G) ~= "table" then
@@ -45048,7 +45263,7 @@ g.TestGardenSync = {
 		end
 		g.TestGardenSync.GenerationModuleCache[y] = c
 		return c
-	end,
+	end;
 	GetBaseWeight = function(G, V)
 		G = tostring(G or "")
 		if G == "" then
@@ -45092,16 +45307,16 @@ g.TestGardenSync = {
 			return math.clamp(tonumber(y) or 1, 1, 100)
 		end
 		return tonumber(y) or 1
-	end;
+	end,
 	GetWeightData = function(G, V, y)
 		if type(V) ~= "table" then
 			return {
-				kg = 0,
-				grams = 0;
-				text = "0.00kg";
-				base = 0,
-				size = 1,
-				overtime = 1;
+				kg = 0;
+				grams = 0,
+				text = "0.00kg",
+				base = 0;
+				size = 1;
+				overtime = 1,
 				has_weight = false
 			}
 		end
@@ -45111,14 +45326,14 @@ g.TestGardenSync = {
 		local c = (Z * j) * i
 		return {
 			kg = g.TestGardenSync.Round2(c);
-			grams = c;
+			grams = c,
 			text = g.TestGardenSync.FormatKg(c);
 			base = Z,
 			size = j,
-			overtime = i;
+			overtime = i,
 			has_weight = c > 0
 		}
-	end;
+	end,
 	GetSeedData = function(G)
 		G = tostring(G or "")
 		if G == "" then
@@ -45154,7 +45369,7 @@ g.TestGardenSync = {
 			return Z.SeedData.IsSingleHarvest(G) == true
 		end
 		return type(g.SeedSingleHarvest) == "table" and g.SeedSingleHarvest[G] == true
-	end,
+	end;
 	EstimateStartingAge = function(G)
 		if type(G) ~= "table" then
 			return 0
@@ -45187,7 +45402,7 @@ g.TestGardenSync = {
 			G.BoostExpiresClock = 0
 		end
 		return tonumber(G.StableGrowthAmount or G.GrowthRate or G.GrowRate) or 0
-	end,
+	end;
 	AdvancePlant = function(G)
 		if type(G) ~= "table" or G.Removed then
 			return G
@@ -45238,13 +45453,13 @@ g.TestGardenSync = {
 		if not y then
 			y = {
 				Id = G,
-				PlantId = G;
+				PlantId = G,
 				Fruits = {},
-				CurrentAge = 0,
-				StableGrowthAmount = 0,
-				BoostExpiresClock = 0;
-				PostBoostRate = 0,
-				BoostSources = 0;
+				CurrentAge = 0;
+				StableGrowthAmount = 0;
+				BoostExpiresClock = 0,
+				PostBoostRate = 0;
+				BoostSources = 0,
 				AddedAt = g.TestGardenSync.Now();
 				LastClock = g.TestGardenSync.Now(),
 				LastUpdate = g.TestGardenSync.Now()
@@ -45280,7 +45495,7 @@ g.TestGardenSync = {
 			y.Removed = false
 		end
 		return y
-	end,
+	end;
 	EnsureFruit = function(G, V, y, Z)
 		G = tostring(G or "")
 		V = tostring(V or "")
@@ -45295,15 +45510,15 @@ g.TestGardenSync = {
 		local c = g.TestGardenSync.Fruits[i]
 		if not c then
 			c = {
-				Key = i,
-				PlantId = G,
-				FruitId = V;
-				CurrentAge = 0;
-				GrowthRate = 0,
+				Key = i;
+				PlantId = G;
+				FruitId = V,
+				CurrentAge = 0,
+				GrowthRate = 0;
 				MaxAge = 0,
-				OvertimeGrowth = 1;
-				LastClock = g.TestGardenSync.Now(),
-				AddedAt = g.TestGardenSync.Now();
+				OvertimeGrowth = 1,
+				LastClock = g.TestGardenSync.Now();
+				AddedAt = g.TestGardenSync.Now(),
 				LastUpdate = g.TestGardenSync.Now()
 			}
 			g.TestGardenSync.Fruits[i] = c
@@ -45354,7 +45569,7 @@ g.TestGardenSync = {
 			G.LastClock = Z
 		end
 		return G
-	end,
+	end;
 	IsFruitReady = function(G)
 		if type(G) ~= "table" or G.Removed then
 			return false
@@ -45362,7 +45577,7 @@ g.TestGardenSync = {
 		g.TestGardenSync.AdvanceFruit(G)
 		local V = g.TestGardenSync.N(G.MaxAge, 0)
 		return V > 0 and g.TestGardenSync.N(G.CurrentAge, 0) >= V
-	end,
+	end;
 	SyncFromGarden = function()
 		local G = g.TestGardenSync.GetGarden()
 		if type(G) ~= "table" then
@@ -45415,7 +45630,7 @@ g.TestGardenSync = {
 		end
 		g.TestGardenSync.RefreshPlantDropdown()
 		g.TestGardenSync.Render()
-	end;
+	end,
 	OnPlantGrowthUpdated = function(G, V, y, Z, j, i, c)
 		if not g.TestGardenSync.IsMine(G) then
 			return
@@ -45458,7 +45673,7 @@ g.TestGardenSync = {
 			end
 		end
 		g.TestGardenSync.Render()
-	end;
+	end,
 	OnPlantMutationUpdated = function(G, V, y)
 		if not g.TestGardenSync.IsMine(G) then
 			return
@@ -45469,7 +45684,7 @@ g.TestGardenSync = {
 			Z.LastUpdate = g.TestGardenSync.Now()
 		end
 		g.TestGardenSync.Render()
-	end,
+	end;
 	OnFruitAdded = function(G, V, y, Z)
 		if not g.TestGardenSync.IsMine(G) then
 			return
@@ -45537,7 +45752,7 @@ g.TestGardenSync = {
 			end
 		end
 		g.TestGardenSync.Render()
-	end,
+	end;
 	OnFruitOvertimeGrowthUpdated = function(G, V, y, Z)
 		if not g.TestGardenSync.IsMine(G) then
 			return
@@ -45548,7 +45763,7 @@ g.TestGardenSync = {
 			j.LastUpdate = g.TestGardenSync.Now()
 		end
 		g.TestGardenSync.Render()
-	end,
+	end;
 	OnFruitMutationUpdated = function(G, V, y, Z)
 		if not g.TestGardenSync.IsMine(G) then
 			return
@@ -45559,7 +45774,7 @@ g.TestGardenSync = {
 			j.LastUpdate = g.TestGardenSync.Now()
 		end
 		g.TestGardenSync.Render()
-	end;
+	end,
 	ConnectGardenRemote = function(G, V)
 		local Z = y.Networking and y.Networking.Garden
 		local j = Z and Z[G]
@@ -45597,7 +45812,7 @@ g.TestGardenSync = {
 		g.TestGardenSync.StartRenderLoop()
 		g.TestGardenSync.Render()
 		return true
-	end,
+	end;
 	Stop = function()
 		g.TestGardenSync.Started = false
 		for G, V in ipairs(g.TestGardenSync.Connections) do
@@ -45610,7 +45825,7 @@ g.TestGardenSync = {
 			g.TestGardenSync.Label:SetText(g.TestGardenSync.C(g.TestGardenSync.Colours.Bad, "Garden sync test stopped."))
 		end
 		return true
-	end;
+	end,
 	Reset = function()
 		table.clear(g.TestGardenSync.Plants)
 		table.clear(g.TestGardenSync.Fruits)
@@ -45618,7 +45833,7 @@ g.TestGardenSync = {
 		g.TestGardenSync.SyncFromGarden()
 		g.TestGardenSync.RefreshPlantDropdown()
 		g.TestGardenSync.Render()
-	end,
+	end;
 	StartRenderLoop = function()
 		if g.TestGardenSync.RenderLoopRunning then
 			return
@@ -45670,30 +45885,30 @@ g.TestGardenSync = {
 		local T = g.TestGardenSync.GetVariant(J, i.Variant or G.Variant)
 		local d = g.TestGardenSync.GetWeightData(Z, i, y)
 		return {
-			name = Z,
-			plantId = j;
+			name = Z;
+			plantId = j,
 			fruitId = y and "" or tostring(V.FruitId or "");
 			w = d.kg,
-			kg = d.kg,
+			kg = d.kg;
 			kg_text = d.text;
-			grams = d.grams,
+			grams = d.grams;
 			base_weight = d.base,
-			size_multiplier = d.size;
+			size_multiplier = d.size,
 			overtime_growth = d.overtime,
 			has_weight = d.has_weight,
 			r = (type(g.SeedRarity) == "table" and g.SeedRarity[Z]) or "Common";
-			m = J;
-			v = T,
-			age = y and g.TestGardenSync.N(G.CurrentAge, G.Age or 0) or g.TestGardenSync.N(V.CurrentAge, 0);
-			max_age = y and g.TestGardenSync.N(G.MaxAge, 0) or g.TestGardenSync.N(V.MaxAge, 0),
+			m = J,
+			v = T;
+			age = y and g.TestGardenSync.N(G.CurrentAge, G.Age or 0) or g.TestGardenSync.N(V.CurrentAge, 0),
+			max_age = y and g.TestGardenSync.N(G.MaxAge, 0) or g.TestGardenSync.N(V.MaxAge, 0);
 			grow_rate = y and g.TestGardenSync.GetPlantGrowthRate(G) or g.TestGardenSync.N(V.GrowthRate, 0),
 			ready = true,
-			sync = true;
+			sync = true,
 			single_harvest = y == true,
-			raw = i;
+			raw = i,
 			plant_raw = G
 		}
-	end,
+	end;
 	GetFruits = function()
 		if not g.TestGardenSync.Started then
 			g.TestGardenSync.Start()
@@ -45767,21 +45982,21 @@ g.TestGardenSync = {
 				end
 			end
 			table.insert(G, {
-				Text = string.format("%s <font color=\"#888888\">%s</font> <font color=\"#7CFC00\">%d ready</font><font color=\"#AAAAAA\">/%d</font>%s", g.TestGardenSync.Html(Z), g.TestGardenSync.Html(g.TestGardenSync.ShortId(y.Id)), i, j, c and " <font color=\"#FFD166\">Single</font>" or "");
+				Text = string.format("%s <font color=\"#888888\">%s</font> <font color=\"#7CFC00\">%d ready</font><font color=\"#AAAAAA\">/%d</font>%s", g.TestGardenSync.Html(Z), g.TestGardenSync.Html(g.TestGardenSync.ShortId(y.Id)), i, j, c and " <font color=\"#FFD166\">Single</font>" or ""),
 				Value = y.Id
 			})
 		end
 		return G
-	end;
+	end,
 	RefreshPlantDropdown = function()
 		if g.TestGardenSync.Dropdown and type(g.TestGardenSync.Dropdown.SetValues) == "function" then
 			g.TestGardenSync.Dropdown:SetValues(g.TestGardenSync.GetPlantDropdownValues())
 		end
-	end,
+	end;
 	SetWatchPlant = function(G)
 		g.TestGardenSync.WatchPlantId = tostring(G or "")
 		g.TestGardenSync.Render()
-	end;
+	end,
 	FormatFruitLine = function(G, V, y, Z)
 		local j = g.TestGardenSync.Colours
 		local i = Z and V or y
@@ -45800,7 +46015,7 @@ g.TestGardenSync = {
 		local a = Z and g.TestGardenSync.N(V.MaxAge, 0) or g.TestGardenSync.N(y.MaxAge, 0)
 		local H = Z and g.TestGardenSync.GetPlantGrowthRate(V) or g.TestGardenSync.N(y.GrowthRate, 0)
 		return string.format("   %s %s %s %s %s %s %s %s %s", g.TestGardenSync.C(J and j.Ready or j.Growing, J and "READY" or "GROWING"), g.TestGardenSync.C(j.Fruit, Z and "Single Harvest" or ("Fruit " .. tostring(G))), g.TestGardenSync.C(j.Id, "[" .. (g.TestGardenSync.ShortId(Z and V.Id or y.FruitId) .. "]")), g.TestGardenSync.C(j.Muted, "Age: " .. (tostring(g.TestGardenSync.Round2(E)) .. ("/" .. tostring(g.TestGardenSync.N(a, 0))))), g.TestGardenSync.C(j.Muted, "Rate: " .. tostring(g.TestGardenSync.Round4(H))), g.TestGardenSync.C(j.Kg, "KG: " .. q.text), g.TestGardenSync.C(j.Muted, "Base: " .. tostring(g.TestGardenSync.Round2(q.base))), g.TestGardenSync.C(j.Muted, "Size: " .. (tostring(g.TestGardenSync.Round2(q.size)) .. (" OT: " .. tostring(g.TestGardenSync.Round2(q.overtime))))), T ~= "" and g.TestGardenSync.C(u, "Mutation: " .. (T .. (" / " .. d))) or g.TestGardenSync.C(j.Normal, "Mutation: none / Normal"))
-	end;
+	end,
 	FormatPlant = function(G)
 		if type(G) ~= "table" then
 			return ""
@@ -45848,7 +46063,7 @@ g.TestGardenSync = {
 			table.insert(y, g.TestGardenSync.C(V.Muted, "   No fruits stored for this plant yet."))
 		end
 		return table.concat(y, "\n")
-	end,
+	end;
 	BuildText = function()
 		local G = g.TestGardenSync.Colours
 		local V = g.TestGardenSync.GetPlantList()
@@ -45898,7 +46113,7 @@ g.TestGardenSync = {
 			table.insert(i, g.TestGardenSync.C(G.Bad, "No plants loaded yet. Press Start / Refresh."))
 		end
 		return table.concat(i, "\n")
-	end;
+	end,
 	Render = function()
 		if not g.TestGardenSync.Label then
 			return false
@@ -45931,19 +46146,19 @@ g.TestGardenSync = {
 			end
 		})
 		g.TestGardenSync.Dropdown = G:AddDropdown("ddTestGardenSyncPlant", {
-			Values = {};
+			Values = {},
 			Default = {},
 			Multi = false;
-			Searchable = true,
+			Searchable = true;
 			MaxVisibleDropdownItems = 10;
-			Text = "Select Plant To Watch",
+			Text = "Select Plant To Watch";
 			Tooltip = "Shows one plant with live data-driven fruits",
 			Callback = function(G)
 				g.TestGardenSync.SetWatchPlant(G)
 			end
 		})
 		g.TestGardenSync.Label = G:AddLabel({
-			Text = "Press Start Garden Sync Test.",
+			Text = "Press Start Garden Sync Test.";
 			DoesWrap = true
 		})
 		g.TestGardenSync.RefreshPlantDropdown()
@@ -45952,8 +46167,8 @@ g.TestGardenSync = {
 }
 g.SettingsUi = function()
 	local G = d:AddTab({
-		Name = "Settings";
-		Description = "Settings";
+		Name = "Settings",
+		Description = "Settings",
 		Icon = "settings"
 	})
 	local V = G:AddLeftGroupbox("Dev Tools", "align-center-horizontal")
@@ -45964,8 +46179,8 @@ g.SettingsUi = function()
 	if c then
 		c:AddToggle("hideplayerstats", {
 			Text = "\226\132\185\239\184\143 Hide Exo Stats";
-			Default = h.hide_log_ui,
-			Tooltip = "Hides the stats info for systems.",
+			Default = h.hide_log_ui;
+			Tooltip = "Hides the stats info for systems.";
 			Callback = function(G)
 				h.hide_log_ui = G
 				a.Save.SaveDataSync()
@@ -45973,7 +46188,7 @@ g.SettingsUi = function()
 		})
 		c:AddToggle("hide_player_ui_toggle", {
 			Text = "\240\159\145\129\239\184\143 Hide Plot & Teleport UI",
-			Default = h.hide_player_ui,
+			Default = h.hide_player_ui;
 			Tooltip = "Hides the plot panels and teleport buttons.";
 			Callback = function(G)
 				h.hide_player_ui = G
@@ -45984,7 +46199,7 @@ g.SettingsUi = function()
 	end
 	if J then
 		local G = J:AddLabel({
-			Text = "Shows the farm placement grid. Blue spots are blocked.";
+			Text = "Shows the farm placement grid. Blue spots are blocked.",
 			DoesWrap = true
 		})
 		J:AddToggle("farm_grid_debug_show_labels", {
@@ -46017,9 +46232,9 @@ g.SettingsUi = function()
 	end
 	if i then
 		i:AddToggle("hide_plant_models_ui", {
-			Text = "Remove Plants",
-			Default = h.remove_plants,
-			Tooltip = "Removes plant models to reduce game lag. Automation will continue working.",
+			Text = "Remove Plants";
+			Default = h.remove_plants;
+			Tooltip = "Removes plant models to reduce game lag. Automation will continue working.";
 			Callback = function(G)
 				h.remove_plants = G
 				a.Save.SaveDataSync()
@@ -46027,7 +46242,7 @@ g.SettingsUi = function()
 		})
 		i:AddToggle("remove_Weatherx", {
 			Text = "Remove Weathers Visuals";
-			Default = h.remove_weather_visuals;
+			Default = h.remove_weather_visuals,
 			Tooltip = "Removes weather visuals. Automation will continue working.";
 			Callback = function(G)
 				h.remove_weather_visuals = G
@@ -46049,9 +46264,9 @@ g.SettingsUi = function()
 			end
 		})
 		i:AddToggle("full_performance_mode_ui", {
-			Text = "Full Performance Mode",
-			Default = h.full_performance_mode,
-			Tooltip = "Disables heavy visuals and lowers graphics for better performance.";
+			Text = "Full Performance Mode";
+			Default = h.full_performance_mode;
+			Tooltip = "Disables heavy visuals and lowers graphics for better performance.",
 			Callback = function(G)
 				h.full_performance_mode = G
 				if Z.FullPerformanceMode then
@@ -46069,13 +46284,13 @@ g.SettingsUi = function()
 		local G = nil
 		local V = ""
 		local i = j:AddDropdown("ddDatalistsdsx1", {
-			Values = {};
+			Values = {},
 			Default = {},
-			Multi = false,
+			Multi = false;
 			Searchable = true;
-			MaxVisibleDropdownItems = 10;
-			Text = "\240\159\148\146 Select Key";
-			Tooltip = "Reads data based on key",
+			MaxVisibleDropdownItems = 10,
+			Text = "\240\159\148\146 Select Key",
+			Tooltip = "Reads data based on key";
 			Callback = function(j)
 				if j == nil then
 					return
@@ -46103,7 +46318,7 @@ g.SettingsUi = function()
 			end
 		})
 		G = j:AddLabel({
-			Text = "--",
+			Text = "--";
 			DoesWrap = true
 		})
 		i:SetValues(Z.DataReplica.AllBigDataKeys)
@@ -46129,7 +46344,7 @@ g.SettingsUi = function()
 end
 g.TweaksUi = function()
 	local G = d:AddTab({
-		Name = "Tweaks";
+		Name = "Tweaks",
 		Description = "Customise system behaviour";
 		Icon = "sliders-horizontal"
 	})
@@ -46140,8 +46355,8 @@ g.TweaksUi = function()
 			Default = math.clamp(tonumber(h.step_teleport_speed) or 100, 25, 500);
 			Min = 25,
 			Max = 500;
-			Rounding = 0,
-			Suffix = "%";
+			Rounding = 0;
+			Suffix = "%",
 			Tooltip = "Higher values reduce the brief wait after moving to a target.";
 			Callback = function(G)
 				local V = math.clamp(tonumber(G) or 100, 25, 500)
@@ -46152,11 +46367,11 @@ g.TweaksUi = function()
 			end
 		})
 		V:AddLabel({
-			Text = "100% is the recommended default speed.",
+			Text = "100% is the recommended default speed.";
 			DoesWrap = true
 		})
 		V:AddToggle("player_speed_enabled_ui", {
-			Text = "\226\154\161 Player Speed";
+			Text = "\226\154\161 Player Speed",
 			Default = h.player_speed_enabled,
 			Tooltip = "Keeps your movement speed at the selected minimum.",
 			Callback = function(G)
@@ -46166,13 +46381,13 @@ g.TweaksUi = function()
 			end
 		})
 		V:AddSlider("player_speed_value_ui", {
-			Text = "Player Speed",
-			Default = math.clamp(tonumber(h.player_speed_value) or 80, 16, 160);
+			Text = "Player Speed";
+			Default = math.clamp(tonumber(h.player_speed_value) or 80, 16, 160),
 			Min = 16;
-			Max = 160,
+			Max = 160;
 			Rounding = 0,
-			Suffix = "";
-			Tooltip = "Higher speed helps player-walk movement reach targets faster.",
+			Suffix = "",
+			Tooltip = "Higher speed helps player-walk movement reach targets faster.";
 			Callback = function(G)
 				h.player_speed_value = math.clamp(tonumber(G) or 80, 16, 160)
 				Z.PlayerSpeed.ApplyPlayerSpeed()
@@ -46183,7 +46398,7 @@ g.TweaksUi = function()
 end
 g.PetEquipTriggersUi = function()
 	local G = d:AddTab({
-		Name = "<font color=\"#FFFFFF\">Pet </font><font color=\"#00A2FF\">Triggers</font>",
+		Name = "<font color=\"#FFFFFF\">Pet </font><font color=\"#00A2FF\">Triggers</font>";
 		Description = "Pet loadouts for events";
 		Icon = "paw-print"
 	})
@@ -46199,7 +46414,7 @@ g.PetEquipTriggersUi = function()
 		V:AddToggle("pet_equip_enabled_ui", {
 			Text = "\240\159\144\190 Enable Pet Triggers";
 			Default = h.pet_equip_enabled,
-			Tooltip = "Runs enabled loadouts when their trigger is active.",
+			Tooltip = "Runs enabled loadouts when their trigger is active.";
 			Callback = function(G)
 				h.pet_equip_enabled = G
 				a.Save.SaveDataSync()
@@ -46207,9 +46422,9 @@ g.PetEquipTriggersUi = function()
 			end
 		})
 		V:AddToggle("pet_equip_restore_previous_ui", {
-			Text = "\226\134\169\239\184\143 Restore Previous Pets",
+			Text = "\226\134\169\239\184\143 Restore Previous Pets";
 			Default = h.pet_equip_restore_previous;
-			Tooltip = "Restores the pets equipped before the trigger started.";
+			Tooltip = "Restores the pets equipped before the trigger started.",
 			Callback = function(G)
 				h.pet_equip_restore_previous = G
 				a.Save.SaveDataSync()
@@ -46232,9 +46447,9 @@ g.PetEquipTriggersUi = function()
 		})
 		V:AddDivider()
 		V:AddToggle("pet_equip_protect_rainbow_ui", {
-			Text = "\240\159\140\136 Never Unequip Rainbow",
+			Text = "\240\159\140\136 Never Unequip Rainbow";
 			Default = h.pet_equip_protect_rainbow,
-			Tooltip = "Rainbow pets are kept equipped when possible.",
+			Tooltip = "Rainbow pets are kept equipped when possible.";
 			Callback = function(G)
 				h.pet_equip_protect_rainbow = G
 				a.Save.SaveDataSync()
@@ -46242,17 +46457,17 @@ g.PetEquipTriggersUi = function()
 		})
 		V:AddToggle("pet_equip_protect_big_huge_ui", {
 			Text = "\240\159\147\143 Never Unequip Big/Huge";
-			Default = h.pet_equip_protect_big_huge;
-			Tooltip = "Big and Huge pets are kept equipped when possible.",
+			Default = h.pet_equip_protect_big_huge,
+			Tooltip = "Big and Huge pets are kept equipped when possible.";
 			Callback = function(G)
 				h.pet_equip_protect_big_huge = G
 				a.Save.SaveDataSync()
 			end
 		})
 		V:AddToggle("pet_equip_protect_super_secret_ui", {
-			Text = "\240\159\146\142 Never Unequip Super/Secret";
-			Default = h.pet_equip_protect_super_secret,
-			Tooltip = "Super and Secret pets are kept equipped when possible.",
+			Text = "\240\159\146\142 Never Unequip Super/Secret",
+			Default = h.pet_equip_protect_super_secret;
+			Tooltip = "Super and Secret pets are kept equipped when possible.";
 			Callback = function(G)
 				h.pet_equip_protect_super_secret = G
 				a.Save.SaveDataSync()
@@ -46262,10 +46477,10 @@ g.PetEquipTriggersUi = function()
 		G = V:AddValueDropdown("pet_equip_protected_names_ui", {
 			Values = Z.PetEquipTriggers.GetPetNameDropdownPetEquipTriggers();
 			Default = h.pet_equip_protected_names;
-			Multi = true;
+			Multi = true,
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
-			Text = "\240\159\155\161\239\184\143 Protect Pet Types",
+			MaxVisibleDropdownItems = 10,
+			Text = "\240\159\155\161\239\184\143 Protect Pet Types";
 			Tooltip = "Selected pet types will not be unequipped by triggers.";
 			Callback = function(G)
 				if G == nil then
@@ -46277,12 +46492,12 @@ g.PetEquipTriggersUi = function()
 		})
 		local y
 		y = V:AddValueDropdown("pet_equip_protected_ids_ui", {
-			Values = Z.PetEquipTriggers.GetExactPetDropdownPetEquipTriggers();
+			Values = Z.PetEquipTriggers.GetExactPetDropdownPetEquipTriggers(),
 			Default = h.pet_equip_protected_ids,
-			Multi = true;
+			Multi = true,
 			Searchable = true;
 			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\148\144 Protect Exact Pets",
+			Text = "\240\159\148\144 Protect Exact Pets";
 			Tooltip = "Selected exact pets will not be unequipped by triggers.";
 			Callback = function(G)
 				if G == nil then
@@ -46314,7 +46529,7 @@ g.PetEquipTriggersUi = function()
 		local G = {}
 		g.PetEquipTriggerUi.RefreshingRules = false
 		j:AddLabel({
-			Text = "Loadouts are created only after Save Loadout. Manual loadouts need Run Manual Now.";
+			Text = "Loadouts are created only after Save Loadout. Manual loadouts need Run Manual Now.",
 			DoesWrap = true
 		})
 		local function V(G, V)
@@ -46350,7 +46565,7 @@ g.PetEquipTriggersUi = function()
 				c.Toggle = j:AddToggle("pet_equip_rule_toggle_" .. i, {
 					Text = Z.PetEquipTriggers.GetRuleSummaryPetEquipTriggers(y),
 					Default = y.enabled == true;
-					Tooltip = "Enable or disable this saved loadout.";
+					Tooltip = "Enable or disable this saved loadout.",
 					Callback = function(G)
 						if g.PetEquipTriggerUi.RefreshingRules then
 							return
@@ -46359,7 +46574,7 @@ g.PetEquipTriggersUi = function()
 					end
 				})
 				c.RunButton = j:AddButton({
-					Text = tostring(y.triggerType or "") == "Manual" and "\226\150\182 Run Manual Now" or "\226\150\182 Auto Trigger Only",
+					Text = tostring(y.triggerType or "") == "Manual" and "\226\150\182 Run Manual Now" or "\226\150\182 Auto Trigger Only";
 					Func = function()
 						local G = (Z.PetEquipTriggers.GetRulesTablePetEquipTriggers())[i]
 						if type(G) ~= "table" then
@@ -46374,13 +46589,13 @@ g.PetEquipTriggersUi = function()
 					end
 				})
 				c.DeleteButton = j:AddButton({
-					Text = "\240\159\151\145 Delete Loadout";
+					Text = "\240\159\151\145 Delete Loadout",
 					Func = function()
 						Z.PetEquipTriggers.RemoveRulePetEquipTriggers(i)
 					end
 				})
 				c.Divider = j:AddLabel({
-					Text = "<font color=\'#444444\'>\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128</font>";
+					Text = "<font color=\'#444444\'>\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128\226\148\128</font>",
 					DoesWrap = false
 				})
 				G[i] = c
@@ -46409,7 +46624,7 @@ g.PetEquipTriggersUi = function()
 			g.PetEquipTriggerUi.RefreshingRules = false
 		end
 		j:AddButton({
-			Text = "\240\159\148\132 Refresh Loadouts";
+			Text = "\240\159\148\132 Refresh Loadouts",
 			Func = function()
 				g.PetEquipTriggerUi.RefreshPetEquipRules()
 			end
@@ -46420,18 +46635,18 @@ g.PetEquipTriggersUi = function()
 			name = "Pet Loadout";
 			triggerType = "Manual",
 			triggerName = "Manual",
-			duration = 0,
+			duration = 0;
 			pets = {}
 		}
 		y:AddInput("pet_equip_rule_name_input_ui", {
 			Text = "Loadout Name";
 			Default = G.name;
-			Numeric = false,
+			Numeric = false;
 			AllowEmpty = false,
 			Finished = true,
-			ClearTextOnFocus = false;
+			ClearTextOnFocus = false,
 			Placeholder = "Loadout name",
-			Tooltip = "Name shown in the saved loadout list.";
+			Tooltip = "Name shown in the saved loadout list.",
 			Callback = function(V)
 				G.name = Z.PetEquipTriggers.CleanRuleNamePetEquipTriggers(V)
 			end
@@ -46451,36 +46666,36 @@ g.PetEquipTriggersUi = function()
 				"Manual",
 				"Default";
 				"Time Cycle",
-				"Weather";
+				"Weather",
 				"Seed Pack";
 				"Dropped Seed"
 			},
 			Default = G.triggerType;
 			Multi = false,
-			Text = "Trigger Type",
-			Tooltip = "Choose when this loadout should run.";
+			Text = "Trigger Type";
+			Tooltip = "Choose when this loadout should run.",
 			Callback = function(V)
 				G.triggerType = tostring(V or "Manual")
 				i()
 			end
 		})
 		j = y:AddDropdown("pet_equip_trigger_on_ui", {
-			Values = Z.PetEquipTriggers.GetTriggerOptionsPetEquipTriggers(G.triggerType),
-			Default = G.triggerName;
+			Values = Z.PetEquipTriggers.GetTriggerOptionsPetEquipTriggers(G.triggerType);
+			Default = G.triggerName,
 			Multi = false,
-			Text = "Trigger On";
-			Tooltip = "Choose the event that activates this loadout.",
+			Text = "Trigger On",
+			Tooltip = "Choose the event that activates this loadout.";
 			Callback = function(V)
 				G.triggerName = tostring(V or "Manual")
 			end
 		})
 		y:AddInput("pet_equip_duration_input_ui", {
-			Text = "Duration Seconds (0 = event/manual)";
+			Text = "Duration Seconds (0 = event/manual)",
 			Default = "0",
 			Numeric = true,
-			AllowEmpty = false;
+			AllowEmpty = false,
 			Finished = true,
-			ClearTextOnFocus = false;
+			ClearTextOnFocus = false,
 			Placeholder = "0";
 			Tooltip = "0 keeps event loadouts until the event ends. Manual 0 stays until restore.";
 			Callback = function(V)
@@ -46493,25 +46708,25 @@ g.PetEquipTriggersUi = function()
 		local T = ""
 		local d = ""
 		y:AddValueDropdown("pet_equip_pet_type_ui", {
-			Values = Z.PetEquipTriggers.GetPetNameDropdownPetEquipTriggers(),
-			Default = "",
-			Multi = false,
+			Values = Z.PetEquipTriggers.GetPetNameDropdownPetEquipTriggers();
+			Default = "";
+			Multi = false;
 			Searchable = true,
-			MaxVisibleDropdownItems = 10,
+			MaxVisibleDropdownItems = 10;
 			Text = "Pet Type",
-			Tooltip = "Choose the pet type to add to the loadout.",
+			Tooltip = "Choose the pet type to add to the loadout.";
 			Callback = function(G)
 				c = tostring(G or "")
 			end
 		})
 		y:AddInput("pet_equip_pet_amount_input_ui", {
-			Text = "Pet Amount",
-			Default = "1",
-			Numeric = true;
+			Text = "Pet Amount";
+			Default = "1";
+			Numeric = true,
 			AllowEmpty = false,
-			Finished = true;
+			Finished = true,
 			ClearTextOnFocus = false,
-			Placeholder = "1";
+			Placeholder = "1",
 			Tooltip = "Amount to try equipping. Extra pets are ignored if you have no free slots.",
 			Callback = function(G)
 				J = math.clamp(math.floor(tonumber(G) or 1), 1, 12)
@@ -46525,9 +46740,9 @@ g.PetEquipTriggersUi = function()
 				"Huge"
 			};
 			Default = "Any";
-			Multi = false,
-			Text = "Optional Size",
-			Tooltip = "Optional pet size filter.",
+			Multi = false;
+			Text = "Optional Size";
+			Tooltip = "Optional pet size filter.";
 			Callback = function(G)
 				G = tostring(G or "Any")
 				T = G == "Any" and "" or G
@@ -46536,13 +46751,13 @@ g.PetEquipTriggersUi = function()
 		y:AddDropdown("pet_equip_pet_variant_ui", {
 			Values = {
 				"Any",
-				"Normal";
+				"Normal",
 				"Rainbow"
 			};
-			Default = "Any";
-			Multi = false;
-			Text = "Optional Variant";
-			Tooltip = "Optional pet variant filter.";
+			Default = "Any",
+			Multi = false,
+			Text = "Optional Variant",
+			Tooltip = "Optional pet variant filter.",
 			Callback = function(G)
 				G = tostring(G or "Any")
 				d = G == "Any" and "" or G
@@ -46569,7 +46784,7 @@ g.PetEquipTriggersUi = function()
 			u:SetText(# V > 0 and "Pending Pets:\n" .. table.concat(V, "\n") or "Pending Pets: none")
 		end
 		y:AddButton({
-			Text = "\226\158\149 Add Pet To Pending";
+			Text = "\226\158\149 Add Pet To Pending",
 			Func = function()
 				local V = Z.PetEquipTriggers.ResolvePetNamePetEquipTriggers(c)
 				if V == "" then
@@ -46577,7 +46792,7 @@ g.PetEquipTriggersUi = function()
 					return
 				end
 				table.insert(G.pets, {
-					pet = V;
+					pet = V,
 					amount = J;
 					size = T,
 					variant = d
@@ -46593,7 +46808,7 @@ g.PetEquipTriggersUi = function()
 			end
 		})
 		y:AddButton({
-			Text = "\226\156\133 Save Loadout",
+			Text = "\226\156\133 Save Loadout";
 			Func = function()
 				local V, y = Z.PetEquipTriggers.AddRulePetEquipTriggers(G.name, G.triggerType, G.triggerName, G.duration, G.pets)
 				if V then
@@ -46629,7 +46844,7 @@ g.PetEquipTriggersUi = function()
 			G:SetText(# V > 0 and table.concat(V, "\n") or "No logs yet")
 		end
 		i:AddButton({
-			Text = "\240\159\167\185 Clear Logs",
+			Text = "\240\159\167\185 Clear Logs";
 			Func = function()
 				table.clear(g.PetEquipTriggerLogs)
 				g.PetEquipTriggerUi.RefreshPetEquipLogs()
@@ -46641,7 +46856,7 @@ end
 g.PetTriggersV2Ui = function()
 	local G = d:AddTab({
 		Name = "<font color=\"#FFFFFF\">Pet </font><font color=\"#00FF88\">Triggers v2</font>",
-		Description = "Simple pet trigger rules";
+		Description = "Simple pet trigger rules",
 		Icon = "rabbit"
 	})
 	local V = G:AddLeftGroupbox("Pet Triggers v2", "settings", false)
@@ -46656,7 +46871,7 @@ g.PetTriggersV2Ui = function()
 		V:AddToggle("pet_triggers_v2_enabled_ui", {
 			Text = "\240\159\144\135 Enable Pet Triggers v2";
 			Default = h.pet_triggers_v2_enabled,
-			Tooltip = "Runs enabled v2 triggers by priority.",
+			Tooltip = "Runs enabled v2 triggers by priority.";
 			Callback = function(G)
 				h.pet_triggers_v2_enabled = G
 				a.Save.SaveData()
@@ -46664,7 +46879,7 @@ g.PetTriggersV2Ui = function()
 			end
 		})
 		V:AddButton({
-			Text = "\240\159\148\132 Refresh Now",
+			Text = "\240\159\148\132 Refresh Now";
 			Func = function()
 				if g.PetTriggersV2UiState.RefreshRulesPetTriggersV2 then
 					g.PetTriggersV2UiState.RefreshRulesPetTriggersV2()
@@ -46675,7 +46890,7 @@ g.PetTriggersV2Ui = function()
 	end
 	if i then
 		i:AddLabel({
-			Text = "<font color=\'#FFAA00\'>Pet Buy = 90</font>\n<font color=\'#66CCFF\'>Time Cycle = 70</font>\n<font color=\'#CFCFCF\'>Default = 10</font>",
+			Text = "<font color=\'#FFAA00\'>Pet Buy = 90</font>\n<font color=\'#66CCFF\'>Time Cycle = 70</font>\n<font color=\'#CFCFCF\'>Default = 10</font>";
 			DoesWrap = true
 		})
 		i:AddLabel({
@@ -46718,9 +46933,9 @@ g.PetTriggersV2Ui = function()
 					ruleId = i
 				}
 				c.Toggle = j:AddToggle("pet_triggers_v2_rule_toggle_" .. i, {
-					Text = Z.PetTriggersV2.GetRuleSummaryPetTriggersV2(y),
-					Default = y.enabled == true,
-					Tooltip = "Enable or disable this trigger.",
+					Text = Z.PetTriggersV2.GetRuleSummaryPetTriggersV2(y);
+					Default = y.enabled == true;
+					Tooltip = "Enable or disable this trigger.";
 					Callback = function(G)
 						if g.PetTriggersV2UiState.RefreshingRulesPetTriggersV2 then
 							return
@@ -46763,7 +46978,7 @@ g.PetTriggersV2Ui = function()
 			g.PetTriggersV2UiState.RefreshingRulesPetTriggersV2 = false
 		end
 		j:AddButton({
-			Text = "\240\159\148\132 Refresh Triggers";
+			Text = "\240\159\148\132 Refresh Triggers",
 			Func = function()
 				g.PetTriggersV2UiState.RefreshRulesPetTriggersV2()
 			end
@@ -46771,9 +46986,9 @@ g.PetTriggersV2Ui = function()
 	end
 	if y then
 		local G = {
-			triggerType = "Default",
+			triggerType = "Default";
 			events = {},
-			loadoutMode = "Speed";
+			loadoutMode = "Speed",
 			pets = {}
 		}
 		local V
@@ -46786,10 +47001,10 @@ g.PetTriggersV2Ui = function()
 		y:AddDropdown("pet_triggers_v2_trigger_type_ui", {
 			Values = {
 				"Default",
-				"Time Cycle";
+				"Time Cycle",
 				"Pet Buy"
 			};
-			Default = G.triggerType;
+			Default = G.triggerType,
 			Multi = false;
 			Text = "\226\154\161 Trigger",
 			Tooltip = "Choose the trigger priority type.";
@@ -46800,10 +47015,10 @@ g.PetTriggersV2Ui = function()
 		V = y:AddValueDropdown("pet_triggers_v2_events_ui", {
 			Values = Z.PetTriggersV2.GetEventDropdownPetTriggersV2();
 			Default = {};
-			Multi = true;
+			Multi = true,
 			Searchable = true;
 			MaxVisibleDropdownItems = 10,
-			Text = "\240\159\140\153 Time Cycle Events",
+			Text = "\240\159\140\153 Time Cycle Events";
 			Tooltip = "Only used for Time Cycle. Select one or multiple events.";
 			Changed = function(V)
 				G.events = type(V) == "table" and V or {}
@@ -46813,10 +47028,10 @@ g.PetTriggersV2Ui = function()
 			Values = {
 				"Speed";
 				"Manual"
-			};
-			Default = G.loadoutMode;
-			Multi = false;
-			Text = "\240\159\144\190 Pet Mode",
+			},
+			Default = G.loadoutMode,
+			Multi = false,
+			Text = "\240\159\144\190 Pet Mode";
 			Tooltip = "Speed chooses Bunny pets automatically. Manual uses the pending pet list.",
 			Callback = function(V)
 				G.loadoutMode = tostring(V or "Speed")
@@ -46826,23 +47041,23 @@ g.PetTriggersV2Ui = function()
 		j = y:AddValueDropdown("pet_triggers_v2_pet_type_ui", {
 			Values = Z.PetTriggersV2.GetPetDropdownPetTriggersV2();
 			Default = "",
-			Multi = false,
+			Multi = false;
 			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Text = "Manual Pet Type",
-			Tooltip = "Used only when Pet Mode is Manual.",
+			Tooltip = "Used only when Pet Mode is Manual.";
 			Callback = function(G)
 				c = tostring(G or "")
 			end
 		})
 		y:AddInput("pet_triggers_v2_pet_amount_ui", {
 			Text = "Manual Pet Amount",
-			Default = "1",
+			Default = "1";
 			Numeric = true;
-			AllowEmpty = false,
-			Finished = true;
+			AllowEmpty = false;
+			Finished = true,
 			ClearTextOnFocus = false,
-			Placeholder = "1";
+			Placeholder = "1",
 			Tooltip = "Used only when Pet Mode is Manual.",
 			Callback = function(G)
 				J = math.clamp(math.floor(tonumber(G) or 1), 1, 12)
@@ -46851,14 +47066,14 @@ g.PetTriggersV2Ui = function()
 		y:AddDropdown("pet_triggers_v2_pet_size_ui", {
 			Values = {
 				"Any",
-				"Normal";
-				"Big",
+				"Normal",
+				"Big";
 				"Huge"
 			};
 			Default = "Any";
 			Multi = false;
 			Text = "Manual Size",
-			Tooltip = "Optional size filter for manual pets.";
+			Tooltip = "Optional size filter for manual pets.",
 			Callback = function(G)
 				G = tostring(G or "Any")
 				T = G == "Any" and "" or G
@@ -46866,14 +47081,14 @@ g.PetTriggersV2Ui = function()
 		})
 		y:AddDropdown("pet_triggers_v2_pet_variant_ui", {
 			Values = {
-				"Any",
-				"Normal";
+				"Any";
+				"Normal",
 				"Rainbow"
-			},
-			Default = "Any",
-			Multi = false;
-			Text = "Manual Variant",
-			Tooltip = "Optional variant filter for manual pets.";
+			};
+			Default = "Any";
+			Multi = false,
+			Text = "Manual Variant";
+			Tooltip = "Optional variant filter for manual pets.",
 			Callback = function(G)
 				G = tostring(G or "Any")
 				d = G == "Any" and "" or G
@@ -46899,7 +47114,7 @@ g.PetTriggersV2Ui = function()
 			i:SetText(# V > 0 and "Pending Manual Pets:\n" .. table.concat(V, "\n") or "Pending Manual Pets: none")
 		end
 		y:AddButton({
-			Text = "\226\158\149 Add Manual Pet";
+			Text = "\226\158\149 Add Manual Pet",
 			Func = function()
 				local V = Z.PetTriggersV2.ResolvePetNamePetTriggersV2(c)
 				if V == "" then
@@ -46907,8 +47122,8 @@ g.PetTriggersV2Ui = function()
 					return
 				end
 				table.insert(G.pets, {
-					pet = V,
-					amount = J;
+					pet = V;
+					amount = J,
 					size = T;
 					variant = d
 				})
@@ -46916,14 +47131,14 @@ g.PetTriggersV2Ui = function()
 			end
 		})
 		y:AddButton({
-			Text = "\240\159\167\185 Clear Manual Pets",
+			Text = "\240\159\167\185 Clear Manual Pets";
 			Func = function()
 				table.clear(G.pets)
 				u()
 			end
 		})
 		y:AddButton({
-			Text = "\226\156\133 Save Trigger",
+			Text = "\226\156\133 Save Trigger";
 			Func = function()
 				local y, j = Z.PetTriggersV2.AddRulePetTriggersV2(G.triggerType, G.events, G.loadoutMode, G.pets)
 				if y then
@@ -46969,16 +47184,16 @@ g.PackOpeningUi = function()
 	local c = G:AddRightGroupbox("Seed Pack Webhook Filters", "bell-ring")
 	if V then
 		V:AddLabel({
-			Text = "Opens matching egg tools. Empty selected list opens all eggs except protected eggs. <font color=\'#FFCC00\'>Set custom per pet filter on Pet Keep Hatch Filters.</font>";
+			Text = "Opens matching egg tools. Empty selected list opens all eggs except protected eggs. <font color=\'#FFCC00\'>Set custom per pet filter on Pet Keep Hatch Filters.</font>",
 			DoesWrap = true
 		})
 		local G
 		G = V:AddValueDropdown("egg_hatcher_selected_ui", {
-			Values = Z.PackOpenHelpers.GetEggDropdownPackOpenHelpers();
-			Default = {},
+			Values = Z.PackOpenHelpers.GetEggDropdownPackOpenHelpers(),
+			Default = {};
 			Multi = true,
-			Text = "\240\159\165\154 Open Selected Eggs",
-			Tooltip = "Only selected eggs will be opened. Empty means all.",
+			Text = "\240\159\165\154 Open Selected Eggs";
+			Tooltip = "Only selected eggs will be opened. Empty means all.";
 			Searchable = true;
 			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
@@ -46992,13 +47207,13 @@ g.PackOpeningUi = function()
 		G:SetValue(h.egg_hatcher_selected)
 		local y
 		y = V:AddValueDropdown("egg_hatcher_protected_ui", {
-			Values = Z.PackOpenHelpers.GetEggDropdownPackOpenHelpers();
+			Values = Z.PackOpenHelpers.GetEggDropdownPackOpenHelpers(),
 			Default = {},
 			Multi = true;
 			Text = "\240\159\155\161\239\184\143 Protect Eggs",
 			Tooltip = "Selected eggs will not be opened.",
 			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -47011,12 +47226,12 @@ g.PackOpeningUi = function()
 		local j
 		j = V:AddValueDropdown("egg_hatcher_keep_pets_ui", {
 			Values = Z.PackOpenHelpers.GetPetDropdownPackOpenHelpers();
-			Default = {};
+			Default = {},
 			Multi = true,
 			Text = "\240\159\142\175 Keep Pets";
 			Tooltip = "Selected pets count as a wanted hatch. Empty means use other keep filters.",
-			Searchable = true;
-			MaxVisibleDropdownItems = 10;
+			Searchable = true,
+			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -47046,9 +47261,9 @@ g.PackOpeningUi = function()
 		i:SetValue(h.egg_hatcher_keep_sizes)
 		local c
 		c = V:AddValueDropdown("egg_hatcher_keep_variants_ui", {
-			Values = Z.PackOpenHelpers.GetVariantDropdownPackOpenHelpers(),
-			Default = {};
-			Multi = true,
+			Values = Z.PackOpenHelpers.GetVariantDropdownPackOpenHelpers();
+			Default = {},
+			Multi = true;
 			Text = "\240\159\140\136 Keep Variants";
 			Tooltip = "Normal means no Rainbow variant.";
 			Searchable = false;
@@ -47064,13 +47279,13 @@ g.PackOpeningUi = function()
 		c:SetValue(h.egg_hatcher_keep_variants)
 		local J
 		J = V:AddValueDropdown("egg_hatcher_keep_rarities_ui", {
-			Values = Z.PackOpenHelpers.GetRarityDropdownPackOpenHelpers(),
+			Values = Z.PackOpenHelpers.GetRarityDropdownPackOpenHelpers();
 			Default = {},
 			Multi = true;
 			Text = "\226\173\144 Keep Rarities",
-			Tooltip = "Selected rarities count as wanted hatches. Empty means use other keep filters.",
-			Searchable = true,
-			MaxVisibleDropdownItems = 8,
+			Tooltip = "Selected rarities count as wanted hatches. Empty means use other keep filters.";
+			Searchable = true;
+			MaxVisibleDropdownItems = 8;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -47082,14 +47297,14 @@ g.PackOpeningUi = function()
 		J:SetValue(h.egg_hatcher_keep_rarities)
 		local T
 		T = V:AddInput("egg_hatcher_max_per_cycle_ui", {
-			Text = "\240\159\148\162 Max Per Cycle";
-			Default = tostring(h.egg_hatcher_max_per_cycle),
-			Numeric = true,
+			Text = "\240\159\148\162 Max Per Cycle",
+			Default = tostring(h.egg_hatcher_max_per_cycle);
+			Numeric = true;
 			AllowEmpty = false;
-			Finished = true,
-			ClearTextOnFocus = false,
+			Finished = true;
+			ClearTextOnFocus = false;
 			Placeholder = "1",
-			Tooltip = "Press Enter to update.";
+			Tooltip = "Press Enter to update.",
 			Callback = function(G)
 				local V = z(G)
 				if not V or V < 1 or V > 1000 then
@@ -47103,14 +47318,14 @@ g.PackOpeningUi = function()
 		})
 		local d
 		d = V:AddInput("egg_hatcher_delay_ui", {
-			Text = "\226\143\177\239\184\143 Delay";
-			Default = tostring(h.egg_hatcher_delay),
+			Text = "\226\143\177\239\184\143 Delay",
+			Default = tostring(h.egg_hatcher_delay);
 			Numeric = true,
-			AllowEmpty = false,
-			Finished = true,
-			ClearTextOnFocus = false,
-			Placeholder = "0.35",
-			Tooltip = "Press Enter to update.";
+			AllowEmpty = false;
+			Finished = true;
+			ClearTextOnFocus = false;
+			Placeholder = "0.35";
+			Tooltip = "Press Enter to update.",
 			Callback = function(G)
 				local V = tonumber(G)
 				if not V or V < .001 or V > 10 then
@@ -47124,8 +47339,8 @@ g.PackOpeningUi = function()
 		})
 		V:AddToggle("egg_hatcher_equip_tool_ui", {
 			Text = "\240\159\167\176 Equip Tool Before Open";
-			Default = h.egg_hatcher_equip_tool;
-			Tooltip = "Equips the egg tool before opening.";
+			Default = h.egg_hatcher_equip_tool,
+			Tooltip = "Equips the egg tool before opening.",
 			Callback = function(G)
 				h.egg_hatcher_equip_tool = G
 				a.Save.SaveDataSync()
@@ -47134,7 +47349,7 @@ g.PackOpeningUi = function()
 		V:AddToggle("egg_hatcher_keep_super_rarity_ui", {
 			Text = "\226\173\144 Always Keep Super+",
 			Default = h.egg_hatcher_keep_super_rarity;
-			Tooltip = "Super and higher rarity hatches count as wanted by default.";
+			Tooltip = "Super and higher rarity hatches count as wanted by default.",
 			Callback = function(G)
 				h.egg_hatcher_keep_super_rarity = G
 				a.Save.SaveDataSync()
@@ -47142,8 +47357,8 @@ g.PackOpeningUi = function()
 		})
 		V:AddToggle("egg_hatcher_pause_other_systems_ui", {
 			Text = "\226\143\184\239\184\143 Pause Others While Hatching";
-			Default = h.egg_hatcher_pause_other_systems,
-			Tooltip = "Pauses other automation while Egg Hatcher is opening or waiting for hatch results.";
+			Default = h.egg_hatcher_pause_other_systems;
+			Tooltip = "Pauses other automation while Egg Hatcher is opening or waiting for hatch results.",
 			Callback = function(G)
 				h.egg_hatcher_pause_other_systems = G
 				a.Save.SaveDataSync()
@@ -47151,7 +47366,7 @@ g.PackOpeningUi = function()
 		})
 		V:AddToggle("egg_hatcher_webhook_enabled_ui", {
 			Text = "\240\159\148\148 Hatch Webhook";
-			Default = h.egg_hatcher_webhook_enabled,
+			Default = h.egg_hatcher_webhook_enabled;
 			Tooltip = "Send a webhook when an egg hatch result is detected.",
 			Callback = function(G)
 				h.egg_hatcher_webhook_enabled = G
@@ -47164,9 +47379,9 @@ g.PackOpeningUi = function()
 		V:AddDivider()
 		V:AddDivider()
 		V:AddToggle("egg_hatcher_enabled_ui", {
-			Text = "\226\156\133 Enable Egg Hatcher";
-			Default = h.egg_hatcher_enabled;
-			Tooltip = "Automatically opens matching egg tools.";
+			Text = "\226\156\133 Enable Egg Hatcher",
+			Default = h.egg_hatcher_enabled,
+			Tooltip = "Automatically opens matching egg tools.",
 			Callback = function(G)
 				h.egg_hatcher_enabled = G
 				if not G then
@@ -47178,7 +47393,7 @@ g.PackOpeningUi = function()
 	end
 	if j then
 		j:AddLabel({
-			Text = "\240\159\144\190 Add custom pet keep rules. Empty size or variant means <font color=\'#FFCC00\'>Any</font>. Matching rules override the normal hatch filters.",
+			Text = "\240\159\144\190 Add custom pet keep rules. Empty size or variant means <font color=\'#FFCC00\'>Any</font>. Matching rules override the normal hatch filters.";
 			DoesWrap = true
 		})
 		local G = ""
@@ -47187,13 +47402,13 @@ g.PackOpeningUi = function()
 		local i
 		local c
 		j:AddValueDropdown("egg_hatcher_pet_keep_filter_pet_ui", {
-			Values = Z.PackOpenHelpers.GetPetDropdownPackOpenHelpers();
-			Default = "",
-			Multi = false;
+			Values = Z.PackOpenHelpers.GetPetDropdownPackOpenHelpers(),
+			Default = "";
+			Multi = false,
 			Text = "\240\159\144\190 Pet",
 			Tooltip = "Choose the pet for a custom hatch filter.";
 			Searchable = true;
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Changed = function(Z)
 				G = tostring(Z or "")
 				local j = nil
@@ -47219,13 +47434,13 @@ g.PackOpeningUi = function()
 			end
 		})
 		i = j:AddValueDropdown("egg_hatcher_pet_keep_filter_size_ui", {
-			Values = Z.PackOpenHelpers.GetSizeDropdownPackOpenHelpers(),
+			Values = Z.PackOpenHelpers.GetSizeDropdownPackOpenHelpers();
 			Default = {};
 			Multi = true;
-			Text = "\240\159\147\143 Size",
+			Text = "\240\159\147\143 Size";
 			Tooltip = "Empty means any size.",
-			Searchable = false,
-			MaxVisibleDropdownItems = 5,
+			Searchable = false;
+			MaxVisibleDropdownItems = 5;
 			Changed = function(G)
 				if type(G) == "table" then
 					V = G
@@ -47235,7 +47450,7 @@ g.PackOpeningUi = function()
 		i:SetValue({})
 		c = j:AddValueDropdown("egg_hatcher_pet_keep_filter_variant_ui", {
 			Values = Z.PackOpenHelpers.GetVariantDropdownPackOpenHelpers(),
-			Default = {};
+			Default = {},
 			Multi = true;
 			Text = "\240\159\140\136 Variant";
 			Tooltip = "Empty means any variant.",
@@ -47250,7 +47465,7 @@ g.PackOpeningUi = function()
 		c:SetValue({})
 		j:AddButton({
 			Text = "\226\156\133 Enable Pet Filter",
-			Tooltip = "Adds or updates the main pet keep filter.",
+			Tooltip = "Adds or updates the main pet keep filter.";
 			Func = function()
 				local j, i = Z.EggHatcher.SavePetKeepFilterEggHatcher(G, V, y)
 				if j then
@@ -47261,8 +47476,8 @@ g.PackOpeningUi = function()
 			end
 		})
 		j:AddButton({
-			Text = "\226\158\149 Add Pet Filter Case",
-			Tooltip = "Adds another matching case for this pet.",
+			Text = "\226\158\149 Add Pet Filter Case";
+			Tooltip = "Adds another matching case for this pet.";
 			Func = function()
 				local j, i = Z.EggHatcher.AddPetKeepFilterCaseEggHatcher(G, V, y)
 				if j then
@@ -47298,9 +47513,9 @@ g.PackOpeningUi = function()
 			if not c then
 				c = {}
 				c.Toggle = j:AddToggle(i, {
-					Text = Z.EggHatcher.GetPetKeepFilterTextEggHatcher(V, G.rule, y);
-					Default = type(G.rule) == "table" and G.rule.enabled == true,
-					Tooltip = "Enable or disable this pet keep filter.",
+					Text = Z.EggHatcher.GetPetKeepFilterTextEggHatcher(V, G.rule, y),
+					Default = type(G.rule) == "table" and G.rule.enabled == true;
+					Tooltip = "Enable or disable this pet keep filter.";
 					Callback = function(G)
 						if g.EggHatcherPetKeepUiRefs.RefreshingRowsEggHatcherPetKeep then
 							return
@@ -47336,18 +47551,18 @@ g.PackOpeningUi = function()
 	end
 	if y then
 		y:AddLabel({
-			Text = "Opens matching seed pack tools. Empty selected list opens all packs except protected packs.",
+			Text = "Opens matching seed pack tools. Empty selected list opens all packs except protected packs.";
 			DoesWrap = true
 		})
 		local G
 		G = y:AddValueDropdown("seed_pack_opener_selected_ui", {
-			Values = Z.PackOpenHelpers.GetSeedPackDropdownPackOpenHelpers();
+			Values = Z.PackOpenHelpers.GetSeedPackDropdownPackOpenHelpers(),
 			Default = {};
 			Multi = true,
-			Text = "\240\159\142\129 Open Selected Packs",
+			Text = "\240\159\142\129 Open Selected Packs";
 			Tooltip = "Only selected seed packs will be opened. Empty means all.";
 			Searchable = true;
-			MaxVisibleDropdownItems = 10;
+			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -47359,13 +47574,13 @@ g.PackOpeningUi = function()
 		G:SetValue(h.seed_pack_opener_selected)
 		local V
 		V = y:AddValueDropdown("seed_pack_opener_protected_ui", {
-			Values = Z.PackOpenHelpers.GetSeedPackDropdownPackOpenHelpers(),
-			Default = {};
+			Values = Z.PackOpenHelpers.GetSeedPackDropdownPackOpenHelpers();
+			Default = {},
 			Multi = true;
-			Text = "\240\159\155\161\239\184\143 Protect Packs";
+			Text = "\240\159\155\161\239\184\143 Protect Packs",
 			Tooltip = "Selected seed packs will not be opened.",
-			Searchable = true,
-			MaxVisibleDropdownItems = 10;
+			Searchable = true;
+			MaxVisibleDropdownItems = 10,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -47382,7 +47597,7 @@ g.PackOpeningUi = function()
 			Numeric = true;
 			AllowEmpty = false;
 			Finished = true,
-			ClearTextOnFocus = false;
+			ClearTextOnFocus = false,
 			Placeholder = "1",
 			Tooltip = "Press Enter to update.";
 			Callback = function(G)
@@ -47399,12 +47614,12 @@ g.PackOpeningUi = function()
 		local i
 		i = y:AddInput("seed_pack_opener_delay_ui", {
 			Text = "\226\143\177\239\184\143 Delay";
-			Default = tostring(h.seed_pack_opener_delay),
+			Default = tostring(h.seed_pack_opener_delay);
 			Numeric = true;
 			AllowEmpty = false;
-			Finished = true;
-			ClearTextOnFocus = false;
-			Placeholder = "0.35";
+			Finished = true,
+			ClearTextOnFocus = false,
+			Placeholder = "0.35",
 			Tooltip = "Press Enter to update.",
 			Callback = function(G)
 				local V = tonumber(G)
@@ -47418,7 +47633,7 @@ g.PackOpeningUi = function()
 			end
 		})
 		y:AddToggle("seed_pack_opener_equip_tool_ui", {
-			Text = "\240\159\167\176 Equip Tool Before Open",
+			Text = "\240\159\167\176 Equip Tool Before Open";
 			Default = h.seed_pack_opener_equip_tool;
 			Tooltip = "Equips the seed pack tool before opening.";
 			Callback = function(G)
@@ -47429,7 +47644,7 @@ g.PackOpeningUi = function()
 		y:AddToggle("seed_pack_opener_webhook_enabled_ui", {
 			Text = "\240\159\148\148 Seed Pack Webhook",
 			Default = h.seed_pack_opener_webhook_enabled;
-			Tooltip = "Send a webhook when a seed pack result is detected.";
+			Tooltip = "Send a webhook when a seed pack result is detected.",
 			Callback = function(G)
 				h.seed_pack_opener_webhook_enabled = G
 				if not G and type(g.SeedPackOpenerWebhookData) == "table" then
@@ -47440,8 +47655,8 @@ g.PackOpeningUi = function()
 		})
 		y:AddToggle("seed_pack_opener_enabled_ui", {
 			Text = "\226\156\133 Enable Seed Pack Opener";
-			Default = h.seed_pack_opener_enabled,
-			Tooltip = "Automatically opens matching seed pack tools.",
+			Default = h.seed_pack_opener_enabled;
+			Tooltip = "Automatically opens matching seed pack tools.";
 			Callback = function(G)
 				h.seed_pack_opener_enabled = G
 				if not G then
@@ -47455,12 +47670,12 @@ g.PackOpeningUi = function()
 		local G
 		G = i:AddValueDropdown("egg_hatcher_webhook_pets_ui", {
 			Values = Z.PackOpenHelpers.GetPetDropdownPackOpenHelpers(),
-			Default = {},
-			Multi = true,
+			Default = {};
+			Multi = true;
 			Text = "\240\159\144\190 Pets";
 			Tooltip = "Only selected pets send webhook. Empty means all.";
 			Searchable = true;
-			MaxVisibleDropdownItems = 10,
+			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -47472,13 +47687,13 @@ g.PackOpeningUi = function()
 		G:SetValue(h.egg_hatcher_webhook_pets)
 		local V
 		V = i:AddValueDropdown("egg_hatcher_webhook_rarities_ui", {
-			Values = Z.PackOpenHelpers.GetRarityDropdownPackOpenHelpers(),
+			Values = Z.PackOpenHelpers.GetRarityDropdownPackOpenHelpers();
 			Default = {};
 			Multi = true,
-			Text = "\226\173\144 Rarities";
+			Text = "\226\173\144 Rarities",
 			Tooltip = "Only selected rarities send webhook. Empty means all.";
-			Searchable = true;
-			MaxVisibleDropdownItems = 8;
+			Searchable = true,
+			MaxVisibleDropdownItems = 8,
 			Changed = function(G)
 				if type(G) ~= "table" then
 					return
@@ -47490,12 +47705,12 @@ g.PackOpeningUi = function()
 		V:SetValue(h.egg_hatcher_webhook_rarities)
 		local y
 		y = i:AddValueDropdown("egg_hatcher_webhook_sizes_ui", {
-			Values = Z.PackOpenHelpers.GetSizeDropdownPackOpenHelpers(),
-			Default = {},
-			Multi = true,
-			Text = "\240\159\147\143 Sizes";
-			Tooltip = "Only selected sizes send webhook. Empty means all.";
-			Searchable = false;
+			Values = Z.PackOpenHelpers.GetSizeDropdownPackOpenHelpers();
+			Default = {};
+			Multi = true;
+			Text = "\240\159\147\143 Sizes",
+			Tooltip = "Only selected sizes send webhook. Empty means all.",
+			Searchable = false,
 			MaxVisibleDropdownItems = 5;
 			Changed = function(G)
 				if type(G) ~= "table" then
@@ -47509,9 +47724,9 @@ g.PackOpeningUi = function()
 		local j
 		j = i:AddValueDropdown("egg_hatcher_webhook_variants_ui", {
 			Values = Z.PackOpenHelpers.GetVariantDropdownPackOpenHelpers(),
-			Default = {};
+			Default = {},
 			Multi = true,
-			Text = "\240\159\140\136 Variants",
+			Text = "\240\159\140\136 Variants";
 			Tooltip = "Only selected variants send webhook. Empty means all.";
 			Searchable = false;
 			MaxVisibleDropdownItems = 5;
@@ -47529,10 +47744,10 @@ g.PackOpeningUi = function()
 		local G
 		G = c:AddValueDropdown("seed_pack_opener_webhook_seeds_ui", {
 			Values = Z.PackOpenHelpers.GetSeedDropdownPackOpenHelpers(),
-			Default = {};
+			Default = {},
 			Multi = true;
 			Text = "\240\159\140\177 Seeds";
-			Tooltip = "Only selected seeds send webhook. Empty means all.";
+			Tooltip = "Only selected seeds send webhook. Empty means all.",
 			Searchable = true;
 			MaxVisibleDropdownItems = 10;
 			Changed = function(G)
@@ -47546,11 +47761,11 @@ g.PackOpeningUi = function()
 		G:SetValue(h.seed_pack_opener_webhook_seeds)
 		local V
 		V = c:AddValueDropdown("seed_pack_opener_webhook_rarities_ui", {
-			Values = Z.PackOpenHelpers.GetRarityDropdownPackOpenHelpers();
-			Default = {};
-			Multi = true,
+			Values = Z.PackOpenHelpers.GetRarityDropdownPackOpenHelpers(),
+			Default = {},
+			Multi = true;
 			Text = "\226\173\144 Rarities",
-			Tooltip = "Only selected rarities send webhook. Empty means all.";
+			Tooltip = "Only selected rarities send webhook. Empty means all.",
 			Searchable = true,
 			MaxVisibleDropdownItems = 8,
 			Changed = function(G)
@@ -47589,7 +47804,7 @@ g.SaveManagerUi = function()
 		})
 		V:AddButton({
 			Text = "Load Saved Data",
-			Tooltip = "Loads this account\'s online save after confirmation.",
+			Tooltip = "Loads this account\'s online save after confirmation.";
 			Func = function()
 				if not Z.SaveSync.GuardPremiumSaveSync("Premium required to load online save") then
 					return
@@ -47599,8 +47814,8 @@ g.SaveManagerUi = function()
 					return
 				end
 				T:Confirm({
-					Title = "Load saved data?";
-					Description = "This will apply the online save for this account and update your local settings.";
+					Title = "Load saved data?",
+					Description = "This will apply the online save for this account and update your local settings.",
 					Callback = function(G)
 						if G then
 							Z.SaveSync.PullSaveSync("", true)
@@ -47612,7 +47827,7 @@ g.SaveManagerUi = function()
 		V:AddToggle("save_sync_online_enabled_ui", {
 			Text = "Enable Save Online";
 			Default = h.save_sync_online_enabled,
-			Tooltip = "Saves this account\'s settings online when they change.",
+			Tooltip = "Saves this account\'s settings online when they change.";
 			Callback = function(G)
 				if G == true and not Z.SaveSync.GuardPremiumSaveSync("Premium required for online saving") then
 					return
@@ -47640,7 +47855,7 @@ g.SaveManagerUi = function()
 	end
 	if y then
 		y:AddLabel({
-			Text = "Enter another account\'s code to copy its saved settings.";
+			Text = "Enter another account\'s code to copy its saved settings.",
 			DoesWrap = true
 		})
 		g.SaveSyncUiRefs.ShareCodeLabel = y:AddLabel({
@@ -47654,11 +47869,11 @@ g.SaveManagerUi = function()
 		y:AddInput("save_sync_share_code_ui", {
 			Text = "Share Code",
 			Default = h.save_sync_share_code,
-			Numeric = false,
+			Numeric = false;
 			AllowEmpty = true;
-			Finished = true;
+			Finished = true,
 			ClearTextOnFocus = false;
-			Placeholder = "Enter code then press Enter";
+			Placeholder = "Enter code then press Enter",
 			Tooltip = "Type the account code and press Enter to save it.",
 			Callback = function(G)
 				local V = Z.SaveSync.CleanShareCodeSaveSync(G)
@@ -47673,7 +47888,7 @@ g.SaveManagerUi = function()
 		y:AddToggle("save_sync_auto_pull_enabled_ui", {
 			Text = "Enable Sync",
 			Default = h.save_sync_auto_pull_enabled;
-			Tooltip = "Checks the entered code every few seconds and applies new settings.",
+			Tooltip = "Checks the entered code every few seconds and applies new settings.";
 			Callback = function(G)
 				if G == true and not Z.SaveSync.GuardPremiumSaveSync("Premium required for online sync") then
 					return
@@ -47696,7 +47911,7 @@ g.SaveManagerUi = function()
 		})
 		y:AddButton({
 			Text = "Pull Now",
-			Tooltip = "Checks the entered code now.";
+			Tooltip = "Checks the entered code now.",
 			Func = function()
 				if not Z.SaveSync.GuardPremiumSaveSync("Premium required for online sync") then
 					return
@@ -47718,7 +47933,7 @@ g.SaveManagerUi = function()
 		})
 		j:AddButton({
 			Text = "Copy Share Launcher";
-			Tooltip = "Copies a launcher that connects another account to this saved code.";
+			Tooltip = "Copies a launcher that connects another account to this saved code.",
 			Func = function()
 				local G = a.Config.BuildShareLauncherText()
 				if type(G) ~= "string" or G == "" then
